@@ -1,0 +1,15 @@
+node_modules
+.env
+
+# Build files
+cache
+artifacts
+typechain
+abis
+out
+
+hardhat.config.ts
+
+# Others 
+lib
+.DS_Store

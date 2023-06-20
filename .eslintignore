@@ -1,0 +1,13 @@
+node_modules
+artifacts
+cache
+coverage*
+gasReporterOutput.json
+typechain
+typechain-types
+lib/ds-test
+lib/openzeppelin-contracts
+lib/loreum-nft 
+lib/loreum-token 
+lib/contract-utils
+
