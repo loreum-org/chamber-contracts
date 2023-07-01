@@ -3,16 +3,17 @@
 
 pragma solidity ^0.8.19;
 
-import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-
 interface IERC721_Chamber {
     function balanceOf(address owner) external view returns (uint256 balance);
     function ownerOf(uint256 tokenId) external view returns (address owner);
 }
 
-contract Chamber {
+interface IERC20_Chamber {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);    
+    function transfer(address to, uint256 amount) external returns (bool);
+}
 
-    using SafeERC20 for IERC20;
+contract Chamber {
 
     // ---------------------
     //    State Variables
@@ -243,7 +244,7 @@ contract Chamber {
         
         totalStake[_tokenId] += _amt;
         memberNftStake[_msgSender()][_tokenId] += _amt;
-        IERC20(stakingToken).safeTransferFrom(_msgSender(), address(this), _amt);
+        IERC20_Chamber(stakingToken).transferFrom(_msgSender(), address(this), _amt);
 
         emit Staked(_msgSender(), _amt, _tokenId);
 
@@ -337,7 +338,7 @@ contract Chamber {
         
         totalStake[_tokenId] -= _amt;
         memberNftStake[_msgSender()][_tokenId] -= _amt;
-        IERC20(stakingToken).safeTransfer(_msgSender(), _amt);
+        IERC20_Chamber(stakingToken).transfer(_msgSender(), _amt);
 
         emit Unstaked(_msgSender(), _amt, _tokenId);
 
