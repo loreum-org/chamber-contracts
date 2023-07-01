@@ -115,16 +115,16 @@ contract ProposalTest is Test {
             targetArray1[0] = address(chamber);
             valueArray1[0] = 1 ether;
 
-            chamber.createProposal(targetArray1, valueArray1, dataArray1);
+            chamber.create(targetArray1, valueArray1, dataArray1);
             assertEq(chamber.proposalCount(), 1);
 
             // 2. nft holder without stake should not be able to approve proposal
             vm.expectRevert("NFT not eligible to vote.");
-            chamber.approveProposal(1, 8);
+            chamber.approve(1, 8);
 
             // 3. nft holder should not be able to approve proposal using unowned tokenId
             vm.expectRevert("Caller does not own NFT.");
-            chamber.approveProposal(1, 5);
+            chamber.approve(1, 5);
  
         vm.stopPrank();
 
@@ -168,7 +168,7 @@ contract ProposalTest is Test {
             valueArray[5] = 0;
             valueArray[6] = 0;
 
-            chamber.createProposal(targetArray, valueArray, dataArray);
+            chamber.create(targetArray, valueArray, dataArray);
             assertEq(chamber.proposalCount(), 2);
             (votes, state) = chamber.proposals(2);
             assertEq(votes, 0);
@@ -176,25 +176,25 @@ contract ProposalTest is Test {
 
             // 4. nft holder should not be able to approve if not a leader
             vm.expectRevert("NFT not eligible to vote.");
-            chamber.approveProposal(1, 1);
+            chamber.approve(1, 1);
         vm.stopPrank();
         
         // 5. Leaders should be able to approve proposal
         vm.prank(danny);
-        chamber.approveProposal(2, 5);
+        chamber.approve(2, 5);
         (votes, state) = chamber.proposals(2);
         assertEq(votes, 1);
         assertTrue(state == Chamber.State.Initialized);
 
         vm.prank(shifty);
-        chamber.approveProposal(2, 6);
+        chamber.approve(2, 6);
         (votes, state) = chamber.proposals(2);
         assertEq(votes, 2);
         assertTrue(state == Chamber.State.Initialized);
         
         // 6. Quorum of leaders should execute proposal
         vm.prank(blackbeard);
-        chamber.approveProposal(2, 7);
+        chamber.approve(2, 7);
         (votes, state) = chamber.proposals(2);
         assertEq(votes, 3);
         assertTrue(state == Chamber.State.Executed);
@@ -212,14 +212,14 @@ contract ProposalTest is Test {
             assertEq(chamber.getUserStakeIndividualNFT(bones, 1), 43333 ether);
 
             vm.expectRevert("NFT not eligible to vote.");
-            chamber.approveProposal(1, 1);
+            chamber.approve(1, 1);
         vm.stopPrank();
 
         // 8. nft holder that unstaked erc20 should be able to approve
         vm.startPrank(jack);
             chamber.unstake(33333 ether, 4);
             helperLogger();
-            chamber.approveProposal(1, 4);
+            chamber.approve(1, 4);
         vm.stopPrank();
     }
 }
