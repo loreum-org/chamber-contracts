@@ -2,4 +2,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export { Chamber__factory } from "./Chamber__factory";
+export { IERC20_Chamber__factory } from "./IERC20_Chamber__factory";
 export { IERC721_Chamber__factory } from "./IERC721_Chamber__factory";

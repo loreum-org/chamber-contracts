@@ -2,4 +2,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { Chamber } from "./Chamber";
+export type { IERC20_Chamber } from "./IERC20_Chamber";
 export type { IERC721_Chamber } from "./IERC721_Chamber";

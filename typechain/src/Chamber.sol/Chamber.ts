@@ -29,9 +29,8 @@ import type {
 
 export interface ChamberInterface extends utils.Interface {
   functions: {
-    "NFT()": FunctionFragment;
-    "approveProposal(uint256,uint256)": FunctionFragment;
-    "createProposal(address[],uint256[],bytes[])": FunctionFragment;
+    "approve(uint256,uint256)": FunctionFragment;
+    "create(address[],uint256[],bytes[])": FunctionFragment;
     "getAdjacent(uint256,bool)": FunctionFragment;
     "getData(uint256)": FunctionFragment;
     "getNext(uint256)": FunctionFragment;
@@ -45,6 +44,8 @@ export interface ChamberInterface extends utils.Interface {
     "isInitialized()": FunctionFragment;
     "leaders()": FunctionFragment;
     "list(uint256,bool)": FunctionFragment;
+    "memberNftStake(address,uint256)": FunctionFragment;
+    "membershipToken()": FunctionFragment;
     "migrate(uint256,uint256,uint256)": FunctionFragment;
     "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)": FunctionFragment;
     "onERC1155Received(address,address,uint256,uint256,bytes)": FunctionFragment;
@@ -55,11 +56,9 @@ export interface ChamberInterface extends utils.Interface {
     "size()": FunctionFragment;
     "stake(uint256,uint256)": FunctionFragment;
     "stakingToken()": FunctionFragment;
-    "supportsInterface(bytes4)": FunctionFragment;
     "tokenIdData(uint256)": FunctionFragment;
     "totalStake(uint256)": FunctionFragment;
     "unstake(uint256,uint256)": FunctionFragment;
-    "userStakeIndividualNFT(address,uint256)": FunctionFragment;
     "viewRankings()": FunctionFragment;
     "viewRankingsAll()": FunctionFragment;
     "voted(uint256,uint256)": FunctionFragment;
@@ -67,9 +66,8 @@ export interface ChamberInterface extends utils.Interface {
 
   getFunction(
     nameOrSignatureOrTopic:
-      | "NFT"
-      | "approveProposal"
-      | "createProposal"
+      | "approve"
+      | "create"
       | "getAdjacent"
       | "getData"
       | "getNext"
@@ -83,6 +81,8 @@ export interface ChamberInterface extends utils.Interface {
       | "isInitialized"
       | "leaders"
       | "list"
+      | "memberNftStake"
+      | "membershipToken"
       | "migrate"
       | "onERC1155BatchReceived"
       | "onERC1155Received"
@@ -93,23 +93,20 @@ export interface ChamberInterface extends utils.Interface {
       | "size"
       | "stake"
       | "stakingToken"
-      | "supportsInterface"
       | "tokenIdData"
       | "totalStake"
       | "unstake"
-      | "userStakeIndividualNFT"
       | "viewRankings"
       | "viewRankingsAll"
       | "voted"
   ): FunctionFragment;
 
-  encodeFunctionData(functionFragment: "NFT", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "approveProposal",
+    functionFragment: "approve",
     values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "createProposal",
+    functionFragment: "create",
     values: [
       PromiseOrValue<string>[],
       PromiseOrValue<BigNumberish>[],
@@ -161,6 +158,14 @@ export interface ChamberInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "list",
     values: [PromiseOrValue<BigNumberish>, PromiseOrValue<boolean>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "memberNftStake",
+    values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "membershipToken",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "migrate",
@@ -218,10 +223,6 @@ export interface ChamberInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "supportsInterface",
-    values: [PromiseOrValue<BytesLike>]
-  ): string;
-  encodeFunctionData(
     functionFragment: "tokenIdData",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
@@ -232,10 +233,6 @@ export interface ChamberInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "unstake",
     values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "userStakeIndividualNFT",
-    values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "viewRankings",
@@ -250,15 +247,8 @@ export interface ChamberInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>]
   ): string;
 
-  decodeFunctionResult(functionFragment: "NFT", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "approveProposal",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "createProposal",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "create", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getAdjacent",
     data: BytesLike
@@ -287,6 +277,14 @@ export interface ChamberInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "leaders", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "list", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "memberNftStake",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "membershipToken",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "migrate", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "onERC1155BatchReceived",
@@ -313,19 +311,11 @@ export interface ChamberInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "supportsInterface",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "tokenIdData",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "totalStake", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "unstake", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "userStakeIndividualNFT",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "viewRankings",
     data: BytesLike
@@ -468,15 +458,13 @@ export interface Chamber extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    NFT(overrides?: CallOverrides): Promise<[string]>;
-
-    approveProposal(
-      proposalId: PromiseOrValue<BigNumberish>,
-      nftId: PromiseOrValue<BigNumberish>,
+    approve(
+      _proposalId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    createProposal(
+    create(
       _target: PromiseOrValue<string>[],
       _value: PromiseOrValue<BigNumberish>[],
       _data: PromiseOrValue<BytesLike>[],
@@ -484,13 +472,13 @@ export interface Chamber extends BaseContract {
     ): Promise<ContractTransaction>;
 
     getAdjacent(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       direction: PromiseOrValue<boolean>,
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber]>;
 
     getData(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<
       [boolean, BigNumber, BigNumber] & {
@@ -501,28 +489,28 @@ export interface Chamber extends BaseContract {
     >;
 
     getNext(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber] & { exists: boolean; next: BigNumber }>;
 
     getNextNode(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber]>;
 
     getPrev(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber] & { exists: boolean; prev: BigNumber }>;
 
     getPreviousNode(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber]>;
 
     getUserStakeIndividualNFT(
-      user: PromiseOrValue<string>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _member: PromiseOrValue<string>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
@@ -533,7 +521,7 @@ export interface Chamber extends BaseContract {
     ): Promise<ContractTransaction>;
 
     inList(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[boolean] & { exists: boolean }>;
 
@@ -549,10 +537,18 @@ export interface Chamber extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
+    memberNftStake(
+      arg0: PromiseOrValue<string>,
+      arg1: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
+    membershipToken(overrides?: CallOverrides): Promise<[string]>;
+
     migrate(
-      amt: PromiseOrValue<BigNumberish>,
-      fromTokenId: PromiseOrValue<BigNumberish>,
-      toTokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _fromTokenId: PromiseOrValue<BigNumberish>,
+      _toTokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -594,17 +590,12 @@ export interface Chamber extends BaseContract {
     size(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     stake(
-      amt: PromiseOrValue<BigNumberish>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     stakingToken(overrides?: CallOverrides): Promise<[string]>;
-
-    supportsInterface(
-      interfaceId: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
-    ): Promise<[boolean]>;
 
     tokenIdData(
       arg0: PromiseOrValue<BigNumberish>,
@@ -617,29 +608,28 @@ export interface Chamber extends BaseContract {
     ): Promise<[BigNumber]>;
 
     unstake(
-      amt: PromiseOrValue<BigNumberish>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
-
-    userStakeIndividualNFT(
-      arg0: PromiseOrValue<string>,
-      arg1: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
 
     viewRankings(
       overrides?: CallOverrides
     ): Promise<
       [BigNumber[], BigNumber[]] & {
-        rankings: BigNumber[];
-        stakes: BigNumber[];
+        _rankings: BigNumber[];
+        _stakes: BigNumber[];
       }
     >;
 
     viewRankingsAll(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber[], BigNumber[]] & {
+        _rankings: BigNumber[];
+        _stakes: BigNumber[];
+      }
+    >;
 
     voted(
       arg0: PromiseOrValue<BigNumberish>,
@@ -648,15 +638,13 @@ export interface Chamber extends BaseContract {
     ): Promise<[boolean]>;
   };
 
-  NFT(overrides?: CallOverrides): Promise<string>;
-
-  approveProposal(
-    proposalId: PromiseOrValue<BigNumberish>,
-    nftId: PromiseOrValue<BigNumberish>,
+  approve(
+    _proposalId: PromiseOrValue<BigNumberish>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  createProposal(
+  create(
     _target: PromiseOrValue<string>[],
     _value: PromiseOrValue<BigNumberish>[],
     _data: PromiseOrValue<BytesLike>[],
@@ -664,13 +652,13 @@ export interface Chamber extends BaseContract {
   ): Promise<ContractTransaction>;
 
   getAdjacent(
-    tokenId: PromiseOrValue<BigNumberish>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     direction: PromiseOrValue<boolean>,
     overrides?: CallOverrides
   ): Promise<[boolean, BigNumber]>;
 
   getData(
-    tokenId: PromiseOrValue<BigNumberish>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<
     [boolean, BigNumber, BigNumber] & {
@@ -681,28 +669,28 @@ export interface Chamber extends BaseContract {
   >;
 
   getNext(
-    tokenId: PromiseOrValue<BigNumberish>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<[boolean, BigNumber] & { exists: boolean; next: BigNumber }>;
 
   getNextNode(
-    tokenId: PromiseOrValue<BigNumberish>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<[boolean, BigNumber]>;
 
   getPrev(
-    tokenId: PromiseOrValue<BigNumberish>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<[boolean, BigNumber] & { exists: boolean; prev: BigNumber }>;
 
   getPreviousNode(
-    tokenId: PromiseOrValue<BigNumberish>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<[boolean, BigNumber]>;
 
   getUserStakeIndividualNFT(
-    user: PromiseOrValue<string>,
-    tokenId: PromiseOrValue<BigNumberish>,
+    _member: PromiseOrValue<string>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
@@ -713,7 +701,7 @@ export interface Chamber extends BaseContract {
   ): Promise<ContractTransaction>;
 
   inList(
-    tokenId: PromiseOrValue<BigNumberish>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<boolean>;
 
@@ -727,10 +715,18 @@ export interface Chamber extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  memberNftStake(
+    arg0: PromiseOrValue<string>,
+    arg1: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  membershipToken(overrides?: CallOverrides): Promise<string>;
+
   migrate(
-    amt: PromiseOrValue<BigNumberish>,
-    fromTokenId: PromiseOrValue<BigNumberish>,
-    toTokenId: PromiseOrValue<BigNumberish>,
+    _amt: PromiseOrValue<BigNumberish>,
+    _fromTokenId: PromiseOrValue<BigNumberish>,
+    _toTokenId: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -772,17 +768,12 @@ export interface Chamber extends BaseContract {
   size(overrides?: CallOverrides): Promise<BigNumber>;
 
   stake(
-    amt: PromiseOrValue<BigNumberish>,
-    tokenId: PromiseOrValue<BigNumberish>,
+    _amt: PromiseOrValue<BigNumberish>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   stakingToken(overrides?: CallOverrides): Promise<string>;
-
-  supportsInterface(
-    interfaceId: PromiseOrValue<BytesLike>,
-    overrides?: CallOverrides
-  ): Promise<boolean>;
 
   tokenIdData(
     arg0: PromiseOrValue<BigNumberish>,
@@ -795,26 +786,28 @@ export interface Chamber extends BaseContract {
   ): Promise<BigNumber>;
 
   unstake(
-    amt: PromiseOrValue<BigNumberish>,
-    tokenId: PromiseOrValue<BigNumberish>,
+    _amt: PromiseOrValue<BigNumberish>,
+    _tokenId: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
-
-  userStakeIndividualNFT(
-    arg0: PromiseOrValue<string>,
-    arg1: PromiseOrValue<BigNumberish>,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
 
   viewRankings(
     overrides?: CallOverrides
   ): Promise<
-    [BigNumber[], BigNumber[]] & { rankings: BigNumber[]; stakes: BigNumber[] }
+    [BigNumber[], BigNumber[]] & {
+      _rankings: BigNumber[];
+      _stakes: BigNumber[];
+    }
   >;
 
   viewRankingsAll(
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber[], BigNumber[]] & {
+      _rankings: BigNumber[];
+      _stakes: BigNumber[];
+    }
+  >;
 
   voted(
     arg0: PromiseOrValue<BigNumberish>,
@@ -823,15 +816,13 @@ export interface Chamber extends BaseContract {
   ): Promise<boolean>;
 
   callStatic: {
-    NFT(overrides?: CallOverrides): Promise<string>;
-
-    approveProposal(
-      proposalId: PromiseOrValue<BigNumberish>,
-      nftId: PromiseOrValue<BigNumberish>,
+    approve(
+      _proposalId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
-    createProposal(
+    create(
       _target: PromiseOrValue<string>[],
       _value: PromiseOrValue<BigNumberish>[],
       _data: PromiseOrValue<BytesLike>[],
@@ -839,13 +830,13 @@ export interface Chamber extends BaseContract {
     ): Promise<void>;
 
     getAdjacent(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       direction: PromiseOrValue<boolean>,
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber]>;
 
     getData(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<
       [boolean, BigNumber, BigNumber] & {
@@ -856,28 +847,28 @@ export interface Chamber extends BaseContract {
     >;
 
     getNext(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber] & { exists: boolean; next: BigNumber }>;
 
     getNextNode(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber]>;
 
     getPrev(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber] & { exists: boolean; prev: BigNumber }>;
 
     getPreviousNode(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[boolean, BigNumber]>;
 
     getUserStakeIndividualNFT(
-      user: PromiseOrValue<string>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _member: PromiseOrValue<string>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -886,7 +877,7 @@ export interface Chamber extends BaseContract {
     helperView(overrides?: CallOverrides): Promise<void>;
 
     inList(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<boolean>;
 
@@ -900,10 +891,18 @@ export interface Chamber extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    memberNftStake(
+      arg0: PromiseOrValue<string>,
+      arg1: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    membershipToken(overrides?: CallOverrides): Promise<string>;
+
     migrate(
-      amt: PromiseOrValue<BigNumberish>,
-      fromTokenId: PromiseOrValue<BigNumberish>,
-      toTokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _fromTokenId: PromiseOrValue<BigNumberish>,
+      _toTokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -945,17 +944,12 @@ export interface Chamber extends BaseContract {
     size(overrides?: CallOverrides): Promise<BigNumber>;
 
     stake(
-      amt: PromiseOrValue<BigNumberish>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
     stakingToken(overrides?: CallOverrides): Promise<string>;
-
-    supportsInterface(
-      interfaceId: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
 
     tokenIdData(
       arg0: PromiseOrValue<BigNumberish>,
@@ -968,23 +962,17 @@ export interface Chamber extends BaseContract {
     ): Promise<BigNumber>;
 
     unstake(
-      amt: PromiseOrValue<BigNumberish>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    userStakeIndividualNFT(
-      arg0: PromiseOrValue<string>,
-      arg1: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
 
     viewRankings(
       overrides?: CallOverrides
     ): Promise<
       [BigNumber[], BigNumber[]] & {
-        rankings: BigNumber[];
-        stakes: BigNumber[];
+        _rankings: BigNumber[];
+        _stakes: BigNumber[];
       }
     >;
 
@@ -992,8 +980,8 @@ export interface Chamber extends BaseContract {
       overrides?: CallOverrides
     ): Promise<
       [BigNumber[], BigNumber[]] & {
-        rankings: BigNumber[];
-        stakes: BigNumber[];
+        _rankings: BigNumber[];
+        _stakes: BigNumber[];
       }
     >;
 
@@ -1067,15 +1055,13 @@ export interface Chamber extends BaseContract {
   };
 
   estimateGas: {
-    NFT(overrides?: CallOverrides): Promise<BigNumber>;
-
-    approveProposal(
-      proposalId: PromiseOrValue<BigNumberish>,
-      nftId: PromiseOrValue<BigNumberish>,
+    approve(
+      _proposalId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    createProposal(
+    create(
       _target: PromiseOrValue<string>[],
       _value: PromiseOrValue<BigNumberish>[],
       _data: PromiseOrValue<BytesLike>[],
@@ -1083,39 +1069,39 @@ export interface Chamber extends BaseContract {
     ): Promise<BigNumber>;
 
     getAdjacent(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       direction: PromiseOrValue<boolean>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getData(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getNext(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getNextNode(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getPrev(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getPreviousNode(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getUserStakeIndividualNFT(
-      user: PromiseOrValue<string>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _member: PromiseOrValue<string>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1126,7 +1112,7 @@ export interface Chamber extends BaseContract {
     ): Promise<BigNumber>;
 
     inList(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1140,10 +1126,18 @@ export interface Chamber extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    memberNftStake(
+      arg0: PromiseOrValue<string>,
+      arg1: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    membershipToken(overrides?: CallOverrides): Promise<BigNumber>;
+
     migrate(
-      amt: PromiseOrValue<BigNumberish>,
-      fromTokenId: PromiseOrValue<BigNumberish>,
-      toTokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _fromTokenId: PromiseOrValue<BigNumberish>,
+      _toTokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -1185,17 +1179,12 @@ export interface Chamber extends BaseContract {
     size(overrides?: CallOverrides): Promise<BigNumber>;
 
     stake(
-      amt: PromiseOrValue<BigNumberish>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     stakingToken(overrides?: CallOverrides): Promise<BigNumber>;
-
-    supportsInterface(
-      interfaceId: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
 
     tokenIdData(
       arg0: PromiseOrValue<BigNumberish>,
@@ -1208,22 +1197,14 @@ export interface Chamber extends BaseContract {
     ): Promise<BigNumber>;
 
     unstake(
-      amt: PromiseOrValue<BigNumberish>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
-    userStakeIndividualNFT(
-      arg0: PromiseOrValue<string>,
-      arg1: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     viewRankings(overrides?: CallOverrides): Promise<BigNumber>;
 
-    viewRankingsAll(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
+    viewRankingsAll(overrides?: CallOverrides): Promise<BigNumber>;
 
     voted(
       arg0: PromiseOrValue<BigNumberish>,
@@ -1233,15 +1214,13 @@ export interface Chamber extends BaseContract {
   };
 
   populateTransaction: {
-    NFT(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    approveProposal(
-      proposalId: PromiseOrValue<BigNumberish>,
-      nftId: PromiseOrValue<BigNumberish>,
+    approve(
+      _proposalId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    createProposal(
+    create(
       _target: PromiseOrValue<string>[],
       _value: PromiseOrValue<BigNumberish>[],
       _data: PromiseOrValue<BytesLike>[],
@@ -1249,39 +1228,39 @@ export interface Chamber extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     getAdjacent(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       direction: PromiseOrValue<boolean>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getData(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getNext(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getNextNode(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getPrev(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getPreviousNode(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getUserStakeIndividualNFT(
-      user: PromiseOrValue<string>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _member: PromiseOrValue<string>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -1292,7 +1271,7 @@ export interface Chamber extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     inList(
-      tokenId: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -1306,10 +1285,18 @@ export interface Chamber extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    memberNftStake(
+      arg0: PromiseOrValue<string>,
+      arg1: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    membershipToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     migrate(
-      amt: PromiseOrValue<BigNumberish>,
-      fromTokenId: PromiseOrValue<BigNumberish>,
-      toTokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _fromTokenId: PromiseOrValue<BigNumberish>,
+      _toTokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1351,17 +1338,12 @@ export interface Chamber extends BaseContract {
     size(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     stake(
-      amt: PromiseOrValue<BigNumberish>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     stakingToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    supportsInterface(
-      interfaceId: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
 
     tokenIdData(
       arg0: PromiseOrValue<BigNumberish>,
@@ -1374,22 +1356,14 @@ export interface Chamber extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     unstake(
-      amt: PromiseOrValue<BigNumberish>,
-      tokenId: PromiseOrValue<BigNumberish>,
+      _amt: PromiseOrValue<BigNumberish>,
+      _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    userStakeIndividualNFT(
-      arg0: PromiseOrValue<string>,
-      arg1: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     viewRankings(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    viewRankingsAll(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
+    viewRankingsAll(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     voted(
       arg0: PromiseOrValue<BigNumberish>,

@@ -3,5 +3,3 @@
 /* eslint-disable */
 export * as chamberSol from "./Chamber.sol";
 export { LinkedList__factory } from "./LinkedList__factory";
-export { MockERC20__factory } from "./MockERC20__factory";
-export { MockNFT__factory } from "./MockNFT__factory";

@@ -3,15 +3,10 @@ import { ethers } from "hardhat";
 import * as deployments from "./deployments";
 
 type DeploymentParams = {
-  LoreumNFT: string;
-  name: string;
-  symbol: string;
-  tokenUri: string;
-  mintCost: BigNumber;
-  royaltyFraction: number;
-  maxSupply: number;
-  maxMint: number;
-  adminAddress: string;
+  membershipToken: string,
+  stakingToken: string,
+  quorum: number,
+  leaders: number
 };
 
 async function main() {
@@ -20,7 +15,7 @@ async function main() {
   switch (network) {
     case "unknown":
       return deploy(deployments["localhost"]);
-    case "goerli":
+    case "sepolia":
       return deploy(deployments["goerli"]);
     case "homestead":
       return deploy(deployments["mainnet"]);
@@ -28,14 +23,10 @@ async function main() {
 }
 
 async function deploy({
-  name,
-  symbol,
-  tokenUri,
-  mintCost,
-  royaltyFraction,
-  maxSupply,
-  maxMint,
-  adminAddress,
+  membershipToken,
+  stakingToken,
+  quorum,
+  leaders
 }: DeploymentParams) {
   console.log("Name:", "\t\t\t", name);
   console.log("Symbol:", "\t\t", symbol);
