@@ -4,5 +4,3 @@
 import type * as chamberSol from "./Chamber.sol";
 export type { chamberSol };
 export type { LinkedList } from "./LinkedList";
-export type { MockERC20 } from "./MockERC20";
-export type { MockNFT } from "./MockNFT";

@@ -25,14 +25,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC1155Receiver__factory>;
     getContractFactory(
-      name: "ERC20",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ERC20__factory>;
-    getContractFactory(
-      name: "IERC20Metadata",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC20Metadata__factory>;
-    getContractFactory(
       name: "IERC20Permit",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC20Permit__factory>;
@@ -40,18 +32,6 @@ declare module "hardhat/types/runtime" {
       name: "IERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC20__factory>;
-    getContractFactory(
-      name: "ERC721",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ERC721__factory>;
-    getContractFactory(
-      name: "IERC721Metadata",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC721Metadata__factory>;
-    getContractFactory(
-      name: "IERC721",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC721__factory>;
     getContractFactory(
       name: "IERC721Receiver",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -73,6 +53,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Chamber__factory>;
     getContractFactory(
+      name: "IERC20_Chamber",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20_Chamber__factory>;
+    getContractFactory(
       name: "IERC721_Chamber",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC721_Chamber__factory>;
@@ -80,14 +64,6 @@ declare module "hardhat/types/runtime" {
       name: "LinkedList",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.LinkedList__factory>;
-    getContractFactory(
-      name: "MockERC20",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.MockERC20__factory>;
-    getContractFactory(
-      name: "MockNFT",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.MockNFT__factory>;
 
     getContractAt(
       name: "IERC1155Receiver",
@@ -105,16 +81,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.ERC1155Receiver>;
     getContractAt(
-      name: "ERC20",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ERC20>;
-    getContractAt(
-      name: "IERC20Metadata",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IERC20Metadata>;
-    getContractAt(
       name: "IERC20Permit",
       address: string,
       signer?: ethers.Signer
@@ -124,21 +90,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IERC20>;
-    getContractAt(
-      name: "ERC721",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ERC721>;
-    getContractAt(
-      name: "IERC721Metadata",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IERC721Metadata>;
-    getContractAt(
-      name: "IERC721",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IERC721>;
     getContractAt(
       name: "IERC721Receiver",
       address: string,
@@ -165,6 +116,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.Chamber>;
     getContractAt(
+      name: "IERC20_Chamber",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20_Chamber>;
+    getContractAt(
       name: "IERC721_Chamber",
       address: string,
       signer?: ethers.Signer
@@ -174,16 +130,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.LinkedList>;
-    getContractAt(
-      name: "MockERC20",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.MockERC20>;
-    getContractAt(
-      name: "MockNFT",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.MockNFT>;
 
     // default types
     getContractFactory(
