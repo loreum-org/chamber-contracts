@@ -33,9 +33,9 @@ const config: HardhatUserConfig = {
         auto: true,
         interval: 50000,
       },
-      forking: {
-        url: process.env.MAINNET_RPC_URL || "",
-      },
+      // forking: {
+      //   url: process.env.MAINNET_RPC_URL || "",
+      // },
       gasPrice: "auto",
     },
     sepolia: {

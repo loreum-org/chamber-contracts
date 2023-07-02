@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { ethers } from "hardhat";
+import hardhat, { ethers } from "hardhat";
 import * as deployments from "./deployments";
 
 type DeploymentParams = {
@@ -14,43 +14,26 @@ async function main() {
   console.log("Network:", "\t\t", network);
   switch (network) {
     case "unknown":
-      return deploy(deployments["localhost"]);
-    case "sepolia":
-      return deploy(deployments["goerli"]);
-    case "homestead":
-      return deploy(deployments["mainnet"]);
+      return deployLocalhost();
   }
 }
 
-async function deploy({
-  membershipToken,
-  stakingToken,
-  quorum,
-  leaders
-}: DeploymentParams) {
-  console.log("Name:", "\t\t\t", name);
-  console.log("Symbol:", "\t\t", symbol);
-  console.log("Token URI:", "\t\t", tokenUri);
-  console.log("Mint Cost:", "\t\t", ethers.utils.formatEther(mintCost.toString()), "ether");
-  console.log("Royalty Fraction:", "\t", royaltyFraction);
-  console.log("Max Supply:", "\t\t", maxSupply);
-  console.log("Max Mint per Wallet:", "\t", maxMint);
-  console.log("Admin Address", "\t\t", adminAddress);
+async function deployLocalhost() {
+    
+    const Chamber = await ethers.getContractFactory("Chamber");
+    const chamber = await Chamber.deploy(
+      deployments.localhost.erc721.address,
+      deployments.localhost.erc20.address,
+      deployments.localhost.chamber.quorum,
+      deployments.localhost.chamber.leaders
+    );
 
-  const LoreumNFT = await ethers.getContractFactory("LoreumNFT");
-  const NFT = await LoreumNFT.deploy(
-    name,
-    symbol,
-    tokenUri,
-    mintCost,
-    royaltyFraction,
-    maxSupply,
-    maxMint,
-    adminAddress
-  );
-
-  await NFT.deployed();
-  console.log("NFT Contract:", "\t\t", NFT.address);
+    await chamber.deployed();
+    console.log("Chamber Contract:", "\t", chamber.address);
+    console.log("Membership Token:", "\t", deployments.localhost.erc721.address);
+    console.log("Staking Token:", "\t\t", deployments.localhost.erc20.address);
+    console.log("Quorum:", "\t\t", deployments.localhost.chamber.quorum);
+    console.log("Leaders:", "\t\t", deployments.localhost.chamber.leaders);
 }
 
 main()

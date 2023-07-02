@@ -8,6 +8,6 @@
     "skipLibCheck": true,
     "rootDirs": ["./src", "./scripts", "./test"]
   },
-  "include": ["./scripts", "./test", "./typechain-types", "./src"],
+  "include": ["./scripts", "./tests", "./typechain-types", "./src"],
   "files": ["./hardhat.config.ts"]
 }
