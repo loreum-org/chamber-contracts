@@ -7,7 +7,7 @@ import type { Provider } from "@ethersproject/providers";
 import type {
   IERC20_Chamber,
   IERC20_ChamberInterface,
-} from "../../../src/Chamber.sol/IERC20_Chamber";
+} from "../IERC20_Chamber";
 
 const _abi = [
   {

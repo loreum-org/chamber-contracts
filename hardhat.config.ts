@@ -8,6 +8,8 @@ import "@nomiclabs/hardhat-ethers";
 import "hardhat-preprocessor";
 import "dotenv/config";
 
+const FAKE_KEY = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
@@ -33,18 +35,18 @@ const config: HardhatUserConfig = {
         auto: true,
         interval: 50000,
       },
-      forking: {
-        url: process.env.MAINNET_RPC_URL || "",
-      },
+      // forking: {
+      //   url: process.env.MAINNET_RPC_URL || "",
+      // },
       gasPrice: "auto",
     },
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || "",
-      accounts: [process.env.SEPOLIA_DEPLOYER_KEY || ""],
+      accounts: [process.env.SEPOLIA_DEPLOYER_KEY || FAKE_KEY],
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || "",
-      accounts: [process.env.MAINNET_DEPLOYER_KEY || ""],
+      accounts: [process.env.MAINNET_DEPLOYER_KEY || FAKE_KEY],
     },
   },
   etherscan: {
