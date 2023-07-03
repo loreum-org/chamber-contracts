@@ -135,7 +135,8 @@ contract Chamber {
         uint index = head;
         _rankings = new uint256[](leaders);
         _stakes = new uint256[](leaders);
-        for (uint i = 0; i < leaders; i++) {
+        uint leadersNumber = leaders;
+        for (uint i = 0; i < leadersNumber; i++) {
             _rankings[i] = index;
             _stakes[i] = totalStake[index];
             index = list[index][_PREV];
@@ -176,8 +177,8 @@ contract Chamber {
         require(!voted[_proposalId][_tokenId], "NFT has already voted.");
 
         bool detected;
-
-        for (uint i = 0; i < proposals[_proposalId].voters.length; i++) {
+        uint proposalsVotersLength = proposals[_proposalId].voters.length;
+        for (uint i = 0; i < proposalsVotersLength; i++) {
             if (_tokenId == proposals[_proposalId].voters[i]) { detected = true; break; }
         }
 
