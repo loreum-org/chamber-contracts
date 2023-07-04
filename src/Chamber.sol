@@ -22,12 +22,12 @@ contract Chamber {
     enum State { Null, Initialized, Executed }
 
     struct Proposal {
-        address[] target;
-        uint256[] value;
-        bytes[] data;
-        uint256[] voters;
-        uint256 approvals;
-        State state;
+        address[]   target;
+        uint256[]   value;
+        bytes[]     data;
+        uint256[]   voters;
+        uint256     approvals;
+        State       state;
     }
 
     /** @dev proposalCount The number of proposals.*/
