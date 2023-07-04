@@ -15,77 +15,98 @@ interface IERC20_Chamber {
 
 contract Chamber {
 
-    // ---------------------
-    //    State Variables
-    // ---------------------
-    
-    /// Chamber State Variables /// 
-    
+    /**************************************************
+        Chamber State Variables
+     **************************************************/
+
     enum State { Null, Initialized, Executed }
 
     struct Proposal {
-        address[] target;
-        uint256[] value;
-        bytes[] data;
-        uint256[] voters;
-        uint256 approvals;
-        State state;
+        address[]   target;
+        uint256[]   value;
+        bytes[]     data;
+        uint256[]   voters;
+        uint256     approvals;
+        State       state;
     }
 
+    /** @dev proposalCount The number of proposals.*/
     uint256 public proposalCount;
 
-    /// @dev membershipToken The ERC721 contract used for membership.
+    /** @dev membershipToken The ERC721 contract used for membership.*/
     address public immutable membershipToken;
 
-    /// @dev stakingToken The ERC20 contract used for staking.
+    /** @dev stakingToken The ERC20 contract used for staking.*/
     address public immutable stakingToken;
 
-    /// @dev quorum The number of approvals required.
+    /** @dev quorum The number of approvals required.*/
     uint16 public quorum;
 
-    /// @dev leaders The number of authorized signers on the leaderboard.
+    /** @dev leaders The number of authorized signers on the leaderboard.*/
     uint16 public leaders;
 
-    /// @notice Tracks the amount of "stakingToken" staked for a given NFT ID.
-    /// @dev    1st element -> NFT tokenID, 2nd element -> amountStaked.
+    /**
+     * @notice Tracks the amount of "stakingToken" staked for a given NFT ID.
+     * @dev    1st element -> NFT tokenID, 2nd element -> amountStaked.
+     */
     mapping(uint256 => uint256) public totalStake;
 
-    /// @notice Tracks a given address's stake amount of "stakingToken" for a given NFT ID.
-    /// @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountStaked.
+    /** 
+     * @notice Tracks a given address's stake amount of "stakingToken" for a given NFT ID.
+     * @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountStaked.
+     */
     mapping(address => mapping(uint256 => uint256)) public memberNftStake;
-
+    
+    /** 
+     * @notice Mapping of the Proposals
+     * @dev    1st element -> index, 2nd element -> Proposal struct
+     */
     mapping(uint256 => Proposal) public proposals;
 
-    /// @dev voted[proposalId][nftId]
+    /** 
+     * @notice Tracks which tokenIds have voted on proposals
+     * @dev    1st element -> proposalId, 2nd element -> tokenId, 3rd element-> voted boolean
+     */
     mapping(uint256 => mapping(uint256 => bool)) public voted;
     
-    /// LinkedList State Variables ///
+    /**************************************************
+        LinkedList State Variables
+     **************************************************/
+
+    /** @dev Head is the first tokenId of the Leaderboard */
+    uint public head;
+    
+    /** @dev Size is the total number of tokenIds on the leaderboard */
+    uint public size;
+
+    /** 
+     * @notice The Leaderboard is a linked list of NFT tokenIds
+     * @dev    1st element -> tokenId, 2nd element -> direction, 3rd element-> tokenId
+     * @dev    direction: False -> previous, True -> next
+     */
+    mapping(uint => mapping(bool => uint)) public list;
     
     uint internal constant _NULL = 0;
     bool internal constant _PREV = false;
     bool internal constant _NEXT = true;
 
-    uint public head;
-    uint public size;
-
-    // list[tokenId][direction] = tokenId
-    mapping(uint => mapping(bool => uint)) public list;
-
     struct Stake {
         uint stake;
     }
 
+    /** @notice Tracks the amount staked for each NFT tokenId */
     mapping(uint => Stake) public tokenIdData;
+    
+    /**************************************************
+        Constructor
+     **************************************************/
 
-
-    // -----------------
-    //    Constructor
-    // -----------------
-
-    /// @param _membershipToken The NFT collection used for membership.
-    /// @param _stakingToken The fungible token use for amplifying governance power.
-    /// @param _quorum The number of votes required for a proposal to be executed.
-    /// @param _leaders The number of leaders at the top of the leaderboard.
+    /** 
+     * @param _membershipToken The NFT collection used for membership.
+     * @param _stakingToken    The fungible token use for amplifying governance power.
+     * @param _quorum          The number of votes required for a proposal to be executed.
+     * @param _leaders         The number of leaders at the top of the leaderboard.
+     */ 
     constructor(address _membershipToken, address _stakingToken, uint16 _quorum, uint16 _leaders) {
         membershipToken = _membershipToken;
         stakingToken = _stakingToken;
@@ -93,40 +114,66 @@ contract Chamber {
         leaders = _leaders;
     }
 
+    /**************************************************
+        Events
+     **************************************************/
 
-    // ------------
-    //    Events
-    // ------------
-
-    /// @notice Emitted upon stake().
-    /// @param staker   The address staking.
-    /// @param amt      The amount of "stakingToken" staked.
-    /// @param tokenId  The ID of the NFT that tokens will be staked against.
+    /** 
+     * @notice Emitted upon stake().
+     * @param staker   The address staking.
+     * @param amt      The amount of "stakingToken" staked.
+     * @param tokenId  The ID of the NFT that tokens will be staked against.
+     */ 
     event Staked(address staker, uint256 amt, uint256 tokenId);
 
-    /// @notice Emitted upon unstake().
-    /// @param staker   The address unstaking.
-    /// @param amt      The amount of "stakingToken" unstaked.
-    /// @param tokenId  The ID of the NFT that tokens were staked against.
+    /** 
+     * @notice Emitted upon unstake().
+     * @param staker   The address unstaking.
+     * @param amt      The amount of "stakingToken" unstaked.
+     * @param tokenId  The ID of the NFT that tokens were staked against.
+     */ 
     event Unstaked(address staker, uint256 amt, uint256 tokenId);
-
+    
+    /**
+     * @notice Emitted when a proposal is approved.
+     * @param proposalId The unique identifier of the approved proposal.
+     * @param nftId      The ID of the NFT that the proposal was associated with.
+     * @param approvals  The total number of approvals that the proposal received.
+     */
     event ProposalApproved(uint256 proposalId, uint256 nftId, uint256 approvals);
 
+    /**
+     * @notice Emitted when a proposal is created.
+     * @param proposalId The unique identifier of the created proposal.
+     * @param target     The array of addresses that the proposal targets.
+     * @param value      The array of monetary values associated with each target.
+     * @param data       The array of data payloads associated with each target.
+     * @param voters     The array of votes associated with each target.
+     */
     event ProposalCreated(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint256[] voters);
 
+    /**
+     * @notice Emitted when a proposal is executed.
+     * @param proposalId The unique identifier of the executed proposal.
+     */
     event ProposalExecuted(uint256 proposalId);
 
+    /**
+     * @notice Emitted when Ether is received.
+     * @param sender The address of the sender of the Ether.
+     * @param value  The amount of Ether received.
+     */
     event ReceivedEther(address indexed sender, uint256 value);
 
+    /**************************************************
+        Functions
+     **************************************************/
 
-
-    // ---------------
-    //    Functions
-    // ---------------
-
-    /// @notice Returns amount a user has staked against a given NFT ID ("tokenID").
-    /// @param _member     The address staking.
-    /// @param _tokenId  The NFT tokenId a member has staked against.
+    /** 
+     * @notice Returns amount a user has staked against a given NFT ID ("tokenID").
+     * @param _member   The address staking.
+     * @param _tokenId  The NFT tokenId a member has staked against.
+     */
     function getUserStakeIndividualNFT(address _member, uint256 _tokenId) external view returns (uint256) {
         return memberNftStake[_member][_tokenId];
     }
@@ -146,6 +193,12 @@ contract Chamber {
     
     event Log(uint,uint,uint,uint);
 
+    /**
+     * @notice Returns the rankings and the stakes of all the tokens in the contract.
+     * @dev Iterates through the linked list starting from the head and retrieves the stake of each token.
+     * @return _rankings An array containing the token IDs, ranked by their stakes.
+     * @return _stakes An array containing the staked amounts, corresponding to the token IDs in the _rankings array.
+     */
     function viewRankingsAll() public view returns(uint[] memory _rankings, uint[] memory _stakes) {
         if (size == 0) { return (_rankings, _stakes); }
         (uint tokenId, uint rank) = (head, 0);
@@ -160,16 +213,22 @@ contract Chamber {
             rank++;
         }
     }
-
+    
+    /**
+     * @notice Emits the `Log` event for each token ID from 0 to 10.
+     * @dev This function is useful for debugging or viewing the state of the leaderboard.
+     */
     function helperView() public {
         for (uint tokenId = 0; tokenId <= 10; tokenId++) {
             emit Log(tokenId, totalStake[tokenId], list[tokenId][_PREV], list[tokenId][_NEXT]);
         }
     }
 
-    /// @notice approve Proposal function
-    /// @param  _proposalId The ID of the proposal to approve.
-    /// @param  _tokenId The ID of the NFT to vote.
+    /** 
+     * @notice approve Proposal function
+     * @param  _proposalId The ID of the proposal to approve.
+     * @param  _tokenId    The ID of the NFT to vote.
+     */ 
     function approve(uint256 _proposalId, uint256 _tokenId) external {
 
         require(_msgSender() == IERC721_Chamber(membershipToken).ownerOf(_tokenId), "Caller does not own NFT.");
@@ -194,10 +253,12 @@ contract Chamber {
         emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
     }
 
-    /// @notice create Proposal function
-    /// @param  _target The address of contract to send transaction
-    /// @param  _value The uint256 amount of ETH to send with transaction
-    /// @param  _data The bytes[] of transaction data
+    /** 
+     * @notice create Proposal function
+     * @param  _target The address of contract to send transaction
+     * @param  _value  The uint256 amount of ETH to send with transaction
+     * @param  _data   The bytes[] of transaction data
+     */
     function create(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
 
         require(IERC721_Chamber(membershipToken).balanceOf(_msgSender()) >= 1, "NFT balance is 0.");
@@ -218,8 +279,10 @@ contract Chamber {
         emit ProposalCreated(proposalCount, _target, _value, _data, _voters);
     }
 
-    /// @notice _executeProposal function
-    /// @param  _proposalId The ID of the proposal to execute.
+    /** 
+     * @notice _executeProposal function
+     * @param  _proposalId The ID of the proposal to execute.
+     */
     function _executeProposal(uint256 _proposalId) private {
 
         require(proposals[_proposalId].state == State.Initialized, "Proposal is not initialized.");
@@ -236,9 +299,11 @@ contract Chamber {
         emit ProposalExecuted(_proposalId);
     }
 
-    /// @notice Stakes a given amount of "stakingToken" against the provided NFT ID.
-    /// @param _amt      The amount of "stakingToken" to stake.
-    /// @param _tokenId  The ID of the NFT to stake against.
+    /** 
+     * @notice Stakes a given amount of "stakingToken" against the provided NFT ID.
+     * @param _amt      The amount of "stakingToken" to stake.
+     * @param _tokenId  The ID of the NFT to stake against.
+     */
     function stake(uint256 _amt, uint256 _tokenId) public {
 
         require(_amt != 0 && _tokenId != 0);
@@ -326,9 +391,11 @@ contract Chamber {
         
     }
 
-    /// @notice Unstakes a given amount of "stakingToken" from the provided NFT ID.
-    /// @param _amt      The amount of "stakingToken" to unstake.
-    /// @param _tokenId  The ID of the NFT to unstake from.
+    /** 
+     * @notice Unstakes a given amount of "stakingToken" from the provided NFT ID.
+     * @param _amt      The amount of "stakingToken" to unstake.
+     * @param _tokenId  The ID of the NFT to unstake from.
+     */ 
     function unstake(uint256 _amt, uint256 _tokenId) public {
         require(_amt != 0 && _tokenId != 0);
         
@@ -377,20 +444,21 @@ contract Chamber {
 
     }
 
-    /// @notice Migrates a staked amount of "stakingToken" from one NFT ID to another.
-    /// @param _amt          The amount of "stakingToken" to migrate.
-    /// @param _fromTokenId  The ID of the NFT that tokens are staked currently.
-    /// @param _toTokenId    The ID of the NFT that tokens will be migrated to.
+    /** 
+     * @notice Migrates a staked amount of "stakingToken" from one NFT ID to another.
+     * @param _fromTokenId  The ID of the NFT that tokens are staked currently.
+     * @param _amt          The amount of "stakingToken" to migrate. 
+     * @param _toTokenId    The ID of the NFT that tokens will be migrated to.
+     */
     function migrate(uint256 _amt, uint256 _fromTokenId, uint256 _toTokenId) external {
         unstake(_amt, _fromTokenId);
         stake(_amt, _toTokenId);
     }
     
+    /**************************************************
+        Linked List Functions
+     **************************************************/
     
-    /// LikedList Utility Functions ///
-    
-    // Checkers.
-
     function isInitialized() public view returns (bool initialized) {
         return list[head][_PREV] != _NULL || list[head][_NEXT] != _NULL;
     }
@@ -403,8 +471,6 @@ contract Chamber {
         else { return true; }
     }
     
-    // Getters.
-
     function getData(uint _tokenId) public view returns (bool exists, uint prev, uint next) {
         return (inList(_tokenId), list[_tokenId][_PREV], list[_tokenId][_PREV]);
     }
@@ -429,8 +495,6 @@ contract Chamber {
         return getAdjacent(_tokenId, _PREV);
     }
     
-    // Insert.
-
     function insertAfter(uint _byTokenId, uint _newTokenId) internal {
         _insert(_byTokenId, _newTokenId, _NEXT);
     }
@@ -455,8 +519,6 @@ contract Chamber {
         list[_tokenId][_direction] = _linkTokenId;
     }
     
-    // Remove.
-
     function remove(uint _tokenId) internal {
         if ((_tokenId == _NULL) || (!inList(_tokenId)) && size != 1) {
             revert();
@@ -467,8 +529,6 @@ contract Chamber {
 
         size -= 1;
     }
-
-    // Push and pop.
 
     function pushFront(uint _tokenId) internal {
         _push(_tokenId, _NEXT);
@@ -495,7 +555,9 @@ contract Chamber {
         remove(adj);
     }
     
-    /// OZ Utilities ///
+    /**************************************************
+        OZ Utilities
+     **************************************************/
     
     function _msgSender() internal view virtual returns (address) {
         return msg.sender;
