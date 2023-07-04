@@ -19,7 +19,7 @@ contract Chamber {
     //    State Variables
     // ---------------------
     
-    /// Chamber State Variables /// 
+    /// Chamber State Variables ///
     
     enum State { Null, Initialized, Executed }
 
@@ -34,29 +34,29 @@ contract Chamber {
 
     uint256 public proposalCount;
 
-    /// @dev membershipToken The ERC721 contract used for membership.
+    /** @dev membershipToken The ERC721 contract used for membership.*/
     address public immutable membershipToken;
 
-    /// @dev stakingToken The ERC20 contract used for staking.
+    /** @dev stakingToken The ERC20 contract used for staking.*/
     address public immutable stakingToken;
 
-    /// @dev quorum The number of approvals required.
+    /** @dev quorum The number of approvals required.*/
     uint16 public quorum;
 
-    /// @dev leaders The number of authorized signers on the leaderboard.
+    /** @dev leaders The number of authorized signers on the leaderboard.*/
     uint16 public leaders;
 
-    /// @notice Tracks the amount of "stakingToken" staked for a given NFT ID.
-    /// @dev    1st element -> NFT tokenID, 2nd element -> amountStaked.
+    /** @notice Tracks the amount of "stakingToken" staked for a given NFT ID.*/
+    /** @dev    1st element -> NFT tokenID, 2nd element -> amountStaked.*/
     mapping(uint256 => uint256) public totalStake;
 
-    /// @notice Tracks a given address's stake amount of "stakingToken" for a given NFT ID.
-    /// @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountStaked.
+    /** @notice Tracks a given address's stake amount of "stakingToken" for a given NFT ID.*/
+    /** @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountStaked.*/
     mapping(address => mapping(uint256 => uint256)) public memberNftStake;
 
     mapping(uint256 => Proposal) public proposals;
 
-    /// @dev voted[proposalId][nftId]
+    /** @dev voted[proposalId][nftId]*/
     mapping(uint256 => mapping(uint256 => bool)) public voted;
     
     /// LinkedList State Variables ///
@@ -82,10 +82,10 @@ contract Chamber {
     //    Constructor
     // -----------------
 
-    /// @param _membershipToken The NFT collection used for membership.
-    /// @param _stakingToken The fungible token use for amplifying governance power.
-    /// @param _quorum The number of votes required for a proposal to be executed.
-    /// @param _leaders The number of leaders at the top of the leaderboard.
+    /** @param _membershipToken The NFT collection used for membership.*/
+    /** @param _stakingToken The fungible token use for amplifying governance power.*/
+    /** @param _quorum The number of votes required for a proposal to be executed.*/
+    /** @param _leaders The number of leaders at the top of the leaderboard.*/
     constructor(address _membershipToken, address _stakingToken, uint16 _quorum, uint16 _leaders) {
         membershipToken = _membershipToken;
         stakingToken = _stakingToken;
@@ -98,16 +98,16 @@ contract Chamber {
     //    Events
     // ------------
 
-    /// @notice Emitted upon stake().
-    /// @param staker   The address staking.
-    /// @param amt      The amount of "stakingToken" staked.
-    /// @param tokenId  The ID of the NFT that tokens will be staked against.
+    /** @notice Emitted upon stake().*/
+    /** @param staker   The address staking.*/
+    /** @param amt      The amount of "stakingToken" staked.*/
+    /** @param tokenId  The ID of the NFT that tokens will be staked against.*/
     event Staked(address staker, uint256 amt, uint256 tokenId);
 
-    /// @notice Emitted upon unstake().
-    /// @param staker   The address unstaking.
-    /// @param amt      The amount of "stakingToken" unstaked.
-    /// @param tokenId  The ID of the NFT that tokens were staked against.
+    /** @notice Emitted upon unstake().*/
+    /** @param staker   The address unstaking.*/
+    /** @param amt      The amount of "stakingToken" unstaked.*/
+    /** @param tokenId  The ID of the NFT that tokens were staked against.*/
     event Unstaked(address staker, uint256 amt, uint256 tokenId);
 
     event ProposalApproved(uint256 proposalId, uint256 nftId, uint256 approvals);
@@ -124,9 +124,9 @@ contract Chamber {
     //    Functions
     // ---------------
 
-    /// @notice Returns amount a user has staked against a given NFT ID ("tokenID").
-    /// @param _member     The address staking.
-    /// @param _tokenId  The NFT tokenId a member has staked against.
+    /** @notice Returns amount a user has staked against a given NFT ID ("tokenID").*/
+    /** @param _member     The address staking.*/
+    /** @param _tokenId  The NFT tokenId a member has staked against.*/
     function getUserStakeIndividualNFT(address _member, uint256 _tokenId) external view returns (uint256) {
         return memberNftStake[_member][_tokenId];
     }
@@ -167,9 +167,9 @@ contract Chamber {
         }
     }
 
-    /// @notice approve Proposal function
-    /// @param  _proposalId The ID of the proposal to approve.
-    /// @param  _tokenId The ID of the NFT to vote.
+    /** @notice approve Proposal function*/
+    /** @param  _proposalId The ID of the proposal to approve.*/
+    /** @param  _tokenId The ID of the NFT to vote.*/
     function approve(uint256 _proposalId, uint256 _tokenId) external {
 
         require(_msgSender() == IERC721_Chamber(membershipToken).ownerOf(_tokenId), "Caller does not own NFT.");
@@ -194,10 +194,10 @@ contract Chamber {
         emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
     }
 
-    /// @notice create Proposal function
-    /// @param  _target The address of contract to send transaction
-    /// @param  _value The uint256 amount of ETH to send with transaction
-    /// @param  _data The bytes[] of transaction data
+    /** @notice create Proposal function*/
+    /** @param  _target The address of contract to send transaction*/
+    /** @param  _value The uint256 amount of ETH to send with transaction*/
+    /** @param  _data The bytes[] of transaction data*/
     function create(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
 
         require(IERC721_Chamber(membershipToken).balanceOf(_msgSender()) >= 1, "NFT balance is 0.");
@@ -218,8 +218,8 @@ contract Chamber {
         emit ProposalCreated(proposalCount, _target, _value, _data, _voters);
     }
 
-    /// @notice _executeProposal function
-    /// @param  _proposalId The ID of the proposal to execute.
+    /** @notice _executeProposal function*/
+    /** @param  _proposalId The ID of the proposal to execute.*/
     function _executeProposal(uint256 _proposalId) private {
 
         require(proposals[_proposalId].state == State.Initialized, "Proposal is not initialized.");
@@ -236,9 +236,9 @@ contract Chamber {
         emit ProposalExecuted(_proposalId);
     }
 
-    /// @notice Stakes a given amount of "stakingToken" against the provided NFT ID.
-    /// @param _amt      The amount of "stakingToken" to stake.
-    /// @param _tokenId  The ID of the NFT to stake against.
+    /** @notice Stakes a given amount of "stakingToken" against the provided NFT ID.*/
+    /** @param _amt      The amount of "stakingToken" to stake.*/
+    /** @param _tokenId  The ID of the NFT to stake against.*/
     function stake(uint256 _amt, uint256 _tokenId) public {
 
         require(_amt != 0 && _tokenId != 0);
@@ -326,9 +326,9 @@ contract Chamber {
         
     }
 
-    /// @notice Unstakes a given amount of "stakingToken" from the provided NFT ID.
-    /// @param _amt      The amount of "stakingToken" to unstake.
-    /// @param _tokenId  The ID of the NFT to unstake from.
+    /** @notice Unstakes a given amount of "stakingToken" from the provided NFT ID.*/
+    /** @param _amt      The amount of "stakingToken" to unstake.*/
+    /** @param _tokenId  The ID of the NFT to unstake from.*/
     function unstake(uint256 _amt, uint256 _tokenId) public {
         require(_amt != 0 && _tokenId != 0);
         
@@ -377,10 +377,10 @@ contract Chamber {
 
     }
 
-    /// @notice Migrates a staked amount of "stakingToken" from one NFT ID to another.
-    /// @param _amt          The amount of "stakingToken" to migrate.
-    /// @param _fromTokenId  The ID of the NFT that tokens are staked currently.
-    /// @param _toTokenId    The ID of the NFT that tokens will be migrated to.
+    /** @notice Migrates a staked amount of "stakingToken" from one NFT ID to another.*/
+    /** @param _amt          The amount of "stakingToken" to migrate.*/
+    /** @param _fromTokenId  The ID of the NFT that tokens are staked currently.*/
+    /** @param _toTokenId    The ID of the NFT that tokens will be migrated to.*/
     function migrate(uint256 _amt, uint256 _fromTokenId, uint256 _toTokenId) external {
         unstake(_amt, _fromTokenId);
         stake(_amt, _toTokenId);
