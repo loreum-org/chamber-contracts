@@ -30,6 +30,7 @@ contract Chamber {
         State state;
     }
 
+    /** @dev proposalCount The number of proposals.*/
     uint256 public proposalCount;
 
     /** @dev membershipToken The ERC721 contract used for membership.*/
@@ -55,32 +56,47 @@ contract Chamber {
      * @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountStaked.
      */
     mapping(address => mapping(uint256 => uint256)) public memberNftStake;
-
+    
+    /** 
+     * @notice Mapping of the Proposals
+     * @dev    1st element -> index, 2nd element -> Proposal struct
+     */
     mapping(uint256 => Proposal) public proposals;
 
-    /** @dev voted[proposalId][nftId]*/
+    /** 
+     * @notice Tracks which tokenIds have voted on proposals
+     * @dev    1st element -> proposalId, 2nd element -> tokenId, 3rd element-> voted boolean
+     */
     mapping(uint256 => mapping(uint256 => bool)) public voted;
     
     /**************************************************
         LinkedList State Variables
      **************************************************/
+
+    /** @dev Head is the first tokenId of the Leaderboard */
+    uint public head;
+    
+    /** @dev Size is the total number of tokenIds on the leaderboard */
+    uint public size;
+
+    /** 
+     * @notice The Leaderboard is a linked list of NFT tokenIds
+     * @dev    1st element -> tokenId, 2nd element -> direction, 3rd element-> tokenId
+     * @dev    direction: False -> previous, True -> next
+     */
+    mapping(uint => mapping(bool => uint)) public list;
     
     uint internal constant _NULL = 0;
     bool internal constant _PREV = false;
     bool internal constant _NEXT = true;
 
-    uint public head;
-    uint public size;
-
-    // list[tokenId][direction] = tokenId
-    mapping(uint => mapping(bool => uint)) public list;
-
     struct Stake {
         uint stake;
     }
 
+    /** @notice Tracks the amount staked for each NFT tokenId */
     mapping(uint => Stake) public tokenIdData;
-
+    
     /**************************************************
         Constructor
      **************************************************/
@@ -117,13 +133,36 @@ contract Chamber {
      * @param tokenId  The ID of the NFT that tokens were staked against.
      */ 
     event Unstaked(address staker, uint256 amt, uint256 tokenId);
-
+    
+    /**
+     * @notice Emitted when a proposal is approved.
+     * @param proposalId The unique identifier of the approved proposal.
+     * @param nftId      The ID of the NFT that the proposal was associated with.
+     * @param approvals  The total number of approvals that the proposal received.
+     */
     event ProposalApproved(uint256 proposalId, uint256 nftId, uint256 approvals);
 
+    /**
+     * @notice Emitted when a proposal is created.
+     * @param proposalId The unique identifier of the created proposal.
+     * @param target     The array of addresses that the proposal targets.
+     * @param value      The array of monetary values associated with each target.
+     * @param data       The array of data payloads associated with each target.
+     * @param voters     The array of votes associated with each target.
+     */
     event ProposalCreated(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint256[] voters);
 
+    /**
+     * @notice Emitted when a proposal is executed.
+     * @param proposalId The unique identifier of the executed proposal.
+     */
     event ProposalExecuted(uint256 proposalId);
 
+    /**
+     * @notice Emitted when Ether is received.
+     * @param sender The address of the sender of the Ether.
+     * @param value  The amount of Ether received.
+     */
     event ReceivedEther(address indexed sender, uint256 value);
 
     /**************************************************
@@ -154,6 +193,12 @@ contract Chamber {
     
     event Log(uint,uint,uint,uint);
 
+    /**
+     * @notice Returns the rankings and the stakes of all the tokens in the contract.
+     * @dev Iterates through the linked list starting from the head and retrieves the stake of each token.
+     * @return _rankings An array containing the token IDs, ranked by their stakes.
+     * @return _stakes An array containing the staked amounts, corresponding to the token IDs in the _rankings array.
+     */
     function viewRankingsAll() public view returns(uint[] memory _rankings, uint[] memory _stakes) {
         if (size == 0) { return (_rankings, _stakes); }
         (uint tokenId, uint rank) = (head, 0);
@@ -168,7 +213,11 @@ contract Chamber {
             rank++;
         }
     }
-
+    
+    /**
+     * @notice Emits the `Log` event for each token ID from 0 to 10.
+     * @dev This function is useful for debugging or viewing the state of the leaderboard.
+     */
     function helperView() public {
         for (uint tokenId = 0; tokenId <= 10; tokenId++) {
             emit Log(tokenId, totalStake[tokenId], list[tokenId][_PREV], list[tokenId][_NEXT]);
