@@ -15,12 +15,10 @@ interface IERC20_Chamber {
 
 contract Chamber {
 
-    // ---------------------
-    //    State Variables
-    // ---------------------
-    
-    /// Chamber State Variables ///
-    
+    /**************************************************
+        Chamber State Variables
+     **************************************************/
+
     enum State { Null, Initialized, Executed }
 
     struct Proposal {
@@ -63,7 +61,9 @@ contract Chamber {
     /** @dev voted[proposalId][nftId]*/
     mapping(uint256 => mapping(uint256 => bool)) public voted;
     
-    /// LinkedList State Variables ///
+    /**************************************************
+        LinkedList State Variables
+     **************************************************/
     
     uint internal constant _NULL = 0;
     bool internal constant _PREV = false;
@@ -81,10 +81,9 @@ contract Chamber {
 
     mapping(uint => Stake) public tokenIdData;
 
-
-    // -----------------
-    //    Constructor
-    // -----------------
+    /**************************************************
+        Constructor
+     **************************************************/
 
     /** 
      * @param _membershipToken The NFT collection used for membership.
@@ -99,10 +98,9 @@ contract Chamber {
         leaders = _leaders;
     }
 
-
-    // ------------
-    //    Events
-    // ------------
+    /**************************************************
+        Events
+     **************************************************/
 
     /** 
      * @notice Emitted upon stake().
@@ -128,11 +126,9 @@ contract Chamber {
 
     event ReceivedEther(address indexed sender, uint256 value);
 
-
-
-    // ---------------
-    //    Functions
-    // ---------------
+    /**************************************************
+        Functions
+     **************************************************/
 
     /** 
      * @notice Returns amount a user has staked against a given NFT ID ("tokenID").
@@ -410,11 +406,10 @@ contract Chamber {
         stake(_amt, _toTokenId);
     }
     
+    /**************************************************
+        Linked List Functions
+     **************************************************/
     
-    /// LikedList Utility Functions ///
-    
-    // Checkers.
-
     function isInitialized() public view returns (bool initialized) {
         return list[head][_PREV] != _NULL || list[head][_NEXT] != _NULL;
     }
@@ -427,8 +422,6 @@ contract Chamber {
         else { return true; }
     }
     
-    // Getters.
-
     function getData(uint _tokenId) public view returns (bool exists, uint prev, uint next) {
         return (inList(_tokenId), list[_tokenId][_PREV], list[_tokenId][_PREV]);
     }
@@ -453,8 +446,6 @@ contract Chamber {
         return getAdjacent(_tokenId, _PREV);
     }
     
-    // Insert.
-
     function insertAfter(uint _byTokenId, uint _newTokenId) internal {
         _insert(_byTokenId, _newTokenId, _NEXT);
     }
@@ -479,8 +470,6 @@ contract Chamber {
         list[_tokenId][_direction] = _linkTokenId;
     }
     
-    // Remove.
-
     function remove(uint _tokenId) internal {
         if ((_tokenId == _NULL) || (!inList(_tokenId)) && size != 1) {
             revert();
@@ -491,8 +480,6 @@ contract Chamber {
 
         size -= 1;
     }
-
-    // Push and pop.
 
     function pushFront(uint _tokenId) internal {
         _push(_tokenId, _NEXT);
@@ -519,7 +506,9 @@ contract Chamber {
         remove(adj);
     }
     
-    /// OZ Utilities ///
+    /**************************************************
+        OZ Utilities
+     **************************************************/
     
     function _msgSender() internal view virtual returns (address) {
         return msg.sender;
