@@ -81,7 +81,7 @@ contract test is Test{
         console.log("Stake amount: ",chamber.getUserStakeIndividualNFT(jb,8));
         console.log("Stake amount: ",chamber.getUserStakeIndividualNFT(jb,1));
 
-        // Unstake
+        // Unstake 
         vm.startPrank(jb);
         chamber.unstake(chamber.getUserStakeIndividualNFT(jb,1),1);
         chamber.unstake(chamber.getUserStakeIndividualNFT(jb,8),8);
