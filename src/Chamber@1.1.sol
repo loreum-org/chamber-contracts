@@ -15,6 +15,11 @@ contract StakeLeadersBoard {
     // Mapping to keep track of each staker's details
     mapping(address => mapping(uint256 => Staker)) public stakerDetails;
 
+    function getStakerAmount(address _stakerAddress, uint256 _tokenId) public view returns (uint256) {
+        Staker memory s = stakerDetails[_stakerAddress][_tokenId];
+        return s.amount;
+    }
+
     // Array to keep track of the leaderboard
     Staker[NumberOfLeaders] leaderboard;
     // Array to keep track of the member which are not leaders
