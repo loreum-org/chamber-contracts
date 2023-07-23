@@ -329,9 +329,9 @@ contract TestLeaderBoardLogic is Test {
         assertEq(chamber.LeaderboardList(2).tokenId, 4);
         assertEq(chamber.MemberList(2).tokenId, 3);
 
-        chamber.stakeTokens(3, 11);
+        chamber.stakeTokens(3, 21);
 
-        assertEq(chamber.LeaderboardList(2).tokenId, 3);
+        assertEq(chamber.LeaderboardList(2).tokenId, 5);
         assertEq(chamber.MemberList(2).tokenId, 4);
     }
 }
