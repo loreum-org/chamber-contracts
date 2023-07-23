@@ -1,17 +1,18 @@
-/**  Public Functions 
- * 
+/**
+ * Public Functions
+ *
  * ---- WRITE ----
  * stakeTokens(uint256 _tokenId, uint256 _amount)
  * unstakeTokens(uint256 _tokenId, uint256 _amount)
- * 
+ *
  * ---- READ -----
  * AllStakeAmount() returns (uint256)
  * NumberOfLeaders() returns (uint256)
- * 
+ *
  * getStakerAmount(address _stakerAddress, uint256 _tokenId) returns (uint256)
  * LeaderboardList(uint256 index) returns (address stakerAddress, uint256 tokenId, uint256 amount)
  * MemberList(uint256 index) returns (address stakerAddress, uint256 tokenId, uint256 amount)
-*/
+ */
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
@@ -59,7 +60,7 @@ contract StakeLeadersBoard {
         address stakerAddress = msg.sender;
 
         // Add the amount while staking
-        AllStakeAmount +=_amount;
+        AllStakeAmount += _amount;
 
         // If the staker has already staked for this token ID, increase their amount
         // and update the leaderboard
@@ -98,19 +99,21 @@ contract StakeLeadersBoard {
                 return;
             }
         }
-        for (uint256 i=0; i < members.length; i++){
-            // If the new staker is already on the leaderboard, update their details
-            // and sort the leaderboard
-            if (
-                members[i].stakerAddress == _newStaker.stakerAddress && 
-                members[i].tokenId == _newStaker.tokenId
-            ) {
+        for (uint256 i = 0; i < members.length; i++) {
+            // If the new staker is already on the member, update their details
+            // and sort the members
+            if (members[i].stakerAddress == _newStaker.stakerAddress && members[i].tokenId == _newStaker.tokenId) {
                 members[i] = _newStaker;
                 sortMembers();
+                if (leaderboard[NumberOfLeaders - 1].amount < members[members.length - 1].amount) {
+                    Staker memory temp = leaderboard[NumberOfLeaders - 1];
+                    leaderboard[NumberOfLeaders - 1] = members[members.length - 1];
+                    members.pop();
+                    members.push(temp);
+                }
                 return;
             }
         }
-
         // Find the staker with the lowest amount on the leaderboard
         uint256 indexLowest = 0;
         for (uint256 i = 0; i < NumberOfLeaders; i++) {
@@ -124,6 +127,9 @@ contract StakeLeadersBoard {
         if (_newStaker.amount > leaderboard[indexLowest].amount) {
             members.push(leaderboard[indexLowest]);
             leaderboard[indexLowest] = _newStaker;
+        } else {
+            members.push(_newStaker);
+            sortMembers();
         }
 
         // Sort the leaderboard
@@ -167,7 +173,7 @@ contract StakeLeadersBoard {
         address stakerAddress = msg.sender;
 
         // Substract the amount while unstaking
-        AllStakeAmount -=_amount;
+        AllStakeAmount -= _amount;
 
         // Make sure the staker has enough tokens to unstake
         require(stakerDetails[stakerAddress][_tokenId].amount >= _amount, "Unstaking amount is more than staked amount");
@@ -198,7 +204,7 @@ contract StakeLeadersBoard {
                 return;
             }
         }
-        for (uint256 i=0; i < members.length; i++){
+        for (uint256 i = 0; i < members.length; i++) {
             if (members[i].stakerAddress == _stakerAddress && members[i].tokenId == _tokenId) {
                 delete members[i];
                 _shiftMembers(i);
@@ -227,6 +233,7 @@ contract StakeLeadersBoard {
         // Remove the last staker
         delete leaderboard[NumberOfLeaders - 1];
     }
+
     function _shiftMembers(uint256 index) private {
         // Loop through the leaderboard from the index of the removed staker
         for (uint256 i = index; i < members.length - 1; i++) {
