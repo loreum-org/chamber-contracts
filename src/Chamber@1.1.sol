@@ -1,3 +1,18 @@
+/**  Public Functions 
+ * 
+ * ---- WRITE ----
+ * stakeTokens(uint256 _tokenId, uint256 _amount)
+ * unstakeTokens(uint256 _tokenId, uint256 _amount)
+ * 
+ * ---- READ -----
+ * AllStakeAmount() returns (uint256)
+ * NumberOfLeaders() returns (uint256)
+ * 
+ * getStakerAmount(address _stakerAddress, uint256 _tokenId) returns (uint256)
+ * LeaderboardList(uint256 index) returns (address stakerAddress, uint256 tokenId, uint256 amount)
+ * MemberList(uint256 index) returns (address stakerAddress, uint256 tokenId, uint256 amount)
+*/
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
@@ -12,8 +27,11 @@ contract StakeLeadersBoard {
     // Define the number of leaders
     uint256 public constant NumberOfLeaders = 3;
 
+    // To keep track of the total amount
+    uint256 public AllStakeAmount;
+
     // Mapping to keep track of each staker's details
-    mapping(address => mapping(uint256 => Staker)) public stakerDetails;
+    mapping(address => mapping(uint256 => Staker)) stakerDetails;
 
     function getStakerAmount(address _stakerAddress, uint256 _tokenId) public view returns (uint256) {
         Staker memory s = stakerDetails[_stakerAddress][_tokenId];
@@ -26,10 +44,11 @@ contract StakeLeadersBoard {
     Staker[] members;
 
     // Function to get leader at a specific index
-    function leaderboardList(uint256 index) public view returns (Staker memory) {
+    function LeaderboardList(uint256 index) public view returns (Staker memory) {
         return leaderboard[index];
     }
     // Function to get member at a specific index
+
     function MemberList(uint256 index) public view returns (Staker memory) {
         return members[index];
     }
@@ -38,6 +57,9 @@ contract StakeLeadersBoard {
     function stakeTokens(uint256 _tokenId, uint256 _amount) public {
         // Get the address of the staker
         address stakerAddress = msg.sender;
+
+        // Add the amount while staking
+        AllStakeAmount +=_amount;
 
         // If the staker has already staked for this token ID, increase their amount
         // and update the leaderboard
@@ -66,12 +88,25 @@ contract StakeLeadersBoard {
                 sortLeaderboard();
                 return;
             } else if (
-                // If the new staker is already on the leaderboard, update their details
-                // and sort the leaderboard
-                leaderboard[i].stakerAddress == _newStaker.stakerAddress && leaderboard[i].tokenId == _newStaker.tokenId
+                leaderboard[i]
+                    // If the new staker is already on the leaderboard, update their details
+                    // and sort the leaderboard
+                    .stakerAddress == _newStaker.stakerAddress && leaderboard[i].tokenId == _newStaker.tokenId
             ) {
                 leaderboard[i] = _newStaker;
                 sortLeaderboard();
+                return;
+            }
+        }
+        for (uint256 i=0; i < members.length; i++){
+            // If the new staker is already on the leaderboard, update their details
+            // and sort the leaderboard
+            if (
+                members[i].stakerAddress == _newStaker.stakerAddress && 
+                members[i].tokenId == _newStaker.tokenId
+            ) {
+                members[i] = _newStaker;
+                sortMembers();
                 return;
             }
         }
@@ -111,10 +146,28 @@ contract StakeLeadersBoard {
         }
     }
 
+    function sortMembers() private {
+        // Bubble sort
+        for (uint256 i = 0; i < members.length; i++) {
+            for (uint256 j = 0; j < members.length - i - 1; j++) {
+                // If the staker at position j has a lower amount than the staker at position j+1,
+                // swap them
+                if (members[j].amount > members[j + 1].amount) {
+                    Staker memory temp = members[j];
+                    members[j] = members[j + 1];
+                    members[j + 1] = temp;
+                }
+            }
+        }
+    }
+
     // Function to unstake tokens
     function unstakeTokens(uint256 _tokenId, uint256 _amount) public {
         // Get the address of the staker
         address stakerAddress = msg.sender;
+
+        // Substract the amount while unstaking
+        AllStakeAmount -=_amount;
 
         // Make sure the staker has enough tokens to unstake
         require(stakerDetails[stakerAddress][_tokenId].amount >= _amount, "Unstaking amount is more than staked amount");
@@ -145,13 +198,21 @@ contract StakeLeadersBoard {
                 return;
             }
         }
+        for (uint256 i=0; i < members.length; i++){
+            if (members[i].stakerAddress == _stakerAddress && members[i].tokenId == _tokenId) {
+                delete members[i];
+                _shiftMembers(i);
+                return;
+            }
+        }
     }
-    function _addPotentialLeader() private{
+
+    function _addPotentialLeader() private {
         uint256 LastMemberIndex = members.length;
         uint256 LastLeaderIndex = leaderboard.length;
 
-        if (LastMemberIndex!=0){
-            leaderboard[LastLeaderIndex-1]=members[LastMemberIndex-1];
+        if (LastMemberIndex != 0) {
+            leaderboard[LastLeaderIndex - 1] = members[LastMemberIndex - 1];
             members.pop();
         }
     }
@@ -165,5 +226,14 @@ contract StakeLeadersBoard {
         }
         // Remove the last staker
         delete leaderboard[NumberOfLeaders - 1];
+    }
+    function _shiftMembers(uint256 index) private {
+        // Loop through the leaderboard from the index of the removed staker
+        for (uint256 i = index; i < members.length - 1; i++) {
+            // Move each staker one position up
+            members[i] = members[i + 1];
+        }
+        // Remove the last staker
+        delete members[members.length - 1];
     }
 }
