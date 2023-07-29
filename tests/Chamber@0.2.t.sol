@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Test, console} from "forge-std/Test.sol";
-import {StakeLeadersBoard} from "../src/Chamber@1.1.sol";
+import {StakeLeadersBoard} from "../src/Chamber@0.2.sol";
 
 contract TestLeaderBoardLogic is Test {
     StakeLeadersBoard chamber;
@@ -13,6 +13,37 @@ contract TestLeaderBoardLogic is Test {
 
     function setUp() public {
         chamber = new StakeLeadersBoard();
+    }
+
+    function test_checkGasSameNFT()public {
+        chamber.stakeTokens(1, 10);
+        chamber.stakeTokens(1, 10);
+        chamber.stakeTokens(1, 10);
+        chamber.stakeTokens(1, 10);
+        chamber.stakeTokens(1, 10);
+        chamber.stakeTokens(1, 10);
+        chamber.stakeTokens(1, 10);
+        chamber.stakeTokens(1, 10);
+        chamber.stakeTokens(1, 10);
+        chamber.stakeTokens(1, 10);
+
+        // chamber.unstakeTokens(1, 10);
+        // chamber.unstakeTokens(1, 10);
+        // chamber.unstakeTokens(1, 10);
+        // chamber.unstakeTokens(1, 10);
+        // chamber.unstakeTokens(1, 10);
+    }
+    function test_checkGasDifferentfNFT()public {
+        chamber.stakeTokens(1, 10);
+        chamber.stakeTokens(2, 20);
+        chamber.stakeTokens(3, 30);
+        chamber.stakeTokens(4, 40);
+        chamber.stakeTokens(5, 50);
+        chamber.stakeTokens(6, 60);
+        chamber.stakeTokens(7, 70);
+        chamber.stakeTokens(8, 80);
+        chamber.stakeTokens(9, 90);
+        chamber.stakeTokens(10, 100);
     }
 
     function test_addNewPerson() public {
