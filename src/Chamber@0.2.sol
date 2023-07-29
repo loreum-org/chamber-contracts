@@ -88,11 +88,11 @@ contract StakeLeadersBoard {
                 leaderboard[i] = _newStaker;
                 sortLeaderboard();
                 return;
-            } else if (
-                leaderboard[i]
-                    // If the new staker is already on the leaderboard, update their details
-                    // and sort the leaderboard
-                    .stakerAddress == _newStaker.stakerAddress && leaderboard[i].tokenId == _newStaker.tokenId
+            }
+            // If the new staker is already on the leaderboard, update their details
+            // and sort the leaderboard
+            else if (
+                leaderboard[i].stakerAddress == _newStaker.stakerAddress && leaderboard[i].tokenId == _newStaker.tokenId
             ) {
                 leaderboard[i] = _newStaker;
                 sortLeaderboard();
@@ -132,7 +132,6 @@ contract StakeLeadersBoard {
             members.push(_newStaker);
             sortMembers(0,members.length-1);
         }
-
         // Sort the leaderboard
         sortLeaderboard();
     }
@@ -166,43 +165,26 @@ contract StakeLeadersBoard {
     //         }
     //     }
     // }
-    function sortMembers(uint256 low, uint256 high) public {
-        if (low < high) {
-            uint256 pi = partition(low, high);
-            sortMembers(low, pi);
-            sortMembers(pi + 1, high);
-        }
-    }
-
-    function partition(uint256 low, uint256 high) internal returns (uint256) {
-        Staker memory pivot = leaderboard[low];
-        uint256 i = low;
-        uint256 j = high + 1;
-
-        while (true) {
-            do {
+    function sortMembers(uint256 left, uint256 right) public {
+        uint i = left;
+        uint j = right;
+        if(i==j) return;
+        uint pivot = members[uint(left + (right - left) / 2)].amount;
+        while (i <= j) {
+            while (members[uint(i)].amount < pivot) i++;
+            while (pivot < members[uint(j)].amount) j--;
+            if (i <= j) {
+                (members[uint(i)].stakerAddress, members[uint(j)].stakerAddress) = (members[uint(j)].stakerAddress, members[uint(i)].stakerAddress);
+                (members[uint(i)].tokenId, members[uint(j)].tokenId) = (members[uint(j)].tokenId, members[uint(i)].tokenId);
+                (members[uint(i)].amount, members[uint(j)].amount) = (members[uint(j)].amount, members[uint(i)].amount);
                 i++;
-            } while (leaderboard[i].amount < pivot.amount && i <= high);
-
-            do {
                 j--;
-            } while (leaderboard[j].amount > pivot.amount);
-
-            if (i >= j) {
-                break;
             }
-
-            swap(i, j);
         }
-
-        swap(low, j);
-        return j;
-    }
-
-    function swap(uint256 i, uint256 j) internal {
-        Staker memory temp = leaderboard[i];
-        leaderboard[i] = leaderboard[j];
-        leaderboard[j] = temp;
+        if (left < j)
+            sortMembers(left, j);
+        if (i < right)
+            sortMembers(i, right);
     }
 
     // Function to unstake tokens

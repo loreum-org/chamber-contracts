@@ -293,25 +293,36 @@ contract TestLeaderBoardLogic is Test {
         chamber.stakeTokens(5, 50); // L2
         chamber.stakeTokens(6, 60); // L1
 
-    //     // assertEq(chamber.MemberList(0).tokenId, 1);
-    //     // assertEq(chamber.MemberList(1).tokenId, 2);
-    //     // assertEq(chamber.MemberList(2).tokenId, 3);
+        assertEq(chamber.MemberList(0).tokenId, 1);
+        assertEq(chamber.MemberList(1).tokenId, 2);
+        assertEq(chamber.MemberList(2).tokenId, 3);
 
-    //     // assertEq(chamber.MemberList(0).amount, 10);
-    //     // assertEq(chamber.MemberList(1).amount, 20);
-    //     // assertEq(chamber.MemberList(2).amount, 30);
+        assertEq(chamber.MemberList(0).amount, 10);
+        assertEq(chamber.MemberList(1).amount, 20);
+        assertEq(chamber.MemberList(2).amount, 30);
 
-    //     chamber.stakeTokens(7, 25);
+        chamber.stakeTokens(7, 25);
 
-    //     assertEq(chamber.MemberList(0).tokenId, 1);
-    //     assertEq(chamber.MemberList(1).tokenId, 2);
-    //     assertEq(chamber.MemberList(2).tokenId, 7);
-    //     assertEq(chamber.MemberList(3).tokenId, 3);
+        assertEq(chamber.MemberList(0).tokenId, 1);
+        assertEq(chamber.MemberList(1).tokenId, 2);
+        assertEq(chamber.MemberList(2).tokenId, 7);
+        assertEq(chamber.MemberList(3).tokenId, 3);
 
-    //     assertEq(chamber.MemberList(0).amount, 10);
-    //     assertEq(chamber.MemberList(1).amount, 20);
-    //     assertEq(chamber.MemberList(2).amount, 25);
-    //     assertEq(chamber.MemberList(3).amount, 30);
+        assertEq(chamber.MemberList(0).amount, 10);
+        assertEq(chamber.MemberList(1).amount, 20);
+        assertEq(chamber.MemberList(2).amount, 25);
+        assertEq(chamber.MemberList(3).amount, 30);
+
+
+        console.log(chamber.MemberList(0).tokenId);
+        console.log(chamber.MemberList(1).tokenId);
+        console.log(chamber.MemberList(2).tokenId);
+        console.log(chamber.MemberList(3).tokenId);
+        console.log(chamber.MemberList(0).amount);
+        console.log(chamber.MemberList(1).amount);
+        console.log(chamber.MemberList(2).amount);
+        console.log(chamber.MemberList(3).amount);
+        
     }
 
     function test_memberUnstakeSomeAmount() public {
@@ -330,15 +341,15 @@ contract TestLeaderBoardLogic is Test {
         assertEq(chamber.MemberList(1).amount, 20);
         assertEq(chamber.MemberList(2).amount, 30);
 
-        // chamber.unstakeTokens(3, 11);
+        chamber.unstakeTokens(3, 11);
 
-        // assertEq(chamber.MemberList(0).tokenId, 1);
-        // assertEq(chamber.MemberList(1).tokenId, 3);
-        // assertEq(chamber.MemberList(2).tokenId, 2);
+        assertEq(chamber.MemberList(0).tokenId, 1);
+        assertEq(chamber.MemberList(1).tokenId, 3);
+        assertEq(chamber.MemberList(2).tokenId, 2);
 
-        // assertEq(chamber.MemberList(0).amount, 10);
-        // assertEq(chamber.MemberList(1).amount, 19);
-        // assertEq(chamber.MemberList(2).amount, 20);
+        assertEq(chamber.MemberList(0).amount, 10);
+        assertEq(chamber.MemberList(1).amount, 19);
+        assertEq(chamber.MemberList(2).amount, 20);
     }
 
     function test_memberUnstakeAllAmount() public {
@@ -378,9 +389,9 @@ contract TestLeaderBoardLogic is Test {
         assertEq(chamber.LeaderboardList(2).tokenId, 4);
         assertEq(chamber.MemberList(2).tokenId, 3);
 
-        // chamber.stakeTokens(3, 21);
+        chamber.stakeTokens(3, 21);
 
-        // assertEq(chamber.LeaderboardList(2).tokenId, 5);
-        // assertEq(chamber.MemberList(2).tokenId, 4);
+        assertEq(chamber.LeaderboardList(2).tokenId, 5);
+        assertEq(chamber.MemberList(2).tokenId, 4);
     }
 }

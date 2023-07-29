@@ -1,0 +1,4 @@
+{
+    "solidity-va.outline.var.storage_annotations": true,
+    "solidity-va.deco.statevars": true
+}
