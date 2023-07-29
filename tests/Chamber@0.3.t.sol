@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.19;
 
-import {Test, console} from "forge-std/Test.sol";
-import {StakeLeadersBoard} from "../src/Chamber@0.3.sol";
+import {Test, console} from "../lib/forge-std/src/Test.sol";
+import {Chamber} from "../src/Chamber@0.3.sol";
 
 contract TestLeaderBoardLogic is Test {
+    Chamber chamber;
     function setUp() public {
         chamber = new Chamber(3);
     }
-    function test_three_checkGasSameNFT()  returns () {
+    function test_three_checkGasSameNFT()  public  {
         chamber.stakeTokens(1, 10);
         chamber.stakeTokens(1, 20);
         chamber.stakeTokens(1, 30);

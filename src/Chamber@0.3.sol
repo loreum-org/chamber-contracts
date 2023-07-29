@@ -41,11 +41,6 @@ contract Chamber {
         return leaderboard[index];
     }
 
-    function MemberList(uint256 index) public view returns (Staker memory) {
-        return members[index];
-    }
-
-    // @audit
     function leaderboardLength() public view returns (uint256) {
         return leaderboard.length;
     }
@@ -87,7 +82,7 @@ contract Chamber {
     function sortLeaderboard() private {
         for (uint256 i = 0; i < leaderboard.length - 1; i++) {
             for (uint256 j = 0; j < (leaderboard.length - 1) - i; j++) {
-                if (leaderboard[j].amount < leaderboard[j + 1].amount) {
+                if (leaderboard[j].amount > leaderboard[j + 1].amount) {
                     Staker memory temp = leaderboard[j];
                     leaderboard[j] = leaderboard[j + 1];
                     leaderboard[j + 1] = temp;
