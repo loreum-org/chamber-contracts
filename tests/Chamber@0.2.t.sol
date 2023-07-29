@@ -15,7 +15,7 @@ contract TestLeaderBoardLogic is Test {
         chamber = new StakeLeadersBoard();
     }
 
-    function test_checkGasSameNFT()public {
+    function test_two_checkGasSameNFT()public {
         chamber.stakeTokens(1, 10);
         chamber.stakeTokens(1, 10);
         chamber.stakeTokens(1, 10);
@@ -33,7 +33,7 @@ contract TestLeaderBoardLogic is Test {
         // chamber.unstakeTokens(1, 10);
         // chamber.unstakeTokens(1, 10);
     }
-    function test_checkGasDifferentfNFT()public {
+    function test_two_checkGasDifferentfNFT()public {
         chamber.stakeTokens(1, 10);
         chamber.stakeTokens(2, 20);
         chamber.stakeTokens(3, 30);
