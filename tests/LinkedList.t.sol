@@ -32,7 +32,6 @@ contract LinkedListTest is Test, TestUtilities {
     }
 
     function helperLogger() public {
-        uint[2] memory a = [Treasury.head(), Treasury.size()];
         (uint[] memory ranksTop, uint[] memory stakesTop) = Treasury.viewRankings();
         (uint[] memory ranksAll, uint[] memory stakesAll) = Treasury.viewRankingsAll();
         emit Log(ranksTop);

@@ -45,6 +45,7 @@ contract ChamberTest is Test, TestUtilities {
         Treasury.stake(70_000 ether, 5);
 
         (uint[] memory ranksTop, uint[] memory stakesTop) = Treasury.viewRankings();
+        (ranksTop, stakesTop);
 
     }
 
