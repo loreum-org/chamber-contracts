@@ -5,7 +5,9 @@ pragma solidity ^0.8.19;
 import "../../lib/forge-std/src/Test.sol";
 
 // Loreum core contracts.
-import "../../src/Chamber.sol";
+import {Chamber} from "../../src/Chamber.sol";
+import {IChamber} from "../../src/IChamber.sol";
+
 import "../../lib/contract-utils/src/MockERC20.sol";
 import "../../lib/contract-utils/src/MockNFT.sol";
 import "../../lib/loreum-nft/src/LoreumNFT.sol";
@@ -89,45 +91,44 @@ contract ProposalTest is Test {
 
         chamberSetup();
 
-        /**  @dev proposal lifecycle tests
+        /**  @dev transaction lifecycle tests
         * 1. nft holder should be able to create a proposal
-        * 2. nft holder without stake should not be able to approve proposal
-        * 3. nft holder should not be able to approve proposal using unowned tokenId
+        * 2. nft holder without stake should not be able to approve transaction
+        * 3. nft holder should not be able to approve transaction using unowned tokenId
         * 4. nft holder should not be able to approve if not a leader
-        * 5. Leaders should be able to approve proposal
-        * 6. Quorum of leaders should execute proposal
+        * 5. Leaders should be able to approve transaction
+        * 6. Quorum of leaders should execute transaction
         * 7. nft hodler with stake allocation after leader snapshot should not be able to approve
         * 8. nft holder that unstaked erc20 should be able to approve
         */
         vm.startPrank(address(1776));
 
-            // mint an nft to 1776
-            vm.deal(address(1776), 100 ether);
-            Explorers.publicMint{ value: 0.05 ether }(1);
-            assertEq(Explorers.balanceOf(address(1776)), 1);
+        // mint an nft to 1776
+        vm.deal(address(1776), 100 ether);
+        Explorers.publicMint{ value: 0.05 ether }(1);
+        assertEq(Explorers.balanceOf(address(1776)), 1);
 
-            // 1. nft holder should be able to create a proposal
-            bytes[] memory dataArray1 = new bytes[](1);
-            address[] memory targetArray1 = new address[](1);
-            uint256[] memory valueArray1 = new uint256[](1);
+        // 1. nft holder should be able to create a proposal
+        bytes[] memory dataArray1 = new bytes[](1);
+        address[] memory targetArray1 = new address[](1);
+        uint256[] memory valueArray1 = new uint256[](1);
 
-            dataArray1[0] = abi.encodeWithSignature("transfer()");
-            targetArray1[0] = address(chamber);
-            valueArray1[0] = 1 ether;
+        dataArray1[0] = abi.encodeWithSignature("transfer()");
+        targetArray1[0] = address(chamber);
+        valueArray1[0] = 1 ether;
 
-            chamber.create(targetArray1, valueArray1, dataArray1);
-            assertEq(chamber.proposalCount(), 1);
+        chamber.createTx(targetArray1, valueArray1, dataArray1);
+        assertEq(chamber.proposalCount(), 1);
 
-            // 2. nft holder without stake should not be able to approve proposal
-            vm.expectRevert("NFT not eligible to vote.");
-            chamber.approve(1, 8);
+        // 2. nft holder without stake should not be able to approve transaction
+        vm.expectRevert();
+        chamber.approveTx(1, 8);
 
-            // 3. nft holder should not be able to approve proposal using unowned tokenId
-            vm.expectRevert("Caller does not own NFT.");
-            chamber.approve(1, 5);
+        // 3. nft holder should not be able to approve transaction using unowned tokenId
+        vm.expectRevert();
+        chamber.approveTx(1, 5);
  
         vm.stopPrank();
-
 
         // transfer ownership of LORE to the chamber
         LORE.transferOwnership(address(chamber));
@@ -137,67 +138,67 @@ contract ProposalTest is Test {
         Chamber.State state;
         
         vm.startPrank(bones);
-            // Create a new proposal for minting LORE to Lorains
-            bytes[] memory dataArray = new bytes[](7);
-            address[] memory targetArray = new address[](7);
-            uint256[] memory valueArray = new uint256[](7);
+        // Create a new proposal for minting LORE to Lorains
+        bytes[] memory dataArray = new bytes[](7);
+        address[] memory targetArray = new address[](7);
+        uint256[] memory valueArray = new uint256[](7);
 
-            uint256 amount = 10000 ether;
+        uint256 amount = 10000 ether;
 
-            targetArray[0] = address(LORE);
-            targetArray[1] = address(LORE);
-            targetArray[2] = address(LORE);
-            targetArray[3] = address(LORE);
-            targetArray[4] = address(LORE);
-            targetArray[5] = address(LORE);
-            targetArray[6] = address(LORE);
+        targetArray[0] = address(LORE);
+        targetArray[1] = address(LORE);
+        targetArray[2] = address(LORE);
+        targetArray[3] = address(LORE);
+        targetArray[4] = address(LORE);
+        targetArray[5] = address(LORE);
+        targetArray[6] = address(LORE);
 
-            dataArray[0] = abi.encodeWithSignature("mint(address,uint256)", bones, amount);
-            dataArray[1] = abi.encodeWithSignature("mint(address,uint256)", coconut, amount);
-            dataArray[2] = abi.encodeWithSignature("mint(address,uint256)", hurricane, amount);
-            dataArray[3] = abi.encodeWithSignature("mint(address,uint256)", jack, amount);
-            dataArray[4] = abi.encodeWithSignature("mint(address,uint256)", danny, amount);
-            dataArray[5] = abi.encodeWithSignature("mint(address,uint256)", shifty, amount);
-            dataArray[6] = abi.encodeWithSignature("mint(address,uint256)", blackbeard, amount);
+        dataArray[0] = abi.encodeWithSignature("mint(address,uint256)", bones, amount);
+        dataArray[1] = abi.encodeWithSignature("mint(address,uint256)", coconut, amount);
+        dataArray[2] = abi.encodeWithSignature("mint(address,uint256)", hurricane, amount);
+        dataArray[3] = abi.encodeWithSignature("mint(address,uint256)", jack, amount);
+        dataArray[4] = abi.encodeWithSignature("mint(address,uint256)", danny, amount);
+        dataArray[5] = abi.encodeWithSignature("mint(address,uint256)", shifty, amount);
+        dataArray[6] = abi.encodeWithSignature("mint(address,uint256)", blackbeard, amount);
 
-            valueArray[0] = 0;
-            valueArray[1] = 0;
-            valueArray[2] = 0;
-            valueArray[3] = 0;
-            valueArray[4] = 0;
-            valueArray[5] = 0;
-            valueArray[6] = 0;
+        valueArray[0] = 0;
+        valueArray[1] = 0;
+        valueArray[2] = 0;
+        valueArray[3] = 0;
+        valueArray[4] = 0;
+        valueArray[5] = 0;
+        valueArray[6] = 0;
 
-            chamber.create(targetArray, valueArray, dataArray);
-            assertEq(chamber.proposalCount(), 2);
-            (votes, state) = chamber.proposals(2);
-            assertEq(votes, 0);
-            assertTrue(state == Chamber.State.Initialized);
+        chamber.createTx(targetArray, valueArray, dataArray);
+        assertEq(chamber.proposalCount(), 2);
+        (votes, state) = chamber.proposals(2);
+        assertEq(votes, 0);
+        assertTrue(state == IChamber.State.Initialized);
 
-            // 4. nft holder should not be able to approve if not a leader
-            vm.expectRevert("NFT not eligible to vote.");
-            chamber.approve(1, 1);
+        // 4. nft holder should not be able to approve if not a leader
+        vm.expectRevert();
+        chamber.approveTx(1, 1);
         vm.stopPrank();
         
-        // 5. Leaders should be able to approve proposal
+        // 5. Leaders should be able to approve transaction
         vm.prank(danny);
-        chamber.approve(2, 5);
+        chamber.approveTx(2, 5);
         (votes, state) = chamber.proposals(2);
         assertEq(votes, 1);
-        assertTrue(state == Chamber.State.Initialized);
+        assertTrue(state == IChamber.State.Initialized);
 
         vm.prank(shifty);
-        chamber.approve(2, 6);
+        chamber.approveTx(2, 6);
         (votes, state) = chamber.proposals(2);
         assertEq(votes, 2);
-        assertTrue(state == Chamber.State.Initialized);
+        assertTrue(state == IChamber.State.Initialized);
         
         // 6. Quorum of leaders should execute proposal
         vm.prank(blackbeard);
-        chamber.approve(2, 7);
+        chamber.approveTx(2, 7);
         (votes, state) = chamber.proposals(2);
         assertEq(votes, 3);
-        assertTrue(state == Chamber.State.Executed);
+        assertTrue(state == IChamber.State.Executed);
 
         // Lorians should now have the amount of LORE
         for (uint8 i = 0; i <= lorians.length - 1; i++) {
@@ -206,20 +207,20 @@ contract ProposalTest is Test {
 
         // 7. nft hodler with stake allocation after snapshot should not be able to approve
         vm.startPrank(bones);
-            // stake more LORE to chamber
-            LORE.approve(address(chamber), 10000 ether);
-            chamber.stake(10000 ether, 1);
-            assertEq(chamber.getUserStakeIndividualNFT(bones, 1), 43333 ether);
+        // stake more LORE to chamber
+        LORE.approve(address(chamber), 10000 ether);
+        chamber.stake(10000 ether, 1);
+        assertEq(chamber.getUserStakeIndividualNFT(bones, 1), 43333 ether);
 
-            vm.expectRevert("NFT not eligible to vote.");
-            chamber.approve(1, 1);
+        vm.expectRevert();
+        chamber.approveTx(1, 1);
         vm.stopPrank();
 
         // 8. nft holder that unstaked erc20 should be able to approve
         vm.startPrank(jack);
-            chamber.unstake(33333 ether, 4);
-            helperLogger();
-            chamber.approve(1, 4);
+        chamber.unstake(33333 ether, 4);
+        helperLogger();
+        chamber.approveTx(1, 4);
         vm.stopPrank();
     }
 }

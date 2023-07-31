@@ -3,32 +3,21 @@
 
 pragma solidity ^0.8.19;
 
+import {IChamber} from "./IChamber.sol";
+
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
+
 interface IERC721_Chamber {
     function balanceOf(address owner) external view returns (uint256 balance);
     function ownerOf(uint256 tokenId) external view returns (address owner);
 }
 
-interface IERC20_Chamber {
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);    
-    function transfer(address to, uint256 amount) external returns (bool);
-}
-
-contract Chamber {
+contract Chamber is IChamber {
 
     /**************************************************
         Chamber State Variables
      **************************************************/
-
-    enum State { Null, Initialized, Executed }
-
-    struct Proposal {
-        address[]   target;
-        uint256[]   value;
-        bytes[]     data;
-        uint256[]   voters;
-        uint256     approvals;
-        State       state;
-    }
 
     /** @dev proposalCount The number of proposals.*/
     uint256 public proposalCount;
@@ -89,13 +78,6 @@ contract Chamber {
     uint internal constant _NULL = 0;
     bool internal constant _PREV = false;
     bool internal constant _NEXT = true;
-
-    struct Stake {
-        uint stake;
-    }
-
-    /** @notice Tracks the amount staked for each NFT tokenId */
-    mapping(uint => Stake) public tokenIdData;
     
     /**************************************************
         Constructor
@@ -113,57 +95,6 @@ contract Chamber {
         quorum = _quorum;
         leaders = _leaders;
     }
-
-    /**************************************************
-        Events
-     **************************************************/
-
-    /** 
-     * @notice Emitted upon stake().
-     * @param staker   The address staking.
-     * @param amt      The amount of "stakingToken" staked.
-     * @param tokenId  The ID of the NFT that tokens will be staked against.
-     */ 
-    event Staked(address staker, uint256 amt, uint256 tokenId);
-
-    /** 
-     * @notice Emitted upon unstake().
-     * @param staker   The address unstaking.
-     * @param amt      The amount of "stakingToken" unstaked.
-     * @param tokenId  The ID of the NFT that tokens were staked against.
-     */ 
-    event Unstaked(address staker, uint256 amt, uint256 tokenId);
-    
-    /**
-     * @notice Emitted when a proposal is approved.
-     * @param proposalId The unique identifier of the approved proposal.
-     * @param nftId      The ID of the NFT that the proposal was associated with.
-     * @param approvals  The total number of approvals that the proposal received.
-     */
-    event ProposalApproved(uint256 proposalId, uint256 nftId, uint256 approvals);
-
-    /**
-     * @notice Emitted when a proposal is created.
-     * @param proposalId The unique identifier of the created proposal.
-     * @param target     The array of addresses that the proposal targets.
-     * @param value      The array of monetary values associated with each target.
-     * @param data       The array of data payloads associated with each target.
-     * @param voters     The array of votes associated with each target.
-     */
-    event ProposalCreated(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint256[] voters);
-
-    /**
-     * @notice Emitted when a proposal is executed.
-     * @param proposalId The unique identifier of the executed proposal.
-     */
-    event ProposalExecuted(uint256 proposalId);
-
-    /**
-     * @notice Emitted when Ether is received.
-     * @param sender The address of the sender of the Ether.
-     * @param value  The amount of Ether received.
-     */
-    event ReceivedEther(address indexed sender, uint256 value);
 
     /**************************************************
         Functions
@@ -190,8 +121,6 @@ contract Chamber {
             if (index == 0) { return (_rankings, _stakes); }
         }
     }
-    
-    event Log(uint,uint,uint,uint);
 
     /**
      * @notice Returns the rankings and the stakes of all the tokens in the contract.
@@ -207,41 +136,26 @@ contract Chamber {
         while (true) {
             _rankings[rank] = tokenId;
             _stakes[rank] = totalStake[tokenId];
-            // emit Log(tokenId, totalStake[tokenId], list[tokenId][_PREV], list[tokenId][_NEXT]);
             tokenId = list[tokenId][_PREV];
             if (tokenId == 0) { return (_rankings, _stakes); }
             rank++;
         }
     }
-    
-    /**
-     * @notice Emits the `Log` event for each token ID from 0 to 10.
-     * @dev This function is useful for debugging or viewing the state of the leaderboard.
-     */
-    function helperView() public {
-        for (uint tokenId = 0; tokenId <= 10; tokenId++) {
-            emit Log(tokenId, totalStake[tokenId], list[tokenId][_PREV], list[tokenId][_NEXT]);
-        }
-    }
 
-    /** 
-     * @notice approve Proposal function
-     * @param  _proposalId The ID of the proposal to approve.
-     * @param  _tokenId    The ID of the NFT to vote.
-     */ 
-    function approve(uint256 _proposalId, uint256 _tokenId) external {
+    /// @inheritdoc IChamber
+    function approveTx(uint256 _proposalId, uint256 _tokenId) external {
 
-        require(_msgSender() == IERC721_Chamber(membershipToken).ownerOf(_tokenId), "Caller does not own NFT.");
-        require(proposals[_proposalId].state == State.Initialized, "Proposal is not initialized.");
-        require(!voted[_proposalId][_tokenId], "NFT has already voted.");
+        if(_msgSender() != IERC721_Chamber(membershipToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't owner");
+        if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
+        if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID aleready voted");
 
-        bool detected;
+        bool onVoterList = false;
         uint proposalsVotersLength = proposals[_proposalId].voters.length;
         for (uint i = 0; i < proposalsVotersLength; i++) {
-            if (_tokenId == proposals[_proposalId].voters[i]) { detected = true; break; }
+            if (_tokenId == proposals[_proposalId].voters[i]) onVoterList = true;
         }
 
-        require(detected, "NFT not eligible to vote.");
+        if (!onVoterList) revert invalidApproval("TokenId not on voter list");
 
         voted[_proposalId][_tokenId] = true;
         proposals[_proposalId].approvals += 1;
@@ -253,15 +167,10 @@ contract Chamber {
         emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
     }
 
-    /** 
-     * @notice create Proposal function
-     * @param  _target The address of contract to send transaction
-     * @param  _value  The uint256 amount of ETH to send with transaction
-     * @param  _data   The bytes[] of transaction data
-     */
-    function create(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
+    /// @inheritdoc IChamber
+    function createTx(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
 
-        require(IERC721_Chamber(membershipToken).balanceOf(_msgSender()) >= 1, "NFT balance is 0.");
+        if(IERC721_Chamber(membershipToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
 
         proposalCount++;
 
@@ -285,7 +194,7 @@ contract Chamber {
      */
     function _executeProposal(uint256 _proposalId) private {
 
-        require(proposals[_proposalId].state == State.Initialized, "Proposal is not initialized.");
+        if(proposals[_proposalId].state != State.Initialized) revert invalidProposalState();
 
         Proposal memory proposal = proposals[_proposalId];
 
@@ -293,27 +202,29 @@ contract Chamber {
 
         for (uint256 i = 0; i < proposal.data.length; i++) {
             (bool success, ) = proposal.target[i].call{value: proposal.value[i]}(proposal.data[i]);
-            require(success, "Failed to execute proposal data");
+            if(!success) revert executionFailed();
         }
 
         emit ProposalExecuted(_proposalId);
     }
 
-    /** 
-     * @notice Stakes a given amount of "stakingToken" against the provided NFT ID.
-     * @param _amt      The amount of "stakingToken" to stake.
-     * @param _tokenId  The ID of the NFT to stake against.
-     */
+    /// @inheritdoc IChamber
     function stake(uint256 _amt, uint256 _tokenId) public {
 
-        require(_amt != 0 && _tokenId != 0);
+        if(_amt == 0 && _tokenId == 0) revert invalidStake();
         
         totalStake[_tokenId] += _amt;
         memberNftStake[_msgSender()][_tokenId] += _amt;
-        IERC20_Chamber(stakingToken).transferFrom(_msgSender(), address(this), _amt);
-
+        _stakeUpdater(_tokenId);
+        SafeERC20.safeTransferFrom(IERC20(stakingToken), _msgSender(), address(this), _amt);
         emit Staked(_msgSender(), _amt, _tokenId);
+    }
 
+    /** 
+     * @notice _stakeUpdatList function updates state for the stake function
+     * @param  _tokenId The nft ID that is being updated
+     */
+    function _stakeUpdater (uint256 _tokenId) private {
         if (_tokenId == head) { return; }
 
         // NFT Stake > 0
@@ -388,28 +299,27 @@ contract Chamber {
 
         // Final check, if size >= leaders ... pop last element.
         // if (size > leaders) { emit Checkpoint(13); popBack(); }
-        
     }
 
-    /** 
-     * @notice Unstakes a given amount of "stakingToken" from the provided NFT ID.
-     * @param _amt      The amount of "stakingToken" to unstake.
-     * @param _tokenId  The ID of the NFT to unstake from.
-     */ 
+    /// @inheritdoc IChamber
     function unstake(uint256 _amt, uint256 _tokenId) public {
-        require(_amt != 0 && _tokenId != 0);
+        if(_amt == 0 && _tokenId == 0) revert invalidUnStake();
         
-        require(
-            memberNftStake[_msgSender()][_tokenId] >= _amt,
-            "Chamber::unstake() memberNftStake[_msgSender()][tokenId] < amt"
-        );
+        if(memberNftStake[_msgSender()][_tokenId] < _amt) revert invalidUnStake();
         
         totalStake[_tokenId] -= _amt;
         memberNftStake[_msgSender()][_tokenId] -= _amt;
-        IERC20_Chamber(stakingToken).transfer(_msgSender(), _amt);
+        _unstakeUpdater(_tokenId);
+        SafeERC20.safeTransfer(IERC20(stakingToken), _msgSender(), _amt);
 
         emit Unstaked(_msgSender(), _amt, _tokenId);
+    }
 
+    /** 
+     * @notice _unstakeUpdater function updates state for the unstake function
+     * @param  _tokenId The nft ID that is being updated
+     */
+    function _unstakeUpdater (uint256 _tokenId) private {
         // Remove token from list.
         if (_tokenId == head && size != 0) {
             (, uint prev) = getPrev(head);
@@ -441,15 +351,9 @@ contract Chamber {
         if (i < leaders) {
             insertAfter(_prev, _tokenId);
         }
-
     }
 
-    /** 
-     * @notice Migrates a staked amount of "stakingToken" from one NFT ID to another.
-     * @param _fromTokenId  The ID of the NFT that tokens are staked currently.
-     * @param _amt          The amount of "stakingToken" to migrate. 
-     * @param _toTokenId    The ID of the NFT that tokens will be migrated to.
-     */
+    /// @inheritdoc IChamber
     function migrate(uint256 _amt, uint256 _fromTokenId, uint256 _toTokenId) external {
         unstake(_amt, _fromTokenId);
         stake(_amt, _toTokenId);

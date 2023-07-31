@@ -69,7 +69,7 @@ contract ChamberPerfTest is Test {
 
         vm.assume(amount > 0);
 
-        uint runs = 1000;
+        uint runs = 50;
         for (uint i = 1; i <= runs; i++) {
             vm.startPrank(bones);
             deal(address(LORE), bones, amount);

@@ -16,40 +16,38 @@ import { TestUtilities } from "../lib/contract-utils/src/TestUtilities.sol";
 contract ChamberTest is Test, TestUtilities {
 
     MockERC20 USD;
-    MockERC20 LORE;
-    MockNFT Explorers;
-    Chamber Treasury;
+    MockERC20 mERC20;
+    MockNFT mNFT;
+    Chamber chamber;
 
     function setUp() public {
         
-        LORE = new MockERC20("Loreum", "LORE", address(this));
-        Explorers = new MockNFT("Loreum Explorers", "LOREUM", address(this));
-        Treasury = new Chamber(address(Explorers), address(LORE), 3, 5);
-        USD = new MockERC20("US Dollar", "USD", address(Treasury));
+        mERC20 = new MockERC20("Loreum", "LORE", address(this));
+        mNFT = new MockNFT("Loreum Explorers", "LOREUM", address(this));
+        chamber = new Chamber(address(mNFT), address(mERC20), 3, 5);
+        USD = new MockERC20("US Dollar", "USD", address(chamber));
 
-        vm.deal(address(Treasury), 100 ether);
+        vm.deal(address(chamber), 100 ether);
 
     }
-
-    event Log(uint256[]);
 
     function stakeExplorers() public {
         
         // Approve Chamber for large amount of LORE
-        LORE.approve(address(Treasury), 10_000_000_000 ether);
+        mERC20.approve(address(chamber), 10_000_000_000 ether);
 
-        Treasury.stake(100_000 ether, 1);
-        Treasury.stake(120_000 ether, 2);
-        Treasury.stake(50_000 ether, 3);
-        Treasury.stake(250_000 ether, 4);
-        Treasury.stake(70_000 ether, 5);
+        chamber.stake(100_000 ether, 1);
+        chamber.stake(120_000 ether, 2);
+        chamber.stake(50_000 ether, 3);
+        chamber.stake(250_000 ether, 4);
+        chamber.stake(70_000 ether, 5);
 
-        (uint[] memory ranksTop, uint[] memory stakesTop) = Treasury.viewRankings();
+        (uint[] memory ranksTop, uint[] memory stakesTop) = chamber.viewRankings();
         (ranksTop, stakesTop);
 
     }
 
-    function test_proposal_cycle() public {
+    function test_Chamber_proposal() public {
 
         stakeExplorers();
 
@@ -76,17 +74,53 @@ contract ChamberTest is Test, TestUtilities {
         valueArray[2] = 10 ether;
         valueArray[3] = 5 ether;
 
-        Treasury.create(targetArray, valueArray, dataArray);
+        chamber.createTx(targetArray, valueArray, dataArray);
 
         // Approve Proposal
 
-        Treasury.approve(1, 3);
-        Treasury.approve(1, 2);
+        chamber.approveTx(1, 3);
+        chamber.approveTx(1, 2);
 
         // Execute Proposal
 
-        Treasury.approve(1, 1);
+        chamber.approveTx(1, 1);
 
+    }
+
+    function test_Chamber_stake (uint256 amount) public {
+        deal(address(mERC20), address(33), amount);
+        vm.startPrank(address(33));
+        mERC20.approve(address(chamber), amount);
+        chamber.stake(amount, 5);
+
+        uint256 stakeBalance = chamber.memberNftStake(address(33), 5);
+        assertEq(stakeBalance, amount);
+
+        uint256 totalStakeForNft = chamber.totalStake(5);
+        assertEq(totalStakeForNft, amount);
+
+        vm.stopPrank();
+    }
+
+    function test_Chamber_unstake (uint256 amount) public {
+        deal(address(mERC20), address(34), amount);
+        vm.startPrank(address(34));
+        mERC20.approve(address(chamber), amount);
+        chamber.stake(amount, 6);
+
+        uint256 stakeBalance = chamber.memberNftStake(address(34), 6);
+        assertEq(stakeBalance, amount);
+
+        uint256 totalStakeForNft = chamber.totalStake(6);
+        assertEq(totalStakeForNft, amount);
+
+        chamber.unstake(amount, 6);
+        uint256 newStakeBalance = chamber.memberNftStake(address(34), 6);
+        assertEq(newStakeBalance, 0);
+        
+        uint newTotalStakeForNft = chamber.totalStake(6);
+        assertEq(newTotalStakeForNft, 0);
+        vm.stopPrank();
     }
 
 }
