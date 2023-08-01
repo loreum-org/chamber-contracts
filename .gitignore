@@ -25,5 +25,7 @@ out
 # Foundry
 out
 
+coverage/
+
 # Others 
 #lib

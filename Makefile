@@ -2,6 +2,7 @@
 install:
     brew install ekhtml
     brew install lcov
+    mkdir coverage
 
 coverage:
     forge coverage --report lcov
