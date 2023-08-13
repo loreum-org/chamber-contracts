@@ -122,5 +122,4 @@ contract ChamberTest is Test, TestUtilities {
         assertEq(newTotalStakeForNft, 0);
         vm.stopPrank();
     }
-
 }
