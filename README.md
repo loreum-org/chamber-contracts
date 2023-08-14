@@ -3,9 +3,9 @@
 <img style="{align: right}" src="https://cdn.loreum.org/logos/white.png"  height="100"/>
 
 ## Overview
-The Chamber contract is a protocol governance standard that provides the functionality of a multisig wallet, however the signers are determined by stake allocation from an ERC20 goverance token.
+The Chamber contract is a protocol governance standard that provides the functionality of a multisig wallet with signers determined by stake allocation from an ERC20 goverance token.
 
-The contract also uses an ERC721 for membership. Stake allocations are made against the ERC721 token ID which creates a leaderboard within the Chamber contract. The leaders are responsible for signing transactions and being the governors of the multisig.
+The contract inherits existing ERC20 governance and ERC721 membership tokens. Stake allocations are made against the ERC721 token ID which creates a leaderboard within the Chamber contract. The leaders are responsible for signing transactions and being the governors of the multisig.
 
 ## Use Cases
 
@@ -45,9 +45,8 @@ erDiagram
     }
 ```
 
-What connects the Chambers is shared value and scarcity of tokens that where used for instantiation parameters to create the contract. If the same `govToken` and `memberToken` are used, the community of tokeneconomic value is shared accross each like Chamber.
+Each Chamber is created with a designated number of leaders and a quorom of approvals required to execute transaction proposals. Based on stake allocations of ERC20 tokens against the ER721 tokenId, a TVL leaderboard is created based where signing authority is based on liquidy democracy. The Chamber leaders have multisig signing authority so long as their stake delegation places their tokenId in the top number of leaders on the leaderboard. This creates a representative board of decision makers based on revocable authority by delegation.
 
-Each Chamber is created with a designated quorom of leaders.
 ### Setup
 
 Copy `.example.env` to `.env`
