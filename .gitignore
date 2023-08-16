@@ -24,6 +24,8 @@ out
 
 # Foundry
 out
+lcov.info
+report
 
 # Others 
 #lib
