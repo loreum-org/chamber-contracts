@@ -56,7 +56,7 @@ contract ChamberSecTest is Test {
 
     // Test if a wallet can withdraw all stake against a leader
     // by staking against another leader and unstake against victim leader
-    function test_Chamber_stakeStealing() public {
+    function test_Chamber_sec_stakeTheft() public {
 
         vm.startPrank(bones);
         deal(address(LORE), bones, 1_000_000);

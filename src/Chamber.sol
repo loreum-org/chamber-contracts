@@ -75,6 +75,7 @@ contract Chamber is IChamber {
      */
     mapping(uint => mapping(bool => uint)) public list;
     
+    // LinkedList constants
     uint internal constant _NULL = 0;
     bool internal constant _PREV = false;
     bool internal constant _NEXT = true;
@@ -403,10 +404,6 @@ contract Chamber is IChamber {
         _insert(_byTokenId, _newTokenId, _NEXT);
     }
 
-    function insertBefore(uint _byTokenId, uint _newTokenId) internal {
-        _insert(_byTokenId, _newTokenId, _PREV);
-    }
-
     function _insert(uint _byTokenId, uint _newTokenId, bool _direction) private {
         if (!inList(_newTokenId) && inList(_byTokenId)) {
             uint id = list[_byTokenId][_direction];
@@ -438,25 +435,8 @@ contract Chamber is IChamber {
         _push(_tokenId, _NEXT);
     }
 
-    function pushBack(uint _tokenId) internal {
-        _push(_tokenId, _PREV);
-    }
-
-    function popFront() internal {
-        _pop(_NEXT);
-    }
-
-    function popBack() internal {
-        _pop(_PREV);
-    }
-
     function _push(uint _tokenId, bool _direction) private {
         _insert(head, _tokenId, _direction);
-    }
-
-    function _pop(bool _direction) private {
-        (, uint adj) = getAdjacent(head, _direction);
-        remove(adj);
     }
     
     /**************************************************

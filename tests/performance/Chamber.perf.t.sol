@@ -54,7 +54,7 @@ contract ChamberPerfTest is Test {
     }
 
     // Test the performance of the stake function
-    function test_Chamber_stake(uint256 tokenId, uint256 amount) public {
+    function test_Chamber_perf_stake_one(uint256 tokenId, uint256 amount) public {
 
         vm.assume(amount > 0);
         vm.assume(tokenId > 0);
@@ -65,7 +65,7 @@ contract ChamberPerfTest is Test {
     }
 
     // Test the performance of the stake function with 10000 calls
-    function test_Chamber_stake(uint256 amount) public {
+    function test_Chamber_perf_stake_many(uint256 amount) public {
 
         vm.assume(amount > 0);
 

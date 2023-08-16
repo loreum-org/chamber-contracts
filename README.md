@@ -45,7 +45,7 @@ erDiagram
     }
 ```
 
-Each Chamber is created with a designated number of leaders and a quorom of approvals required to execute transaction proposals. Based on stake allocations of ERC20 tokens against the ER721 tokenId, a TVL leaderboard is created based where signing authority is based on liquidy democracy. The Chamber leaders have multisig signing authority so long as their stake delegation places their tokenId in the top number of leaders on the leaderboard. This creates a representative board of decision makers based on revocable authority by delegation.
+Each Chamber is created with a designated number of leaders and a quorom of approvals required to execute transaction proposals. Based on stake allocations of ERC20 tokens against the ER721 tokenId, a TVL leaderboard is created where the number of leaders become signing authorities. The Chamber leaders have multisig signing authority so long as their stake delegation places their tokenId in the top number of leaders on the leaderboard. This creates a representative board of decision makers based on revocable authority by delegation.
 
 ### Setup
 
