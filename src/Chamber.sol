@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Loreum Chamber v0.0.1
 
-pragma solidity ^0.8.19;
+pragma solidity 0.8.19;
 
-import {IChamber} from "./IChamber.sol";
+import { IChamber } from "./IChamber.sol";
 
-import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
+import { SafeERC20 } from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 
 interface IERC721_Chamber {
     function balanceOf(address owner) external view returns (uint256 balance);
@@ -19,32 +19,32 @@ contract Chamber is IChamber {
         Chamber State Variables
      **************************************************/
 
-    /** @dev proposalCount The number of proposals.*/
+    /** @notice proposalCount The number of proposals.*/
     uint256 public proposalCount;
 
-    /** @dev membershipToken The ERC721 contract used for membership.*/
-    address public immutable membershipToken;
+    /** @notice memberToken The ERC721 contract used for membership.*/
+    address public immutable memberToken;
 
-    /** @dev stakingToken The ERC20 contract used for staking.*/
-    address public immutable stakingToken;
+    /** @notice govToken The ERC20 contract used for staking.*/
+    address public immutable govToken;
 
-    /** @dev quorum The number of approvals required.*/
-    uint16 public quorum;
+    /** @notice quorum The number of approvals required.*/
+    uint8 public quorum;
 
-    /** @dev leaders The number of authorized signers on the leaderboard.*/
-    uint16 public leaders;
+    /** @notice leaders The number of authorized signers on the leaderboard.*/
+    uint8 public leaders;
 
     /**
-     * @notice Tracks the amount of "stakingToken" staked for a given NFT ID.
+     * @notice Tracks the amount of "govToken" staked for a given NFT ID.
      * @dev    1st element -> NFT tokenID, 2nd element -> amountStaked.
      */
     mapping(uint256 => uint256) public totalStake;
 
     /** 
-     * @notice Tracks a given address's stake amount of "stakingToken" for a given NFT ID.
+     * @notice Tracks a given address's stake amount of "govToken" for a given NFT ID.
      * @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountStaked.
      */
-    mapping(address => mapping(uint256 => uint256)) public memberNftStake;
+    mapping(address => mapping(uint256 => uint256)) public accountNftStake;
     
     /** 
      * @notice Mapping of the Proposals
@@ -62,10 +62,10 @@ contract Chamber is IChamber {
         LinkedList State Variables
      **************************************************/
 
-    /** @dev Head is the first tokenId of the Leaderboard */
+    /** @notice Head is the first tokenId of the Leaderboard */
     uint public head;
     
-    /** @dev Size is the total number of tokenIds on the leaderboard */
+    /** @notice Size is the total number of tokenIds on the leaderboard */
     uint public size;
 
     /** 
@@ -85,14 +85,14 @@ contract Chamber is IChamber {
      **************************************************/
 
     /** 
-     * @param _membershipToken The NFT collection used for membership.
-     * @param _stakingToken    The fungible token use for amplifying governance power.
+     * @param _memberToken The NFT collection used for membership.
+     * @param _govToken    The fungible token use for amplifying governance power.
      * @param _quorum          The number of votes required for a proposal to be executed.
      * @param _leaders         The number of leaders at the top of the leaderboard.
      */ 
-    constructor(address _membershipToken, address _stakingToken, uint16 _quorum, uint16 _leaders) {
-        membershipToken = _membershipToken;
-        stakingToken = _stakingToken;
+    constructor(address _memberToken, address _govToken, uint8 _quorum, uint8 _leaders) {
+        memberToken = _memberToken;
+        govToken = _govToken;
         quorum = _quorum;
         leaders = _leaders;
     }
@@ -107,7 +107,7 @@ contract Chamber is IChamber {
      * @param _tokenId  The NFT tokenId a member has staked against.
      */
     function getUserStakeIndividualNFT(address _member, uint256 _tokenId) external view returns (uint256) {
-        return memberNftStake[_member][_tokenId];
+        return accountNftStake[_member][_tokenId];
     }
 
     function viewRankings() public view returns(uint[] memory _rankings, uint[] memory _stakes) {
@@ -146,7 +146,7 @@ contract Chamber is IChamber {
     /// @inheritdoc IChamber
     function approveTx(uint256 _proposalId, uint256 _tokenId) external {
 
-        if(_msgSender() != IERC721_Chamber(membershipToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't owner");
+        if(_msgSender() != IERC721_Chamber(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't owner");
         if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
         if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID aleready voted");
 
@@ -171,7 +171,7 @@ contract Chamber is IChamber {
     /// @inheritdoc IChamber
     function createTx(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
 
-        if(IERC721_Chamber(membershipToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
+        if(IERC721_Chamber(memberToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
 
         proposalCount++;
 
@@ -215,9 +215,9 @@ contract Chamber is IChamber {
         if(_amt == 0 && _tokenId == 0) revert invalidStake();
         
         totalStake[_tokenId] += _amt;
-        memberNftStake[_msgSender()][_tokenId] += _amt;
+        accountNftStake[_msgSender()][_tokenId] += _amt;
         _stakeUpdater(_tokenId);
-        SafeERC20.safeTransferFrom(IERC20(stakingToken), _msgSender(), address(this), _amt);
+        SafeERC20.safeTransferFrom(IERC20(govToken), _msgSender(), address(this), _amt);
         emit Staked(_msgSender(), _amt, _tokenId);
     }
 
@@ -306,12 +306,12 @@ contract Chamber is IChamber {
     function unstake(uint256 _amt, uint256 _tokenId) public {
         if(_amt == 0 && _tokenId == 0) revert invalidUnStake();
         
-        if(memberNftStake[_msgSender()][_tokenId] < _amt) revert invalidUnStake();
+        if(accountNftStake[_msgSender()][_tokenId] < _amt) revert invalidUnStake();
         
         totalStake[_tokenId] -= _amt;
-        memberNftStake[_msgSender()][_tokenId] -= _amt;
+        accountNftStake[_msgSender()][_tokenId] -= _amt;
         _unstakeUpdater(_tokenId);
-        SafeERC20.safeTransfer(IERC20(stakingToken), _msgSender(), _amt);
+        SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), _amt);
 
         emit Unstaked(_msgSender(), _amt, _tokenId);
     }

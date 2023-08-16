@@ -5,9 +5,9 @@ pragma solidity ^0.8.19;
 import "../lib/forge-std/src/Test.sol";
 
 // Loreum core contracts.
-import {Chamber} from "../src/Chamber.sol";
-import "../lib/contract-utils/src/MockERC20.sol";
-import "../lib/contract-utils/src/MockNFT.sol";
+import { Chamber } from "../src/Chamber.sol";
+import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
+import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
 
 import { TestUtilities } from "../lib/contract-utils/src/TestUtilities.sol";
 
@@ -17,8 +17,8 @@ contract LinkedListTest is Test, TestUtilities {
     MockNFT NFT;
     Chamber chamber;
         
-    uint16 leaders = 8;
-    uint16 quorum = 5;
+    uint8 leaders = 8;
+    uint8 quorum = 5;
 
     event Log(uint);
     event Log(uint256[2]);
@@ -41,7 +41,7 @@ contract LinkedListTest is Test, TestUtilities {
     }
 
     function test_LinkedList_init() public {
-        assertEq(chamber.stakingToken(), address(MUSD));
+        assertEq(chamber.govToken(), address(MUSD));
         assert(!chamber.isInitialized());
     }
 
