@@ -9,8 +9,9 @@ import {Chamber} from "../../src/Chamber.sol";
 import {MockERC20} from "../../lib/contract-utils/src/MockERC20.sol";
 import {LoreumNFT} from "../../lib/loreum-nft/src/LoreumNFT.sol";
 import {LoreumToken} from "../../lib/loreum-token/src/LoreumToken.sol";
+import {Test} from "../../lib/forge-std/src/Test.sol";
 
-contract ChamberPerfTest is Test {
+contract ChamberSecTest is Test {
 
     MockERC20 USD;
     LoreumToken LORE;
@@ -53,29 +54,33 @@ contract ChamberPerfTest is Test {
 
     }
 
-    // Test the performance of the stake function
-    function test_Chamber_stake(uint256 tokenId, uint256 amount) public {
+    // Test if a wallet can withdraw all stake against a leader
+    // by staking against another leader and unstake against victim leader
+    function test_Chamber_sec_stakeTheft() public {
 
-        vm.assume(amount > 0);
-        vm.assume(tokenId > 0);
         vm.startPrank(bones);
-        deal(address(LORE), bones, amount);
-        LORE.approve(address(chamber), amount);
-        chamber.stake(amount, tokenId);
+        deal(address(LORE), bones, 1_000_000);
+        LORE.approve(address(chamber), 1_000_000);
+
+        // stake against tokenId 1
+        chamber.stake(5, 1);
+
+        // stake against another token to increase total amount staked
+        chamber.stake(7, 10);
+
+        vm.stopPrank();
+
+        // another users stakes against tokenId 1
+        vm.startPrank(hurricane);
+        deal(address(LORE), hurricane, 1_000_000);
+        LORE.approve(address(chamber), 1_000_000);
+        chamber.stake(7, 1);
+        vm.stopPrank();
+
+        // can bones unstake all the amount staked against tokenId 1?
+        vm.startPrank(bones);
+        vm.expectRevert(0x66efb9e7);
+        chamber.unstake(12, 1);
+        vm.stopPrank();
     }
-
-    // Test the performance of the stake function with 10000 calls
-    function test_Chamber_stake(uint256 amount) public {
-
-        vm.assume(amount > 0);
-
-        uint runs = 50;
-        for (uint i = 1; i <= runs; i++) {
-            vm.startPrank(bones);
-            deal(address(LORE), bones, amount);
-            LORE.approve(address(chamber), amount);
-            chamber.stake(amount, i);
-        }
-    }
-
 }

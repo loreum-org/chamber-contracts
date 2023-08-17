@@ -93,7 +93,7 @@ contract ChamberTest is Test, TestUtilities {
         mERC20.approve(address(chamber), amount);
         chamber.stake(amount, 5);
 
-        uint256 stakeBalance = chamber.memberNftStake(address(33), 5);
+        uint256 stakeBalance = chamber.accountNftStake(address(33), 5);
         assertEq(stakeBalance, amount);
 
         uint256 totalStakeForNft = chamber.totalStake(5);
@@ -108,14 +108,14 @@ contract ChamberTest is Test, TestUtilities {
         mERC20.approve(address(chamber), amount);
         chamber.stake(amount, 6);
 
-        uint256 stakeBalance = chamber.memberNftStake(address(34), 6);
+        uint256 stakeBalance = chamber.accountNftStake(address(34), 6);
         assertEq(stakeBalance, amount);
 
         uint256 totalStakeForNft = chamber.totalStake(6);
         assertEq(totalStakeForNft, amount);
 
         chamber.unstake(amount, 6);
-        uint256 newStakeBalance = chamber.memberNftStake(address(34), 6);
+        uint256 newStakeBalance = chamber.accountNftStake(address(34), 6);
         assertEq(newStakeBalance, 0);
         
         uint newTotalStakeForNft = chamber.totalStake(6);

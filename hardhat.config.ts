@@ -17,9 +17,6 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: false,
       hardfork: "london",
       mining: {
-        // mempool: {
-        //   order: "fifo"
-        // },
         auto: true,
         interval: 50000,
       },
@@ -35,9 +32,6 @@ const config: HardhatUserConfig = {
         auto: true,
         interval: 50000,
       },
-      // forking: {
-      //   url: process.env.MAINNET_RPC_URL || "",
-      // },
       gasPrice: "auto",
     },
     sepolia: {
@@ -51,7 +45,7 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      goerli: process.env.ETHERSCAN_API_KEY || "",
+      sepolia: process.env.ETHERSCAN_API_KEY || "",
       mainnet: process.env.ETHERSCAN_API_KEY || "",
     },
   },

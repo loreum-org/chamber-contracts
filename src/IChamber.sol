@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 interface IChamber {
 
+     /// @notice The State of a proposal
     enum State { Null, Initialized, Executed }
 
     struct Proposal {
@@ -13,7 +14,6 @@ interface IChamber {
         uint256     approvals;
         State       state;
     }
-
 
     error invalidUnStake();
 
