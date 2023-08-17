@@ -13,33 +13,69 @@ import * as Contracts from ".";
 declare module "hardhat/types/runtime" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
     getContractFactory(
+      name: "IERC20Permit",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20Permit__factory>;
+    getContractFactory(
+      name: "IERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20__factory>;
+    getContractFactory(
       name: "Chamber",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Chamber__factory>;
     getContractFactory(
-      name: "IERC20_Chamber",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC20_Chamber__factory>;
-    getContractFactory(
       name: "IERC721_Chamber",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC721_Chamber__factory>;
+    getContractFactory(
+      name: "IChamber",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IChamber__factory>;
+    getContractFactory(
+      name: "IRegistry",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IRegistry__factory>;
+    getContractFactory(
+      name: "Registry",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Registry__factory>;
 
+    getContractAt(
+      name: "IERC20Permit",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20Permit>;
+    getContractAt(
+      name: "IERC20",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20>;
     getContractAt(
       name: "Chamber",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Chamber>;
     getContractAt(
-      name: "IERC20_Chamber",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IERC20_Chamber>;
-    getContractAt(
       name: "IERC721_Chamber",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IERC721_Chamber>;
+    getContractAt(
+      name: "IChamber",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IChamber>;
+    getContractAt(
+      name: "IRegistry",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IRegistry>;
+    getContractAt(
+      name: "Registry",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Registry>;
 
     // default types
     getContractFactory(

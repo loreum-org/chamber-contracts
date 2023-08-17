@@ -7,13 +7,16 @@ import { IChamber } from "./IChamber.sol";
 
 import { SafeERC20 } from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
+import { ReentrancyGuard } from "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 
 interface IERC721_Chamber {
     function balanceOf(address owner) external view returns (uint256 balance);
     function ownerOf(uint256 tokenId) external view returns (address owner);
 }
 
-contract Chamber is IChamber {
+contract Chamber is IChamber, ReentrancyGuard {
+
+    uint8 constant public VERSION = 1;
 
     /**************************************************
         Chamber State Variables
@@ -144,31 +147,6 @@ contract Chamber is IChamber {
     }
 
     /// @inheritdoc IChamber
-    function approveTx(uint256 _proposalId, uint256 _tokenId) external {
-
-        if(_msgSender() != IERC721_Chamber(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't owner");
-        if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
-        if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID aleready voted");
-
-        bool onVoterList = false;
-        uint proposalsVotersLength = proposals[_proposalId].voters.length;
-        for (uint i = 0; i < proposalsVotersLength; i++) {
-            if (_tokenId == proposals[_proposalId].voters[i]) onVoterList = true;
-        }
-
-        if (!onVoterList) revert invalidApproval("TokenId not on voter list");
-
-        voted[_proposalId][_tokenId] = true;
-        proposals[_proposalId].approvals += 1;
-
-        if (proposals[_proposalId].approvals >= quorum) {
-            _executeProposal(_proposalId);
-        }
-        
-        emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
-    }
-
-    /// @inheritdoc IChamber
     function createTx(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
 
         if(IERC721_Chamber(memberToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
@@ -189,6 +167,32 @@ contract Chamber is IChamber {
         emit ProposalCreated(proposalCount, _target, _value, _data, _voters);
     }
 
+    /// @inheritdoc IChamber
+    function approveTx(uint256 _proposalId, uint256 _tokenId) external {
+
+        if(_msgSender() != IERC721_Chamber(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't owner");
+        if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
+        if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID aleready voted");
+
+        bool onVoterList = false;
+        uint proposalsVotersLength = proposals[_proposalId].voters.length;
+        for (uint i = 0; i < proposalsVotersLength; i++) {
+            if (_tokenId == proposals[_proposalId].voters[i]) onVoterList = true;
+        }
+
+        if (!onVoterList) revert invalidApproval("TokenId not on voter list");
+
+        voted[_proposalId][_tokenId] = true;
+        proposals[_proposalId].approvals += 1;
+
+        emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
+
+        if (proposals[_proposalId].approvals >= quorum) {
+            _executeProposal(_proposalId);
+        }
+        
+    }
+
     /** 
      * @notice _executeProposal function
      * @param  _proposalId The ID of the proposal to execute.
@@ -202,7 +206,7 @@ contract Chamber is IChamber {
         proposals[_proposalId].state = State.Executed;
 
         for (uint256 i = 0; i < proposal.data.length; i++) {
-            (bool success, ) = proposal.target[i].call{value: proposal.value[i]}(proposal.data[i]);
+            (bool success,) = proposal.target[i].call{value: proposal.value[i]}(proposal.data[i]);
             if(!success) revert executionFailed();
         }
 
@@ -210,7 +214,7 @@ contract Chamber is IChamber {
     }
 
     /// @inheritdoc IChamber
-    function stake(uint256 _amt, uint256 _tokenId) public {
+    function stake(uint256 _amt, uint256 _tokenId) public nonReentrant {
 
         if(_amt == 0 && _tokenId == 0) revert invalidStake();
         
@@ -303,7 +307,7 @@ contract Chamber is IChamber {
     }
 
     /// @inheritdoc IChamber
-    function unstake(uint256 _amt, uint256 _tokenId) public {
+    function unstake(uint256 _amt, uint256 _tokenId) public nonReentrant {
         if(_amt == 0 && _tokenId == 0) revert invalidUnStake();
         
         if(accountNftStake[_msgSender()][_tokenId] < _amt) revert invalidUnStake();
@@ -355,9 +359,41 @@ contract Chamber is IChamber {
     }
 
     /// @inheritdoc IChamber
-    function migrate(uint256 _amt, uint256 _fromTokenId, uint256 _toTokenId) external {
+    function migrate(uint256 _amt, uint256 _fromTokenId, uint256 _toTokenId) external nonReentrant {
         unstake(_amt, _fromTokenId);
         stake(_amt, _toTokenId);
+    }
+
+    function changeLeaders(Direction direction, uint8 amount) public returns (bool) {
+        if (_msgSender() != address(this)) revert invalidChangeAmount();
+        if (direction == Direction.plus) {
+            if ((leaders + amount) > 10) revert invalidChangeAmount();
+            leaders += amount;
+            return true;
+        }
+
+        if (direction == Direction.minus) {
+            if ((leaders - amount) < 1) revert invalidChangeAmount();
+            leaders -= amount;
+            return true;
+        }
+        return false;
+    }
+
+    function changeQuorum(Direction direction, uint8 amount) public returns (bool) {
+        if (_msgSender() != address(this)) revert invalidChangeAmount();
+        if (direction == Direction.plus) {
+            if ((quorum + amount) > leaders) revert invalidChangeAmount();
+            quorum += amount;
+            return true;
+        }
+
+        if (direction == Direction.minus) {
+            if ((quorum - amount) < 1) revert invalidChangeAmount();
+            quorum -= amount;
+            return true;
+        }
+        return false;
     }
     
     /**************************************************
@@ -475,7 +511,9 @@ contract Chamber is IChamber {
         return this.onERC1155BatchReceived.selector;
     }
 
-    fallback() external payable { emit ReceivedEther(_msgSender(), msg.value); }
+    fallback() external payable { 
+        if (msg.value > 0) emit ReceivedEther(_msgSender(), msg.value); 
+    }
 
     receive() external payable {}
 

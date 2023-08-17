@@ -6,6 +6,10 @@ interface IChamber {
      /// @notice The State of a proposal
     enum State { Null, Initialized, Executed }
 
+    /// @notice The direction to increment or decrement a value
+    enum Direction { plus, minus }
+
+    /// @notice The structue of a proposal
     struct Proposal {
         address[]   target;
         uint256[]   value;
@@ -30,6 +34,8 @@ interface IChamber {
     error insufficientBalance();
 
     error invalidApproval(string message);
+
+    error invalidChangeAmount();
 
 
     /**************************************************
