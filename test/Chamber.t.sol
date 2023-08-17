@@ -5,11 +5,10 @@ pragma solidity ^0.8.19;
 import "../lib/forge-std/src/Test.sol";
 
 // Loreum core contracts.
-import "../src/Chamber.sol";
-import "../lib/contract-utils/src/MockERC20.sol";
-import "../lib/contract-utils/src/MockNFT.sol";
-
-import "../lib/forge-std/src/console2.sol";
+import { Chamber } from "../src/Chamber.sol";
+import { IChamber } from "../src/IChamber.sol";
+import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
+import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
 
 import { TestUtilities } from "../lib/contract-utils/src/TestUtilities.sol";
 
@@ -22,8 +21,8 @@ contract ChamberTest is Test, TestUtilities {
 
     function setUp() public {
         
-        mERC20 = new MockERC20("Loreum", "LORE", address(this));
-        mNFT = new MockNFT("Loreum Explorers", "LOREUM", address(this));
+        mERC20 = new MockERC20("MockERC20", "mERC20", address(this));
+        mNFT = new MockNFT("MockNFT", "mNFT", address(this));
         chamber = new Chamber(address(mNFT), address(mERC20), 3, 5);
         USD = new MockERC20("US Dollar", "USD", address(chamber));
 
@@ -121,5 +120,59 @@ contract ChamberTest is Test, TestUtilities {
         uint newTotalStakeForNft = chamber.totalStake(6);
         assertEq(newTotalStakeForNft, 0);
         vm.stopPrank();
+    }
+
+    function createChangeProposal(IChamber.Direction dir, uint8 amount, uint8 prop, string memory sig) internal {
+
+        // Create Proposal
+
+        bytes[] memory dataArray = new bytes[](1);
+        address[] memory targetArray = new address[](1);
+        uint256[] memory valueArray = new uint256[](1);
+
+        dataArray[0] = abi.encodeWithSignature(sig, dir, amount);
+
+        targetArray[0] = address(chamber);
+
+        valueArray[0] = 0;
+
+        chamber.createTx(targetArray, valueArray, dataArray);
+
+        // Approve Proposal
+
+        chamber.approveTx(prop, 3);
+        chamber.approveTx(prop, 2);
+        chamber.approveTx(prop, 1);
+    }
+
+    function test_Chamber_changeLeaders () public {
+        stakeExplorers();
+
+        uint8 leaders = chamber.leaders();
+
+        createChangeProposal(IChamber.Direction.plus, 5, 1, "changeLeaders(uint8,uint8)");
+        assertEq(chamber.leaders(), leaders + 5);
+
+        createChangeProposal(IChamber.Direction.minus, 1, 2, "changeLeaders(uint8,uint8)");
+        assertEq(chamber.leaders(), leaders + 4);
+
+        // vm.expectRevert();
+        // createChangeProposal(IChamber.Direction.minus, 9, 3);
+
+    }
+
+    function test_Chamber_changeQuorum () public {
+        stakeExplorers();
+
+        uint8 quorum = chamber.quorum();
+
+        createChangeProposal(IChamber.Direction.plus, 1, 1, "changeQuorum(uint8,uint8)");
+        assertEq(chamber.quorum(), quorum + 1);
+
+        createChangeProposal(IChamber.Direction.plus, 1, 2, "changeQuorum(uint8,uint8)");
+        assertEq(chamber.quorum(), quorum + 1);
+
+        chamber.approveTx(2, 4);
+
     }
 }

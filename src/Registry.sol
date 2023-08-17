@@ -6,7 +6,6 @@ import { IRegistry } from "./IRegistry.sol";
 
 contract Registry is IRegistry {
 
-    Chamber public chamber;
     uint8 public version;
 
     /// @notice Deployed Chambers
@@ -44,6 +43,7 @@ contract Registry is IRegistry {
         uint8 _leaders,
         uint8 _quorum
         ) external returns (address) {
+            Chamber chamber;
             chamber = new Chamber(_govToken, _memberToken, _leaders, _quorum);
             ChamberData memory chamberData = ChamberData({ 
                 chamber: address(chamber), 

@@ -11,7 +11,7 @@ import { IChamber } from "../../src/IChamber.sol";
 import { LoreumNFT } from "../../lib/loreum-nft/src/LoreumNFT.sol";
 import { LoreumToken } from "../../lib/loreum-token/src/LoreumToken.sol";
 
-contract ProposalTest is Test {
+contract RegsitryTest is Test {
 
     LoreumToken LORE;
     LoreumNFT NFT;
