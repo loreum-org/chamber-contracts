@@ -70,7 +70,7 @@ const _abi = [
       {
         indexed: false,
         internalType: "uint256",
-        name: "nftId",
+        name: "tokenId",
         type: "uint256",
       },
       {
@@ -302,7 +302,7 @@ const _abi = [
     stateMutability: "nonpayable",
     type: "function",
   },
-];
+] as const;
 
 export class IChamber__factory {
   static readonly abi = _abi;

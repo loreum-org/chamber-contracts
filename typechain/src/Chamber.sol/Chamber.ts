@@ -32,8 +32,6 @@ export interface ChamberInterface extends utils.Interface {
     "VERSION()": FunctionFragment;
     "accountNftStake(address,uint256)": FunctionFragment;
     "approveTx(uint256,uint256)": FunctionFragment;
-    "changeLeaders(uint8,uint8)": FunctionFragment;
-    "changeQuorum(uint8,uint8)": FunctionFragment;
     "createTx(address[],uint256[],bytes[])": FunctionFragment;
     "getAdjacent(uint256,bool)": FunctionFragment;
     "getData(uint256)": FunctionFragment;
@@ -58,6 +56,7 @@ export interface ChamberInterface extends utils.Interface {
     "quorum()": FunctionFragment;
     "size()": FunctionFragment;
     "stake(uint256,uint256)": FunctionFragment;
+    "supportsInterface(bytes4)": FunctionFragment;
     "totalStake(uint256)": FunctionFragment;
     "unstake(uint256,uint256)": FunctionFragment;
     "viewRankings()": FunctionFragment;
@@ -70,8 +69,6 @@ export interface ChamberInterface extends utils.Interface {
       | "VERSION"
       | "accountNftStake"
       | "approveTx"
-      | "changeLeaders"
-      | "changeQuorum"
       | "createTx"
       | "getAdjacent"
       | "getData"
@@ -96,6 +93,7 @@ export interface ChamberInterface extends utils.Interface {
       | "quorum"
       | "size"
       | "stake"
+      | "supportsInterface"
       | "totalStake"
       | "unstake"
       | "viewRankings"
@@ -110,14 +108,6 @@ export interface ChamberInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "approveTx",
-    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "changeLeaders",
-    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "changeQuorum",
     values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
@@ -227,6 +217,10 @@ export interface ChamberInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
+    functionFragment: "supportsInterface",
+    values: [PromiseOrValue<BytesLike>]
+  ): string;
+  encodeFunctionData(
     functionFragment: "totalStake",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
@@ -253,14 +247,6 @@ export interface ChamberInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "approveTx", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "changeLeaders",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "changeQuorum",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "createTx", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getAdjacent",
@@ -315,6 +301,10 @@ export interface ChamberInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "quorum", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "size", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "stake", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "supportsInterface",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "totalStake", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "unstake", data: BytesLike): Result;
   decodeFunctionResult(
@@ -346,7 +336,7 @@ export interface ChamberInterface extends utils.Interface {
 
 export interface ProposalApprovedEventObject {
   proposalId: BigNumber;
-  nftId: BigNumber;
+  tokenId: BigNumber;
   approvals: BigNumber;
 }
 export type ProposalApprovedEvent = TypedEvent<
@@ -455,18 +445,6 @@ export interface Chamber extends BaseContract {
     approveTx(
       _proposalId: PromiseOrValue<BigNumberish>,
       _tokenId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
-    changeLeaders(
-      direction: PromiseOrValue<BigNumberish>,
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
-    changeQuorum(
-      direction: PromiseOrValue<BigNumberish>,
-      amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -593,6 +571,11 @@ export interface Chamber extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    supportsInterface(
+      interfaceId: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
     totalStake(
       arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
@@ -640,18 +623,6 @@ export interface Chamber extends BaseContract {
   approveTx(
     _proposalId: PromiseOrValue<BigNumberish>,
     _tokenId: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
-  changeLeaders(
-    direction: PromiseOrValue<BigNumberish>,
-    amount: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
-  changeQuorum(
-    direction: PromiseOrValue<BigNumberish>,
-    amount: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -776,6 +747,11 @@ export interface Chamber extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  supportsInterface(
+    interfaceId: PromiseOrValue<BytesLike>,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
   totalStake(
     arg0: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
@@ -825,18 +801,6 @@ export interface Chamber extends BaseContract {
       _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    changeLeaders(
-      direction: PromiseOrValue<BigNumberish>,
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
-
-    changeQuorum(
-      direction: PromiseOrValue<BigNumberish>,
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
 
     createTx(
       _target: PromiseOrValue<string>[],
@@ -959,6 +923,11 @@ export interface Chamber extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    supportsInterface(
+      interfaceId: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
+
     totalStake(
       arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
@@ -998,12 +967,12 @@ export interface Chamber extends BaseContract {
   filters: {
     "ProposalApproved(uint256,uint256,uint256)"(
       proposalId?: null,
-      nftId?: null,
+      tokenId?: null,
       approvals?: null
     ): ProposalApprovedEventFilter;
     ProposalApproved(
       proposalId?: null,
-      nftId?: null,
+      tokenId?: null,
       approvals?: null
     ): ProposalApprovedEventFilter;
 
@@ -1061,18 +1030,6 @@ export interface Chamber extends BaseContract {
     approveTx(
       _proposalId: PromiseOrValue<BigNumberish>,
       _tokenId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
-    changeLeaders(
-      direction: PromiseOrValue<BigNumberish>,
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
-    changeQuorum(
-      direction: PromiseOrValue<BigNumberish>,
-      amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -1191,6 +1148,11 @@ export interface Chamber extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    supportsInterface(
+      interfaceId: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     totalStake(
       arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
@@ -1225,18 +1187,6 @@ export interface Chamber extends BaseContract {
     approveTx(
       _proposalId: PromiseOrValue<BigNumberish>,
       _tokenId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    changeLeaders(
-      direction: PromiseOrValue<BigNumberish>,
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    changeQuorum(
-      direction: PromiseOrValue<BigNumberish>,
-      amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1353,6 +1303,11 @@ export interface Chamber extends BaseContract {
       _amt: PromiseOrValue<BigNumberish>,
       _tokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    supportsInterface(
+      interfaceId: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     totalStake(

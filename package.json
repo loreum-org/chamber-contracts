@@ -1,6 +1,6 @@
 {
   "name": "@loreum/chamber",
-  "version": "beta-0.0.1",
+  "version": "alpha-0.0.1",
   "description": "Loreum Chambers are composable DAO governance contracts for EVMs.",
   "author": "Loreum DAO LLC",
   "license": "MIT",
@@ -36,7 +36,6 @@
     "cycle": "hardhat run --network localhost scripts/cycle.ts",
     "deploy": "npm run deploy:erc721 && npm run deploy:erc20 && npm run deploy:local",
     "deploy:local": "npx hardhat run ./scripts/deploy.ts --network localhost",
-    "deploy:goerli": "npx hardhat run --network goerli scripts/deploy.ts",
     "deploy:mainnet": "npx hardhat run --network mainnet scripts/deploy.ts",
     "deploy:erc721": "npx hardhat run --config ./lib/loreum-nft/hardhat.config.ts ./lib/loreum-nft/scripts/deploy.ts --network localhost",
     "deploy:erc20": "npx hardhat run --config ./lib/loreum-token/hardhat.config.ts ./lib/loreum-token/scripts/deploy.ts --network localhost",
