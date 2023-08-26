@@ -4,4 +4,5 @@
 export * as chamberSol from "./Chamber.sol";
 export { IChamber__factory } from "./IChamber__factory";
 export { IRegistry__factory } from "./IRegistry__factory";
+export { LinkedList__factory } from "./LinkedList__factory";
 export { Registry__factory } from "./Registry__factory";

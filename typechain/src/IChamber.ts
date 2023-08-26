@@ -99,7 +99,7 @@ export interface IChamberInterface extends utils.Interface {
 
 export interface ProposalApprovedEventObject {
   proposalId: BigNumber;
-  nftId: BigNumber;
+  tokenId: BigNumber;
   approvals: BigNumber;
 }
 export type ProposalApprovedEvent = TypedEvent<
@@ -299,12 +299,12 @@ export interface IChamber extends BaseContract {
   filters: {
     "ProposalApproved(uint256,uint256,uint256)"(
       proposalId?: null,
-      nftId?: null,
+      tokenId?: null,
       approvals?: null
     ): ProposalApprovedEventFilter;
     ProposalApproved(
       proposalId?: null,
-      nftId?: null,
+      tokenId?: null,
       approvals?: null
     ): ProposalApprovedEventFilter;
 
