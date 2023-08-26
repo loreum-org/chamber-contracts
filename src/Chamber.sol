@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
-// Loreum Chamber v0.0.1
+// Loreum Chamber v1
 
 pragma solidity 0.8.19;
 
+import { LinkedList } from "./LinkedList.sol";
 import { IChamber } from "./IChamber.sol";
 
-import { SafeERC20 } from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Context } from "openzeppelin-contracts/contracts/utils/Context.sol";
 import { IERC20 } from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
+import { IERC721 } from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
+import { SafeERC20 } from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ERC1155Holder } from "openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import { ERC721Holder } from "openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { ReentrancyGuard } from "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 
-interface IERC721_Chamber {
-    function balanceOf(address owner) external view returns (uint256 balance);
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-}
-
-contract Chamber is IChamber, ReentrancyGuard {
+contract Chamber is IChamber, LinkedList, ReentrancyGuard, Context, ERC721Holder, ERC1155Holder {
 
     uint8 constant public VERSION = 1;
 
@@ -62,28 +62,6 @@ contract Chamber is IChamber, ReentrancyGuard {
     mapping(uint256 => mapping(uint256 => bool)) public voted;
     
     /**************************************************
-        LinkedList State Variables
-     **************************************************/
-
-    /** @notice Head is the first tokenId of the Leaderboard */
-    uint public head;
-    
-    /** @notice Size is the total number of tokenIds on the leaderboard */
-    uint public size;
-
-    /** 
-     * @notice The Leaderboard is a linked list of NFT tokenIds
-     * @dev    1st element -> tokenId, 2nd element -> direction, 3rd element-> tokenId
-     * @dev    direction: False -> previous, True -> next
-     */
-    mapping(uint => mapping(bool => uint)) public list;
-    
-    // LinkedList constants
-    uint internal constant _NULL = 0;
-    bool internal constant _PREV = false;
-    bool internal constant _NEXT = true;
-    
-    /**************************************************
         Constructor
      **************************************************/
 
@@ -105,7 +83,7 @@ contract Chamber is IChamber, ReentrancyGuard {
      **************************************************/
 
     /** 
-     * @notice Returns amount a user has staked against a given NFT ID ("tokenID").
+     * @notice Returns amount a user has staked against a given tokenId.
      * @param _member   The address staking.
      * @param _tokenId  The NFT tokenId a member has staked against.
      */
@@ -134,6 +112,7 @@ contract Chamber is IChamber, ReentrancyGuard {
      */
     function viewRankingsAll() public view returns(uint[] memory _rankings, uint[] memory _stakes) {
         if (size == 0) { return (_rankings, _stakes); }
+        
         (uint tokenId, uint rank) = (head, 0);
         _rankings = new uint256[](size);
         _stakes = new uint256[](size);
@@ -148,13 +127,10 @@ contract Chamber is IChamber, ReentrancyGuard {
 
     /// @inheritdoc IChamber
     function createTx(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
-
-        if(IERC721_Chamber(memberToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
-
+        if(IERC721(memberToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
+        
         proposalCount++;
-
         (uint256[] memory _voters, ) = viewRankings();
-
         proposals[proposalCount] = Proposal({
             target: _target,
             value: _value,
@@ -163,17 +139,15 @@ contract Chamber is IChamber, ReentrancyGuard {
             approvals: 0,
             state: State.Initialized
         });
-
         emit ProposalCreated(proposalCount, _target, _value, _data, _voters);
     }
 
     /// @inheritdoc IChamber
     function approveTx(uint256 _proposalId, uint256 _tokenId) external {
-
-        if(_msgSender() != IERC721_Chamber(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't owner");
+        if(_msgSender() != IERC721(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't owner");
         if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
         if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID aleready voted");
-
+        
         bool onVoterList = false;
         uint proposalsVotersLength = proposals[_proposalId].voters.length;
         for (uint i = 0; i < proposalsVotersLength; i++) {
@@ -184,9 +158,7 @@ contract Chamber is IChamber, ReentrancyGuard {
 
         voted[_proposalId][_tokenId] = true;
         proposals[_proposalId].approvals += 1;
-
         emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
-
         if (proposals[_proposalId].approvals >= quorum) {
             _executeProposal(_proposalId);
         }
@@ -198,18 +170,15 @@ contract Chamber is IChamber, ReentrancyGuard {
      * @param  _proposalId The ID of the proposal to execute.
      */
     function _executeProposal(uint256 _proposalId) private {
-
         if(proposals[_proposalId].state != State.Initialized) revert invalidProposalState();
-
+       
         Proposal memory proposal = proposals[_proposalId];
-
         proposals[_proposalId].state = State.Executed;
-
+        
         for (uint256 i = 0; i < proposal.data.length; i++) {
             (bool success,) = proposal.target[i].call{value: proposal.value[i]}(proposal.data[i]);
             if(!success) revert executionFailed();
         }
-
         emit ProposalExecuted(_proposalId);
     }
 
@@ -221,6 +190,7 @@ contract Chamber is IChamber, ReentrancyGuard {
         totalStake[_tokenId] += _amt;
         accountNftStake[_msgSender()][_tokenId] += _amt;
         _stakeUpdater(_tokenId);
+        
         SafeERC20.safeTransferFrom(IERC20(govToken), _msgSender(), address(this), _amt);
         emit Staked(_msgSender(), _amt, _tokenId);
     }
@@ -301,22 +271,18 @@ contract Chamber is IChamber, ReentrancyGuard {
                 }
             }
         }
-
-        // Final check, if size >= leaders ... pop last element.
-        // if (size > leaders) { emit Checkpoint(13); popBack(); }
     }
 
     /// @inheritdoc IChamber
     function unstake(uint256 _amt, uint256 _tokenId) public nonReentrant {
         if(_amt == 0 && _tokenId == 0) revert invalidUnStake();
-        
         if(accountNftStake[_msgSender()][_tokenId] < _amt) revert invalidUnStake();
         
         totalStake[_tokenId] -= _amt;
         accountNftStake[_msgSender()][_tokenId] -= _amt;
         _unstakeUpdater(_tokenId);
+        
         SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), _amt);
-
         emit Unstaked(_msgSender(), _amt, _tokenId);
     }
 
@@ -364,157 +330,9 @@ contract Chamber is IChamber, ReentrancyGuard {
         stake(_amt, _toTokenId);
     }
 
-    function changeLeaders(Direction direction, uint8 amount) public returns (bool) {
-        if (_msgSender() != address(this)) revert invalidChangeAmount();
-        if (direction == Direction.plus) {
-            if ((leaders + amount) > 10) revert invalidChangeAmount();
-            leaders += amount;
-            return true;
-        }
-
-        if (direction == Direction.minus) {
-            if ((leaders - amount) < 1) revert invalidChangeAmount();
-            leaders -= amount;
-            return true;
-        }
-        return false;
-    }
-
-    function changeQuorum(Direction direction, uint8 amount) public returns (bool) {
-        if (_msgSender() != address(this)) revert invalidChangeAmount();
-        if (direction == Direction.plus) {
-            if ((quorum + amount) > leaders) revert invalidChangeAmount();
-            quorum += amount;
-            return true;
-        }
-
-        if (direction == Direction.minus) {
-            if ((quorum - amount) < 1) revert invalidChangeAmount();
-            quorum -= amount;
-            return true;
-        }
-        return false;
-    }
-    
-    /**************************************************
-        Linked List Functions
-     **************************************************/
-    
-    function isInitialized() public view returns (bool initialized) {
-        return list[head][_PREV] != _NULL || list[head][_NEXT] != _NULL;
-    }
-
-    function inList(uint _tokenId) public view returns (bool exists) {
-        if (list[_tokenId][_PREV] == _NULL && list[_tokenId][_NEXT] == _NULL) {
-            return head == _tokenId;
-            // return list[head][_NEXT] == _tokenId;
-        }
-        else { return true; }
-    }
-    
-    function getData(uint _tokenId) public view returns (bool exists, uint prev, uint next) {
-        return (inList(_tokenId), list[_tokenId][_PREV], list[_tokenId][_PREV]);
-    }
-
-    function getPrev(uint _tokenId) public view returns (bool exists, uint prev) {
-        return (inList(_tokenId), list[_tokenId][_PREV]);
-    }
-
-    function getNext(uint _tokenId) public view returns (bool exists, uint next) {
-        return (inList(_tokenId), list[_tokenId][_NEXT]);
-    }
-
-    function getAdjacent(uint _tokenId, bool direction) public view returns (bool, uint) {
-        return inList(_tokenId) ? (false, 0) : (true, list[_tokenId][direction]);
-    }
-
-    function getNextNode(uint _tokenId) public view returns (bool, uint) {
-        return getAdjacent(_tokenId, _NEXT);
-    }
-
-    function getPreviousNode(uint _tokenId) public view returns (bool, uint) {
-        return getAdjacent(_tokenId, _PREV);
-    }
-    
-    function insertAfter(uint _byTokenId, uint _newTokenId) internal {
-        _insert(_byTokenId, _newTokenId, _NEXT);
-    }
-
-    function _insert(uint _byTokenId, uint _newTokenId, bool _direction) private {
-        if (!inList(_newTokenId) && inList(_byTokenId)) {
-            uint id = list[_byTokenId][_direction];
-            _createLink(_byTokenId, _newTokenId, _direction);
-            _createLink(_newTokenId, id, _direction);
-            size += 1;
-            return;
-        }
-        revert();
-    }
-
-    function _createLink(uint _tokenId, uint _linkTokenId, bool _direction) private {
-        list[_linkTokenId][!_direction] = _tokenId;
-        list[_tokenId][_direction] = _linkTokenId;
-    }
-    
-    function remove(uint _tokenId) internal {
-        if ((_tokenId == _NULL) || (!inList(_tokenId)) && size != 1) {
-            revert();
-        }
-        _createLink(list[_tokenId][_PREV], list[_tokenId][_NEXT], _NEXT);
-        delete list[_tokenId][_PREV];
-        delete list[_tokenId][_NEXT];
-
-        size -= 1;
-    }
-
-    function pushFront(uint _tokenId) internal {
-        _push(_tokenId, _NEXT);
-    }
-
-    function _push(uint _tokenId, bool _direction) private {
-        _insert(head, _tokenId, _direction);
-    }
-    
-    /**************************************************
-        OZ Utilities
-     **************************************************/
-    
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes calldata) {
-        return msg.data;
-    }
-    
-    function onERC721Received(address, address, uint256, bytes memory) public virtual returns (bytes4) {
-        return this.onERC721Received.selector;
-    }
-    
-    function onERC1155Received(
-        address,
-        address,
-        uint256,
-        uint256,
-        bytes memory
-    ) public virtual returns (bytes4) {
-        return this.onERC1155Received.selector;
-    }
-
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] memory,
-        uint256[] memory,
-        bytes memory
-    ) public virtual returns (bytes4) {
-        return this.onERC1155BatchReceived.selector;
-    }
-
     fallback() external payable { 
-        if (msg.value > 0) emit ReceivedEther(_msgSender(), msg.value); 
+        if (msg.value > 0) emit ReceivedEther(_msgSender(), msg.value);
     }
 
     receive() external payable {}
-
 }

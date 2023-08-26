@@ -4,7 +4,6 @@
   "description": "Loreum Chambers are composable DAO governance contracts for EVMs.",
   "author": "Loreum DAO LLC",
   "license": "MIT",
-  "private": false,
   "files": [
     "/abis/*.json",
     "/src/*.sol",

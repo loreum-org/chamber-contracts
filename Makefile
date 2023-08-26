@@ -14,3 +14,7 @@ deploy-sepolia :; forge script script/${contract}.s.sol:Deploy${contract} \
 	--rpc-url ${RPC_URL}  \
 	--private-key ${PRIVATE_KEY} \
 	--broadcast
+
+coverage :; forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage
+
+show-coverage :; npx http-server ./coverage
