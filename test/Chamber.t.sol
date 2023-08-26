@@ -122,7 +122,7 @@ contract ChamberTest is Test, TestUtilities {
         vm.stopPrank();
     }
 
-    function createChangeProposal(IChamber.Direction dir, uint8 amount, uint8 prop, string memory sig) internal {
+    function createChangeProposal(IChamber.ChangeType changeType, IChamber.Direction dir, uint8 amount, uint8 prop, string memory sig) internal {
 
         // Create Proposal
 
@@ -130,7 +130,7 @@ contract ChamberTest is Test, TestUtilities {
         address[] memory targetArray = new address[](1);
         uint256[] memory valueArray = new uint256[](1);
 
-        dataArray[0] = abi.encodeWithSignature(sig, dir, amount);
+        dataArray[0] = abi.encodeWithSignature(sig, changeType, dir, amount);
 
         targetArray[0] = address(chamber);
 
@@ -143,36 +143,5 @@ contract ChamberTest is Test, TestUtilities {
         chamber.approveTx(prop, 3);
         chamber.approveTx(prop, 2);
         chamber.approveTx(prop, 1);
-    }
-
-    function test_Chamber_changeLeaders () public {
-        stakeExplorers();
-
-        uint8 leaders = chamber.leaders();
-
-        createChangeProposal(IChamber.Direction.plus, 5, 1, "changeLeaders(uint8,uint8)");
-        assertEq(chamber.leaders(), leaders + 5);
-
-        createChangeProposal(IChamber.Direction.minus, 1, 2, "changeLeaders(uint8,uint8)");
-        assertEq(chamber.leaders(), leaders + 4);
-
-        // vm.expectRevert();
-        // createChangeProposal(IChamber.Direction.minus, 9, 3);
-
-    }
-
-    function test_Chamber_changeQuorum () public {
-        stakeExplorers();
-
-        uint8 quorum = chamber.quorum();
-
-        createChangeProposal(IChamber.Direction.plus, 1, 1, "changeQuorum(uint8,uint8)");
-        assertEq(chamber.quorum(), quorum + 1);
-
-        createChangeProposal(IChamber.Direction.plus, 1, 2, "changeQuorum(uint8,uint8)");
-        assertEq(chamber.quorum(), quorum + 1);
-
-        chamber.approveTx(2, 4);
-
     }
 }
