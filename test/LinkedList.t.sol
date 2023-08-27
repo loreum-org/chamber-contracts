@@ -8,6 +8,7 @@ import "../lib/forge-std/src/Test.sol";
 import { Chamber } from "../src/Chamber.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
+import { MockList } from "./mocks/MockList.sol";
 
 import { TestUtilities } from "../lib/contract-utils/src/TestUtilities.sol";
 
@@ -16,6 +17,7 @@ contract LinkedListTest is Test, TestUtilities {
     MockERC20 MUSD;
     MockNFT NFT;
     Chamber chamber;
+    MockList mockList;
         
     uint8 leaders = 8;
     uint8 quorum = 5;
@@ -25,10 +27,10 @@ contract LinkedListTest is Test, TestUtilities {
     event Log(uint256[]);
 
     function setUp() public {
-
         NFT = new MockNFT("Mock NFT", "MNFT", address(this));
         MUSD = new MockERC20("Mock Stable Dollar", "MUSD", address(this));
         chamber = new Chamber(address(NFT), address(MUSD), quorum, leaders);
+        mockList = new MockList();
     }
 
     function helperLogger() public {
@@ -176,5 +178,65 @@ contract LinkedListTest is Test, TestUtilities {
         helperLogger();
 
     }
+
+    function test_LinkedList_inList (uint256 amount) public {
+        deal(address(MUSD), address(this), amount);
+        vm.assume(amount > 0);
+        bool resultFalse = chamber.inList(amount);
+        assertFalse(resultFalse);
+
+        MUSD.approve(address(chamber), amount);
+        chamber.stake(amount, 1);
+        bool resultTrue = chamber.inList(1);
+        assertTrue(resultTrue);
+    }
+    
+    function test_LinkedList_getData(uint256 amount) public {
+        (bool exists, uint prev, uint next) = chamber.getData(1);
+        assertFalse(exists);
+        assertTrue(prev == 0 && next == 0);
+    
+        vm.assume(amount > 100);
+
+        deal(address(MUSD), address(this), amount);
+
+        MUSD.approve(address(chamber), amount);
+        chamber.stake(amount / 2, 1);
+        chamber.stake(amount / 3, 2);
+
+        (exists, prev, next) = chamber.getData(1);
+        chamber.viewRankingsAll();
+        assertTrue(exists);
+        assertTrue(prev == 2 && next == 2);
+    }
+
+    function test_LinkedList_getPrev(uint256 amount) public {
+        (bool exists, uint prev) = chamber.getPrev(1);
+        assertFalse(exists);
+        assertTrue(prev == 0);
+    
+        vm.assume(amount > 100);
+
+        deal(address(MUSD), address(this), amount);
+
+        MUSD.approve(address(chamber), amount);
+        chamber.stake(amount / 2, 1);
+        chamber.stake(amount / 3, 2);
+
+        (exists, prev) = chamber.getPrev(1);
+        chamber.viewRankingsAll();
+        assertTrue(exists);
+        assertTrue(prev == 2);
+    }
+
+    function test_LinkedList_insert() public {
+        vm.expectRevert();
+        mockList.insertTest(1, 2);
+    }
+
+    function test_LinkedList_remove() public {
+        vm.expectRevert();
+        mockList.removeTest(1);
+    }  
 
 }

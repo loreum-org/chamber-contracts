@@ -18,3 +18,5 @@ deploy-sepolia :; forge script script/${contract}.s.sol:Deploy${contract} \
 coverage :; forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage
 
 show-coverage :; npx http-server ./coverage
+
+clean :; rm -rf out coverage lcov.info cache artifacts
