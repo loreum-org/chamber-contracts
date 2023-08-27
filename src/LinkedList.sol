@@ -37,7 +37,6 @@ contract LinkedList {
     function inList(uint _tokenId) public view returns (bool exists) {
         if (list[_tokenId][_PREV] == _NULL && list[_tokenId][_NEXT] == _NULL) {
             return head == _tokenId;
-            // return list[head][_NEXT] == _tokenId;
         }
         else { return true; }
     }
@@ -48,22 +47,6 @@ contract LinkedList {
 
     function getPrev(uint _tokenId) public view returns (bool exists, uint prev) {
         return (inList(_tokenId), list[_tokenId][_PREV]);
-    }
-
-    function getNext(uint _tokenId) public view returns (bool exists, uint next) {
-        return (inList(_tokenId), list[_tokenId][_NEXT]);
-    }
-
-    function getAdjacent(uint _tokenId, bool direction) public view returns (bool, uint) {
-        return inList(_tokenId) ? (false, 0) : (true, list[_tokenId][direction]);
-    }
-
-    function getNextNode(uint _tokenId) public view returns (bool, uint) {
-        return getAdjacent(_tokenId, _NEXT);
-    }
-
-    function getPreviousNode(uint _tokenId) public view returns (bool, uint) {
-        return getAdjacent(_tokenId, _PREV);
     }
     
     function insertAfter(uint _byTokenId, uint _newTokenId) internal {

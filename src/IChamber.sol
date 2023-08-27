@@ -6,12 +6,6 @@ interface IChamber {
      /// @notice The State of a proposal
     enum State { Null, Initialized, Executed }
 
-    /// @notice The direction to increment or decrement a value
-    enum Direction { plus, minus }
-
-    /// @notice A swtich type for changing the quorum or leaders values
-    enum ChangeType { quorum, leaders }
-
     /// @notice The structue of a proposal
     struct Proposal {
         address[]   target;
@@ -124,12 +118,4 @@ interface IChamber {
      * @param _tokenId  The ID of the NFT to unstake from
      */ 
     function unstake(uint256 _amt, uint256 _tokenId) external;
-
-    /** 
-     * @notice Migrates a staked amount of "stakingToken" from one NFT ID to another
-     * @param _fromTokenId  The ID of the NFT that tokens are staked currently
-     * @param _amt          The amount of "stakingToken" to migrate
-     * @param _toTokenId    The ID of the NFT that tokens will be migrated to
-     */
-    function migrate(uint256 _amt, uint256 _fromTokenId, uint256 _toTokenId) external;
 }

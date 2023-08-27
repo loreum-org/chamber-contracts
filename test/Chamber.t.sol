@@ -101,6 +101,101 @@ contract ChamberTest is Test, TestUtilities {
         vm.stopPrank();
     }
 
+    function test_Chamber_stakeEnd (
+        uint256 amount1, 
+        uint256 amount2,
+        uint256 amount3,
+        uint256 amount4,
+        uint256 amount5,
+        uint256 amount6,
+        uint256 amount7,
+        uint256 amount8
+        ) public {
+        vm.assume(amount1 > 1000);
+        vm.assume(amount2 > 1000);
+        vm.assume(amount3 > 1000);
+        vm.assume(amount4 > 1000);
+        vm.assume(amount5 > 100);
+        vm.assume(amount6 > 100);
+        vm.assume(amount7 > 100);
+        vm.assume(amount8 > 100);
+        
+        vm.assume(amount1 < 100_000_000_000 ether);
+        vm.assume(amount2 < 100_000_000_000 ether);
+        vm.assume(amount3 < 100_000_000_000 ether);
+        vm.assume(amount4 < 100_000_000_000 ether);
+        
+        deal(address(mERC20), address(this), amount1);
+        mERC20.approve(address(chamber), amount1);
+        chamber.stake(amount1, amount5);
+        chamber.unstake(amount1 / 2, amount5);
+
+        deal(address(mERC20), address(this), amount2);
+        mERC20.approve(address(chamber), amount2);        
+        chamber.stake(amount2, amount6);
+        chamber.unstake(amount2 / 5, amount6);
+        
+        deal(address(mERC20), address(this), amount3);
+        mERC20.approve(address(chamber), amount3);        
+        chamber.stake(amount3, amount7);
+        chamber.unstake(amount3 / 3, amount7);
+        
+        deal(address(mERC20), address(this), amount4);
+        mERC20.approve(address(chamber), amount4);        
+        chamber.stake(amount4 / 4, amount8);
+        chamber.unstake(amount4 / 4, amount8);
+
+        deal(address(mERC20), address(this), amount1 / 4);
+        mERC20.approve(address(chamber), amount1 / 4);        
+        chamber.stake(amount1 / 4, amount5 / 5);
+
+        deal(address(mERC20), address(this), amount2 / 4);
+        mERC20.approve(address(chamber), amount2 / 4);        
+        chamber.stake(amount2 / 4, amount4);
+
+        deal(address(mERC20), address(this), amount2 / 5);
+        mERC20.approve(address(chamber),amount2 / 5);  
+        chamber.stake(amount2 / 5, amount6 / 4);
+
+        deal(address(mERC20), address(this), amount3 / 2);
+        mERC20.approve(address(chamber),amount3 / 2); 
+        chamber.stake(amount3 / 2, amount6 / 3);
+    }
+
+    function test_Chamber_unstakeToZero() public {
+        deal(address(mERC20), address(this), 10_000_000 ether);
+        mERC20.approve(address(chamber), 1_000 ether);
+        chamber.stake(1_000 ether, 1);
+        chamber.unstake(1_000 ether, 1);
+    }
+
+    function test_Chamber_stakeUnchanged() public {
+        deal(address(mERC20), address(this), 1_000 ether);
+        mERC20.approve(address(chamber), 1_000 ether);
+        chamber.stake(6 ether, 1);
+
+        deal(address(mERC20), address(this), 1_000 ether);
+        mERC20.approve(address(chamber), 1_000 ether);
+        chamber.stake(4 ether, 2);
+
+        deal(address(mERC20), address(this), 1_000 ether);
+        mERC20.approve(address(chamber), 1_000 ether);
+        chamber.stake(2 ether, 3);
+
+        chamber.stake(1, 3);
+        chamber.stake(1, 5);
+
+        deal(address(mERC20), address(this), 1_000 ether);
+        mERC20.approve(address(chamber), 1_000 ether);
+        chamber.stake(2 ether, 5);
+
+        chamber.stake(1, 1);
+
+        chamber.stake(1 ether, 2);
+        chamber.stake(1 ether, 7);
+        chamber.viewRankings();
+    }
+
     function test_Chamber_unstake (uint256 amount) public {
         deal(address(mERC20), address(34), amount);
         vm.startPrank(address(34));
@@ -122,26 +217,21 @@ contract ChamberTest is Test, TestUtilities {
         vm.stopPrank();
     }
 
-    function createChangeProposal(IChamber.ChangeType changeType, IChamber.Direction dir, uint8 amount, uint8 prop, string memory sig) internal {
+    function test_Chamber_ethTransfer (uint256 amount) public {
+        vm.assume(amount < 100_000_000 ether);
+        vm.deal(address(this), amount);
+        
+        (bool sent,) = address(chamber).call{value: amount}("");
+        assertTrue(sent);
+        assertEq(address(chamber).balance, amount + 100 ether);
+    }
 
-        // Create Proposal
-
-        bytes[] memory dataArray = new bytes[](1);
-        address[] memory targetArray = new address[](1);
-        uint256[] memory valueArray = new uint256[](1);
-
-        dataArray[0] = abi.encodeWithSignature(sig, changeType, dir, amount);
-
-        targetArray[0] = address(chamber);
-
-        valueArray[0] = 0;
-
-        chamber.createTx(targetArray, valueArray, dataArray);
-
-        // Approve Proposal
-
-        chamber.approveTx(prop, 3);
-        chamber.approveTx(prop, 2);
-        chamber.approveTx(prop, 1);
+    function test_Chamber_fallback (uint256 amount) public {
+        vm.assume(amount < 100_000_000 ether);
+        uint256 bal1 = address(chamber).balance;
+        (bool sent,) = address(chamber).call{value: amount}("sailMaster()");
+        assertTrue(sent);
+        uint256 bal2 = address(chamber).balance;
+        assertEq(bal1, bal2 - amount);
     }
 }

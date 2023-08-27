@@ -324,12 +324,6 @@ contract Chamber is IChamber, LinkedList, ReentrancyGuard, Context, ERC721Holder
         }
     }
 
-    /// @inheritdoc IChamber
-    function migrate(uint256 _amt, uint256 _fromTokenId, uint256 _toTokenId) external nonReentrant {
-        unstake(_amt, _fromTokenId);
-        stake(_amt, _toTokenId);
-    }
-
     fallback() external payable { 
         if (msg.value > 0) emit ReceivedEther(_msgSender(), msg.value);
     }
