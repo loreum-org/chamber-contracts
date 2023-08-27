@@ -2,6 +2,10 @@
 
 <img style="{align: right}" src="https://cdn.loreum.org/logos/white.png"  height="100"/>
 
+![Foundry CI](https://github.com/loreum-org/chamber/actions/workflows/forge.yaml/badge.svg)
+[![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://docs.loreum.org/blog)
+[![License: BUSL 1.1](https://img.shields.io/badge/License-MIT.svg)](https://github.com/loreum-org/chamber/LICENSE)
+
 ## Overview
 The Chamber is a multisig wallet that enables liquid democracy for Treasury and Protocol Management by the token community. Due to their composability, Chambers are a protocol governance standard that enables Role based accounts to be controlled by token holders, rather than a core group of founders. This enables decentralized ownership of DeFi protocols.
 Chambers provide the functionality of a multisig wallet where signers are determined by stake allocation from an ERC20 goverance token.
