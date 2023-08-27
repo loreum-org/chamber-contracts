@@ -3,17 +3,18 @@
 <img style="{align: right}" src="https://cdn.loreum.org/logos/white.png"  height="100"/>
 
 ## Overview
-The Chamber contract is a protocol governance standard that provides the functionality of a multisig wallet with signers determined by stake allocation from an ERC20 goverance token.
+The Chamber is a multisig wallet that enables liquid democracy for Treasury and Protocol Management by the token community. Due to their composability, Chambers are a protocol governance standard that enables Role based accounts to be controlled by token holders, rather than a core group of founders. This enables decentralized ownership of DeFi protocols.
+Chambers provide the functionality of a multisig wallet where signers are determined by stake allocation from an ERC20 goverance token.
 
-The contract inherits existing ERC20 governance and ERC721 membership tokens. Stake allocations are made against the ERC721 token ID which creates a leaderboard within the Chamber contract. The leaders are responsible for signing transactions and being the governors of the multisig.
+The contract inherits upon instantiation existing ERC20 governance and ERC721 membership tokens. Stake allocations are made against the ERC721 token ID which creates a leaderboard within the Chamber contract. The leaders are responsible for signing transactions and being the governors of the multisig. Each leader has a single vote that is not correlated to wallet balance, but rather by stake allocation of ERC20 governace tokens by the community against their NFT TokenId.
 
 ## Use Cases
 
 1. **Treasury Multisig** 
-The primary use-case for a chmaber contract is to be a treasury multisig wallet that governs the assets of a DAO or DeFi protocol.
+The primary use-case for a chmaber contract is to be a treasury multisig wallet that owns the various roles and assets of a DAO or DeFi protocol. It's intended to be a drop-in replaces for the "Gnosis" Safe Multisig wallet.
 
 2. **Defi Composability**
-Chambers are composable and designed to inherit the same governance ERC20 token. This creates utility for the token accross an organically composable organization where sub-entities connect and expand horizonally. The scarcity of ERC20 tokens creates intrinsic token demand. Yield distribution and contract governance is controlled by the leaders of the Chamber.
+Chambers are composable by inheriting any exisitng governance ERC20 token accross a number of Chambers and Sub Chambers. This horizontal and veritical composibility creates utility and intrinsic scarcity of governance tokens.
 
 ```mermaid
   graph TD;
@@ -27,7 +28,7 @@ Chambers are composable and designed to inherit the same governance ERC20 token.
 ```
 
 3. **DAO Governance**
-Chambers may organically form at shelling points within a community and created by anyone. Instantiating a Chamber with like ERC20 and ERC721 tokens as used in common with the community, the value system is shared among Chambers.
+Instantiating a Chambers with the same ERC20 and ERC721 tokens as used in common with the community creates a shared value system as voting power can migrate accross the various Chambers.
 
 ```mermaid
 erDiagram
@@ -45,27 +46,11 @@ erDiagram
     }
 ```
 
-Each Chamber is created with a designated number of leaders and a quorom of approvals required to execute transaction proposals. Based on stake allocations of ERC20 tokens against the ER721 tokenId, a TVL leaderboard is created where the number of leaders become signing authorities. The Chamber leaders have multisig signing authority so long as their stake delegation places their tokenId in the top number of leaders on the leaderboard. This creates a representative board of decision makers based on revocable authority by delegation.
+Each Chamber is created with a designated number of leaders and a quorom. Each leader has a single vote and is represented by an NFT tokenId. If a member of the community removes their stake against a tokenId, that leader may fall-off the leader board and lose their ability to approve transaction proposals. Leaders have multisig signing authority only so long as their stake delegation places their tokenId in the top number of leaders on the leaderboard. This creates a representative board of decision makers based on revocable authority by delegation.
 
 ### Setup
 
-Copy `.example.env` to `.env`
-
 ```
-cp .example.env .env
-```
-
-`yarn` to install npm packages
-
-```
-yarn install
-```
-
-`yarn setup` to clone libs.
-
-```
-yarn setup
-# Or
 git submodule update --init --recursive
 ```
 
@@ -73,22 +58,7 @@ git submodule update --init --recursive
 
 ```
 forge build
-forge test --verbosity -vvv
-```
+forge test
 
-### Hardhat
-
-You'll need to open two terminals.
-
-_Terminal 1_
-
-```
-yarn chain
-```
-
-_Terminal 2_
-
-```
-yarn compile
-yarn deploy:local
+# You know what to do
 ```
