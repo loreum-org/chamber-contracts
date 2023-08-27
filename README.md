@@ -1,13 +1,12 @@
-# Loreum Chambers
+<img style="{align: right}" src="https://cdn.loreum.org/logos/black.png"  height="50"/>
 
-<img style="{align: right}" src="https://cdn.loreum.org/logos/white.png"  height="100"/>
+# Chamber Multisig
 
 ![Foundry CI](https://github.com/loreum-org/chamber/actions/workflows/forge.yaml/badge.svg)
 [![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://docs.loreum.org/blog)
 [![License: BUSL 1.1](https://img.shields.io/badge/License-MIT.svg)](https://github.com/loreum-org/chamber/LICENSE)
 
-## Overview
-The Chamber is a multisig wallet that enables liquid democracy for Treasury and Protocol Management by the token community. Due to their composability, Chambers are a protocol governance standard that enables Role based accounts to be controlled by token holders, rather than a core group of founders. This enables decentralized ownership of DeFi protocols.
+The Chamber is a multisig wallet that enables liquid democracy for Treasury and Protocol Management by the token community. Due to their composability, Chambers are a protocol governance standard that enable Roles to be controlled by token holders through representative leaders, rather than a core group of static founders. This enables decentralized ownership of DeFi protocols.
 Chambers provide the functionality of a multisig wallet where signers are determined by stake allocation from an ERC20 goverance token.
 
 The contract inherits upon instantiation existing ERC20 governance and ERC721 membership tokens. Stake allocations are made against the ERC721 token ID which creates a leaderboard within the Chamber contract. The leaders are responsible for signing transactions and being the governors of the multisig. Each leader has a single vote that is not correlated to wallet balance, but rather by stake allocation of ERC20 governace tokens by the community against their NFT TokenId.
