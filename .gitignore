@@ -20,7 +20,7 @@ coverage.json
 # Hardhat files
 cache
 artifacts
-out
+typechain
 
 # Foundry
 out
