@@ -1,5 +1,6 @@
 
 
+ci-test :; forge test
 
 dev-test :; forge test --verbosity -vvv --watch
 
