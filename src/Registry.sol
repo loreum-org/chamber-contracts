@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import { Chamber } from "./Chamber.sol";
-import { IRegistry } from "./IRegistry.sol";
+import { IRegistry } from "./interfaces/IRegistry.sol";
 
 contract Registry is IRegistry {
 

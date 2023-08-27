@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-// Test (foundry-rs) imports.
 import "../../lib/forge-std/src/Test.sol";
 
-// Loreum core contracts.
 import { Chamber } from "../../src/Chamber.sol";
-import { IChamber } from "../../src/IChamber.sol";
+import { IChamber } from "../../src/interfaces/IChamber.sol";
 
 import { LoreumNFT } from "../../lib/loreum-nft/src/LoreumNFT.sol";
 import { LoreumToken } from "../../lib/loreum-token/src/LoreumToken.sol";
