@@ -4,7 +4,7 @@
 pragma solidity 0.8.19;
 
 import { LinkedList } from "./LinkedList.sol";
-import { IChamber } from "./IChamber.sol";
+import { IChamber } from "./interfaces/IChamber.sol";
 
 import { Context } from "openzeppelin-contracts/contracts/utils/Context.sol";
 import { IERC20 } from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";

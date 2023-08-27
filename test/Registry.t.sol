@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-// Test (foundry-rs) imports.
 import "../lib/forge-std/src/Test.sol";
 
-// Loreum core contracts.
 import { Registry } from "../src/Registry.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
-import { IChamber } from "../src/IChamber.sol";
-import { IRegistry } from "../src/IRegistry.sol";
+import { IChamber } from "../src/interfaces/IChamber.sol";
+import { IRegistry } from "../src/interfaces/IRegistry.sol";
 
 contract RegistryTest is Test {
     MockERC20 mERC20;
