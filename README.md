@@ -13,11 +13,13 @@ The contract inherits upon instantiation existing ERC20 governance and ERC721 me
 
 ## Use Cases
 
-1. **Treasury Multisig** 
-The primary use case for a chamber contract is to be a treasury multisig wallet that owns the various roles and assets of a DAO or DeFi protocol. It's intended to be a drop-in replaces for the "Gnosis" Safe Multisig wallet.
+1. **Treasury Multisig**
+
+The primary use-case for a chmaber contract is to be a treasury multisig wallet that owns the various roles and assets of a DAO or DeFi protocol. It's intended to be a drop-in replacement for the "Gnosis" Safe Multisig wallet.
 
 2. **Defi Composability**
-Chambers are composable by inheriting any existing governance ERC20 token across a number of Chambers and Sub Chambers. This horizontal and vertical composability creates utility and intrinsic scarcity of governance tokens.
+
+Chambers are composable by inheriting any exisitng governance ERC20 token accross a number of Chambers and Sub Chambers. This horizontal and veritical composibility creates utility and intrinsic scarcity of governance tokens.
 
 ```mermaid
   graph TD;
@@ -31,6 +33,7 @@ Chambers are composable by inheriting any existing governance ERC20 token across
 ```
 
 3. **DAO Governance**
+
 Instantiating a Chambers with the same ERC20 and ERC721 tokens as used in common with the community creates a shared value system as voting power can migrate across the various Chambers.
 
 ```mermaid
