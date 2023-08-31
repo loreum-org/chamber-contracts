@@ -33,6 +33,7 @@ Chambers are composable by inheriting any exisitng governance ERC20 token accros
 ```
 
 3. **DAO Governance**
+
 Instantiating a Chambers with the same ERC20 and ERC721 tokens as used in common with the community creates a shared value system as voting power can migrate across the various Chambers.
 
 ```mermaid
