@@ -126,7 +126,7 @@ contract Chamber is IChamber, LinkedList, ReentrancyGuard, Context, ERC721Holder
     }
 
     /// @inheritdoc IChamber
-    function createTx(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
+    function createProposal(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
         if(IERC721(memberToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
         
         proposalCount++;
@@ -143,7 +143,7 @@ contract Chamber is IChamber, LinkedList, ReentrancyGuard, Context, ERC721Holder
     }
 
     /// @inheritdoc IChamber
-    function approveTx(uint256 _proposalId, uint256 _tokenId) external {
+    function approveProposal(uint256 _proposalId, uint256 _tokenId) external {
         if(_msgSender() != IERC721(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't owner");
         if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
         if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID aleready voted");

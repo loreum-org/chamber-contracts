@@ -71,16 +71,16 @@ contract ChamberTest is Test, TestUtilities {
         valueArray[2] = 10 ether;
         valueArray[3] = 5 ether;
 
-        chamber.createTx(targetArray, valueArray, dataArray);
+        chamber.createProposal(targetArray, valueArray, dataArray);
 
         // Approve Proposal
 
-        chamber.approveTx(1, 3);
-        chamber.approveTx(1, 2);
+        chamber.approveProposal(1, 3);
+        chamber.approveProposal(1, 2);
 
         // Execute Proposal
 
-        chamber.approveTx(1, 1);
+        chamber.approveProposal(1, 1);
 
     }
 

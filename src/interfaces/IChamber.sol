@@ -95,7 +95,7 @@ interface IChamber {
      * @param  _proposalId The ID of the proposal to approve
      * @param  _tokenId    The ID of the NFT to vote
      */ 
-    function approveTx(uint256 _proposalId, uint256 _tokenId) external;
+    function approveProposal(uint256 _proposalId, uint256 _tokenId) external;
 
     /** 
      * @notice create Proposal function
@@ -103,7 +103,7 @@ interface IChamber {
      * @param  _value  The uint256 amount of ETH to send with transaction
      * @param  _data   The bytes[] of transaction data
      */
-    function createTx(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external;
+    function createProposal(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external;
 
     /** 
      * @notice Stakes a given amount of "stakingToken" against the provided NFT ID
