@@ -3,7 +3,7 @@ solc_version = "0.8.19"
 
 cache = true
 cache_path = 'cache'
-evm_version = 'london'
+evm_version = 'paris'
 
 libs = ['lib']
 names = false

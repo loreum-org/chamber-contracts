@@ -18,7 +18,7 @@ contract RegistryTest is Test {
     function setUp() public {
         mERC20 = new MockERC20("MockERC20", "mERC20", address(this));
         mNFT = new MockNFT("MockNFT", "mNFT", address(this));
-        registry = new Registry(1);
+        registry = new Registry();
     }
 
     function test_registry_create() public {
