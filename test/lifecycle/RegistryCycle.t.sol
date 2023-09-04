@@ -9,7 +9,7 @@ import { IChamber } from "../../src/interfaces/IChamber.sol";
 import { LoreumNFT } from "../../lib/loreum-nft/src/LoreumNFT.sol";
 import { LoreumToken } from "../../lib/loreum-token/src/LoreumToken.sol";
 
-contract RegsitryTest is Test {
+contract RegistryCycle is Test {
 
     LoreumToken LORE;
     LoreumNFT NFT;

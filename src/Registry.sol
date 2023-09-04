@@ -6,7 +6,7 @@ import { IRegistry } from "./interfaces/IRegistry.sol";
 
 contract Registry is IRegistry {
 
-    uint8 public version;
+    uint8 public version = 1;
 
     /// @notice Deployed Chambers
     mapping(address => ChamberData) public chambers;
@@ -31,10 +31,6 @@ contract Registry is IRegistry {
         uint8 quorum,
         uint8 version
     );
-
-    constructor(uint8 _version) {
-        version = _version;
-    }
 
     /// @inheritdoc IRegistry
     function create(
