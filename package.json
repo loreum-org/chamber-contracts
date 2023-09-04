@@ -1,7 +1,7 @@
 {
   "name": "@loreum/chamber",
-  "version": "0.0.2-alpha",
-  "description": "Loreum Chambers are composable DAO governance contracts for EVMs.",
+  "version": "0.0.4-alpha",
+  "description": "Multisig for decentralized protocols.",
   "author": "Loreum DAO LLC",
   "license": "MIT",
   "files": [
