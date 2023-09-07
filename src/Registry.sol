@@ -8,6 +8,9 @@ contract Registry is IRegistry {
 
     uint8 public version = 1;
 
+    /// @notice Total number of Chambers
+    uint256 public totalChambers;
+
     /// @notice Deployed Chambers
     mapping(address => ChamberData) public chambers;
 
@@ -50,6 +53,7 @@ contract Registry is IRegistry {
         
         chambers[address(chamber)] = chamberData;
         deployers[msg.sender].push(chamberData);
+        totalChambers++;
         
         emit ChamberCreated(address(chamber), msg.sender, _govToken, _memberToken, _leaders, _quorum, version);
         return address(chamber);

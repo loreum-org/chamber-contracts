@@ -1,6 +1,6 @@
 {
   "name": "@loreum/chamber",
-  "version": "0.0.4-alpha",
+  "version": "0.0.5-alpha",
   "description": "Multisig for decentralized protocols.",
   "author": "Loreum DAO LLC",
   "license": "MIT",
