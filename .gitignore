@@ -5,11 +5,6 @@
 /broadcast/*
 /broadcast/*/31337/
 
-# node
-node_modules
-package-lock.json
-yarn.lock
-
 .env
 .env*
 !.env.template
@@ -17,15 +12,11 @@ coverage
 coverage.json
 .DS_Store
 
-# Hardhat files
-cache
-artifacts
-typechain
-
 # Foundry
 out
 lcov.info
 report
+cache
 
 # Others 
 #lib
