@@ -11,7 +11,7 @@ deploy-anvil :; forge script script/${contract}.s.sol:Deploy${contract} \
 	--private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
 	--broadcast
 
-deploy-sepolia :; forge script script/${contract}.s.sol:Deploy${contract} \
+deploy :; forge script script/${contract}.s.sol:Deploy${contract} \
 	--rpc-url ${RPC_URL}  \
 	--private-key ${PRIVATE_KEY} \
 	--broadcast
