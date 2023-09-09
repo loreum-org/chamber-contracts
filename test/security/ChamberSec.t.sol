@@ -52,33 +52,33 @@ contract ChamberSecTest is Test {
 
     }
 
-    // Test if a wallet can withdraw all stake against a leader
-    // by staking against another leader and unstake against victim leader
-    function test_Chamber_sec_stakeTheft() public {
+    // Test if a wallet can demote a leader
+    // by promoteing another leader and demote victim leader
+    function test_Chamber_sec_demotionTheft() public {
 
         vm.startPrank(bones);
         deal(address(LORE), bones, 1_000_000);
         LORE.approve(address(chamber), 1_000_000);
 
-        // stake against tokenId 1
-        chamber.stake(5, 1);
+        // promote tokenId 1
+        chamber.promote(5, 1);
 
-        // stake against another token to increase total amount staked
-        chamber.stake(7, 10);
+        // promote another fnt to increase total amount delegated
+        chamber.promote(7, 10);
 
         vm.stopPrank();
 
-        // another users stakes against tokenId 1
+        // another user promotes tokenId 1
         vm.startPrank(hurricane);
         deal(address(LORE), hurricane, 1_000_000);
         LORE.approve(address(chamber), 1_000_000);
-        chamber.stake(7, 1);
+        chamber.promote(7, 1);
         vm.stopPrank();
 
-        // can bones unstake all the amount staked against tokenId 1?
+        // can bones demote tokenId 1?
         vm.startPrank(bones);
-        vm.expectRevert(0x66efb9e7);
-        chamber.unstake(12, 1);
+        vm.expectRevert();
+        chamber.demote(12, 1);
         vm.stopPrank();
     }
 }

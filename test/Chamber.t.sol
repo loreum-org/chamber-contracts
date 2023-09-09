@@ -28,25 +28,25 @@ contract ChamberTest is Test, TestUtilities {
 
     }
 
-    function stakeExplorers() public {
+    function promoteExplorers() public {
         
         // Approve Chamber for large amount of LORE
         mERC20.approve(address(chamber), 10_000_000_000 ether);
 
-        chamber.stake(100_000 ether, 1);
-        chamber.stake(120_000 ether, 2);
-        chamber.stake(50_000 ether, 3);
-        chamber.stake(250_000 ether, 4);
-        chamber.stake(70_000 ether, 5);
+        chamber.promote(100_000 ether, 1);
+        chamber.promote(120_000 ether, 2);
+        chamber.promote(50_000 ether, 3);
+        chamber.promote(250_000 ether, 4);
+        chamber.promote(70_000 ether, 5);
 
-        (uint8[5] memory ranksTop, uint256[5] memory stakesTop) = chamber.getLeaderboard();
-        (ranksTop, stakesTop);
+        (uint8[5] memory leaders, uint256[5] memory delegations) = chamber.getLeaderboard();
+        (leaders, delegations);
 
     }
 
     function test_Chamber_proposal() public {
 
-        stakeExplorers();
+        promoteExplorers();
 
         // Create Proposal
 
@@ -84,76 +84,76 @@ contract ChamberTest is Test, TestUtilities {
         chamber.getLeaderboard();
     }
 
-    function test_Chamber_stake (uint256 amount) public {
+    function test_Chamber_promote (uint256 amount) public {
         deal(address(mERC20), address(33), amount);
         vm.startPrank(address(33));
         mERC20.approve(address(chamber), amount);
-        chamber.stake(amount, 5);
+        chamber.promote(amount, 5);
 
-        uint256 stakeBalance = chamber.accountNftStake(address(33), 5);
-        assertEq(stakeBalance, amount);
+        uint256 balance = chamber.accountDelegation(address(33), 5);
+        assertEq(balance, amount);
 
-        uint256 totalStakeForNft = chamber.totalStake(5);
-        assertEq(totalStakeForNft, amount);
+        uint256 totalDelegation = chamber.totalDelegation(5);
+        assertEq(totalDelegation, amount);
 
         vm.stopPrank();
         chamber.getLeaderboard();
 
     }
 
-    function test_Chamber_unstakeToZero() public {
+    function test_Chamber_demoteToZero() public {
         deal(address(mERC20), address(this), 10_000_000 ether);
         mERC20.approve(address(chamber), 1_000 ether);
-        chamber.stake(1_000 ether, 1);
-        chamber.unstake(1_000 ether, 1);
+        chamber.promote(1_000 ether, 1);
+        chamber.demote(1_000 ether, 1);
         chamber.getLeaderboard();
     }
 
-    function test_Chamber_stakeUnchanged() public {
+    function test_Chamber_delegationUnchanged() public {
         deal(address(mERC20), address(this), 1_000 ether);
         mERC20.approve(address(chamber), 1_000 ether);
-        chamber.stake(6 ether, 1);
-
-        deal(address(mERC20), address(this), 1_000 ether);
-        mERC20.approve(address(chamber), 1_000 ether);
-        chamber.stake(4 ether, 2);
+        chamber.promote(6 ether, 1);
 
         deal(address(mERC20), address(this), 1_000 ether);
         mERC20.approve(address(chamber), 1_000 ether);
-        chamber.stake(2 ether, 3);
-
-        chamber.stake(1, 3);
-        chamber.stake(1, 5);
+        chamber.promote(4 ether, 2);
 
         deal(address(mERC20), address(this), 1_000 ether);
         mERC20.approve(address(chamber), 1_000 ether);
-        chamber.stake(2 ether, 5);
+        chamber.promote(2 ether, 3);
 
-        chamber.stake(1, 1);
+        chamber.promote(1, 3);
+        chamber.promote(1, 5);
 
-        chamber.stake(1 ether, 2);
-        chamber.stake(1 ether, 7);
+        deal(address(mERC20), address(this), 1_000 ether);
+        mERC20.approve(address(chamber), 1_000 ether);
+        chamber.promote(2 ether, 5);
+
+        chamber.promote(1, 1);
+
+        chamber.promote(1 ether, 2);
+        chamber.promote(1 ether, 7);
         chamber.getLeaderboard();
     }
 
-    function test_Chamber_unstake (uint256 amount) public {
+    function test_Chamber_demote (uint256 amount) public {
         deal(address(mERC20), address(34), amount);
         vm.startPrank(address(34));
         mERC20.approve(address(chamber), amount);
-        chamber.stake(amount, 6);
+        chamber.promote(amount, 6);
 
-        uint256 stakeBalance = chamber.accountNftStake(address(34), 6);
-        assertEq(stakeBalance, amount);
+        uint256 balance = chamber.accountDelegation(address(34), 6);
+        assertEq(balance, amount);
 
-        uint256 totalStakeForNft = chamber.totalStake(6);
-        assertEq(totalStakeForNft, amount);
+        uint256 totalDelegation = chamber.totalDelegation(6);
+        assertEq(totalDelegation, amount);
 
-        chamber.unstake(amount, 6);
-        uint256 newStakeBalance = chamber.accountNftStake(address(34), 6);
-        assertEq(newStakeBalance, 0);
+        chamber.demote(amount, 6);
+        uint256 newBalance = chamber.accountDelegation(address(34), 6);
+        assertEq(newBalance, 0);
         
-        uint newTotalStakeForNft = chamber.totalStake(6);
-        assertEq(newTotalStakeForNft, 0);
+        uint newTotalDelegation = chamber.totalDelegation(6);
+        assertEq(newTotalDelegation, 0);
         vm.stopPrank();
         chamber.getLeaderboard();
     }

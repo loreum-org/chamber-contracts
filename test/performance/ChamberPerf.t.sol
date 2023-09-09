@@ -51,19 +51,19 @@ contract ChamberPerfTest is Test {
 
     }
 
-    // Test the performance of the stake function
-    function test_Chamber_perf_stake_one(uint8 tokenId, uint256 amount) public {
+    // Test the performance of the promote function
+    function test_Chamber_perf_promote_one(uint8 tokenId, uint256 amount) public {
 
         vm.assume(amount > 0);
         vm.assume(tokenId > 0);
         vm.startPrank(bones);
         deal(address(LORE), bones, amount);
         LORE.approve(address(chamber), amount);
-        chamber.stake(amount, tokenId);
+        chamber.promote(amount, tokenId);
     }
 
-    // Test the performance of the stake function with 10000 calls
-    function test_Chamber_perf_stake_many(uint256 amount) public {
+    // Test the performance of the promote function with 10000 calls
+    function test_Chamber_perf_promote_many(uint256 amount) public {
 
         vm.assume(amount > 0);
 
@@ -72,7 +72,7 @@ contract ChamberPerfTest is Test {
             vm.startPrank(bones);
             deal(address(LORE), bones, amount);
             LORE.approve(address(chamber), amount);
-            chamber.stake(amount, i);
+            chamber.promote(amount, i);
         }
     }
 
