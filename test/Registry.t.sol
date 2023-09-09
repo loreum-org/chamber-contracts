@@ -22,7 +22,7 @@ contract RegistryTest is Test {
     }
 
     function test_registry_create() public {
-        chamber = registry.create(address(mERC20), address(mNFT), 10, 5);
+        chamber = registry.create(address(mERC20), address(mNFT));
 
         (address _chamber, address _gov, address _member, uint16 version) = registry.chambers(chamber);
         assertEq(_chamber, address(chamber));

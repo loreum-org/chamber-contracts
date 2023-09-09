@@ -38,7 +38,7 @@ contract ChamberPerfTest is Test {
             address(100)
         );
 
-        chamber = new Chamber(address(Explorers), address(LORE), 3, 20);
+        chamber = new Chamber(address(Explorers), address(LORE));
         USD = new MockERC20("US Dollar", "USD", address(chamber));
 
         vm.label(bones, "Bones");
@@ -52,7 +52,7 @@ contract ChamberPerfTest is Test {
     }
 
     // Test the performance of the stake function
-    function test_Chamber_perf_stake_one(uint256 tokenId, uint256 amount) public {
+    function test_Chamber_perf_stake_one(uint8 tokenId, uint256 amount) public {
 
         vm.assume(amount > 0);
         vm.assume(tokenId > 0);
@@ -67,8 +67,8 @@ contract ChamberPerfTest is Test {
 
         vm.assume(amount > 0);
 
-        uint runs = 50;
-        for (uint i = 1; i <= runs; i++) {
+        uint8 runs = 50;
+        for (uint8 i = 1; i <= runs; i++) {
             vm.startPrank(bones);
             deal(address(LORE), bones, amount);
             LORE.approve(address(chamber), amount);

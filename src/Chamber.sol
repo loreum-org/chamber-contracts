@@ -28,7 +28,7 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
     address public immutable govToken;
 
     /// @notice The leaderboard
-    uint8[9] public leaderboard;
+    uint8[5] public leaderboard;
 
     /**
      * @notice Tracks the amount of "govToken" staked for a given NFT ID.
@@ -79,8 +79,17 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
      * @param _member   The address staking.
      * @param _tokenId  The NFT tokenId a member has staked against.
      */
-    function getUserStakeIndividualNFT(address _member, uint8 _tokenId) external view returns (uint256) {
+    function getUserStake(address _member, uint8 _tokenId) external view returns (uint256) {
         return accountNftStake[_member][_tokenId];
+    }
+
+    function getLeaderboard() external view returns (uint8[5] memory, uint256[5] memory) {
+        uint8[5] memory _leaderboard = leaderboard;
+        uint256[5] memory _stakes;
+        for (uint8 i = 0; i < 5; i++) {
+            _stakes[i] = totalStake[_leaderboard[i]];
+        }
+        return (_leaderboard, _stakes);
     }
 
     /// @inheritdoc IChamber
@@ -105,8 +114,9 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
         if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
         if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID aleready voted");
         
-        uint8[9] memory voters = proposals[_proposalId].voters;
+        uint8[5] memory voters = proposals[_proposalId].voters;
         bool onVoterList = false;
+
         for (uint i = 0; i < voters.length; i++) {
             if (_tokenId == voters[i]) onVoterList = true;
         }
@@ -116,7 +126,7 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
         voted[_proposalId][_tokenId] = true;
         proposals[_proposalId].approvals += 1;
         emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
-        if (quorum(proposals[_proposalId].approvals)) {
+        if (proposals[_proposalId].approvals == 3) {
             _executeProposal(_proposalId);
         }
     }
@@ -150,22 +160,19 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
         emit Staked(_msgSender(), _amt, _tokenId);
     }
 
+    /// @notice Updates the leaderboard
     function _updateLeaderboard (uint8 _tokenId) private {
-        uint8[9] memory _leaderboard = leaderboard;
-
-        for (uint i = 0; i < 8; i++) {
-            if (totalStake[_tokenId] > totalStake[_leaderboard[i]]) {
-                uint8[9] memory _newLeaderboard;
-                for (uint j = 0; j < 8; j++) {
-                    if (totalStake[_leaderboard[j]] == totalStake[_leaderboard[i]]) {
-                        _newLeaderboard[j] = _tokenId;
-                    } else if (totalStake[_leaderboard[j]] < totalStake[_leaderboard[i]]) {
-                        _newLeaderboard[j] = _leaderboard[j];
-                    } else {
-                        _newLeaderboard[j] = _leaderboard[j - 1];
-                    }
+        for (uint8 i = 0; i < 5; i++) {
+            if (leaderboard[i] == _tokenId) break;
+            if (totalStake[_tokenId] > totalStake[leaderboard[i]]) {
+                uint8 temp = leaderboard[i];
+                leaderboard[i] = _tokenId;
+                for (uint8 j = i; j < 5; j++) {
+                    if (j == 4) break;
+                    uint8 temp2 = leaderboard[j + 1];
+                    leaderboard[j + 1] = temp;
+                    temp = temp2;
                 }
-                leaderboard = _newLeaderboard;
                 break;
             }
         }
@@ -182,11 +189,6 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
         
         SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), _amt);
         emit Unstaked(_msgSender(), _amt, _tokenId);
-    }
-
-    function quorum(uint8 _votes) public view returns(bool) {
-        // return true if the number of proposals is greater then 50% of the length of the leaderboard
-        return _votes > uint8(leaderboard.length / 2);
     }
 
     fallback() external payable { 

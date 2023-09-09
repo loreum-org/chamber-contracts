@@ -11,7 +11,7 @@ import { MockNFT } from "../../lib/contract-utils/src/MockNFT.sol";
 import { LoreumNFT } from "../../lib/loreum-nft/src/LoreumNFT.sol";
 import { LoreumToken } from "../../lib/loreum-token/src/LoreumToken.sol";
 
-contract ProposalTest is Test {
+contract ProposalCycleTest is Test {
 
     MockERC20 USD;
     LoreumToken LORE;
@@ -40,7 +40,7 @@ contract ProposalTest is Test {
             address(100)
         );
 
-        chamber = new Chamber(address(Explorers), address(LORE), 3, 5);
+        chamber = new Chamber(address(Explorers), address(LORE));
         USD = new MockERC20("US Dollar", "USD", address(chamber));
 
         vm.deal(address(chamber), 100 ether);
@@ -54,16 +54,12 @@ contract ProposalTest is Test {
 
     }
 
-    event Log(uint256[]);
+    event Log(uint8[5], uint256[5]);
 
     function helperLogger() public {
         // for logging out the leaderboard
-        (uint[] memory ranksTop, uint[] memory stakesTop) = chamber.viewRankings();
-        (uint[] memory ranksAll, uint[] memory stakesAll) = chamber.viewRankingsAll();
-        emit Log(ranksTop);
-        emit Log(stakesTop);
-        emit Log(ranksAll);
-        emit Log(stakesAll);
+        (uint8[5] memory ranksTop, uint256[5] memory stakesTop) = chamber.viewRankings();
+        emit Log(ranksTop, stakesTop);
     }
 
     // helper to Mint tokenIds to each Lorian and stake LORE amounts to Chamber
@@ -85,7 +81,7 @@ contract ProposalTest is Test {
         helperLogger();
     }
 
-    function test_chamber_LORE () public {
+    function test_ProposalCycle_LORE () public {
 
         chamberSetup();
 
@@ -135,7 +131,7 @@ contract ProposalTest is Test {
         uint256 votes;
         Chamber.State state;
         
-        vm.startPrank(bones);
+
         // Create a new proposal for minting LORE to Lorains
         bytes[] memory dataArray = new bytes[](7);
         address[] memory targetArray = new address[](7);
@@ -167,6 +163,7 @@ contract ProposalTest is Test {
         valueArray[5] = 0;
         valueArray[6] = 0;
 
+        vm.startPrank(bones);
         chamber.createProposal(targetArray, valueArray, dataArray);
         assertEq(chamber.proposalCount(), 2);
         (votes, state) = chamber.proposals(2);
@@ -174,8 +171,10 @@ contract ProposalTest is Test {
         assertTrue(state == IChamber.State.Initialized);
 
         // 4. nft holder should not be able to approve if not a leader
+        chamber.viewRankings();
+        vm.startPrank(blackbeard);
         vm.expectRevert();
-        chamber.approveProposal(1, 1);
+        chamber.approveProposal(1, 7);
         vm.stopPrank();
         
         // 5. Leaders should be able to approve transaction
@@ -185,15 +184,15 @@ contract ProposalTest is Test {
         assertEq(votes, 1);
         assertTrue(state == IChamber.State.Initialized);
 
-        vm.prank(shifty);
-        chamber.approveProposal(2, 6);
+        vm.prank(bones);
+        chamber.approveProposal(2, 1);
         (votes, state) = chamber.proposals(2);
         assertEq(votes, 2);
         assertTrue(state == IChamber.State.Initialized);
         
         // 6. Quorum of leaders should execute proposal
-        vm.prank(blackbeard);
-        chamber.approveProposal(2, 7);
+        vm.prank(hurricane);
+        chamber.approveProposal(2, 3);
         (votes, state) = chamber.proposals(2);
         assertEq(votes, 3);
         assertTrue(state == IChamber.State.Executed);
@@ -208,11 +207,7 @@ contract ProposalTest is Test {
         // stake more LORE to chamber
         LORE.approve(address(chamber), 10000 ether);
         chamber.stake(10000 ether, 1);
-        assertEq(chamber.getUserStakeIndividualNFT(bones, 1), 43333 ether);
-
-        vm.expectRevert();
-        chamber.approveProposal(1, 1);
-        vm.stopPrank();
+        assertEq(chamber.getUserStake(bones, 1), 43333 ether);
 
         // 8. nft holder that unstaked erc20 should be able to approve
         vm.startPrank(jack);

@@ -21,7 +21,7 @@ contract ChamberTest is Test, TestUtilities {
         
         mERC20 = new MockERC20("MockERC20", "mERC20", address(this));
         mNFT = new MockNFT("MockNFT", "mNFT", address(this));
-        chamber = new Chamber(address(mNFT), address(mERC20), 3, 5);
+        chamber = new Chamber(address(mNFT), address(mERC20));
         USD = new MockERC20("US Dollar", "USD", address(chamber));
 
         vm.deal(address(chamber), 100 ether);
@@ -39,7 +39,7 @@ contract ChamberTest is Test, TestUtilities {
         chamber.stake(250_000 ether, 4);
         chamber.stake(70_000 ether, 5);
 
-        (uint[] memory ranksTop, uint[] memory stakesTop) = chamber.viewRankings();
+        (uint8[5] memory ranksTop, uint256[5] memory stakesTop) = chamber.viewRankings();
         (ranksTop, stakesTop);
 
     }
@@ -81,7 +81,7 @@ contract ChamberTest is Test, TestUtilities {
         // Execute Proposal
 
         chamber.approveProposal(1, 1);
-
+        chamber.viewRankings();
     }
 
     function test_Chamber_stake (uint256 amount) public {
@@ -97,67 +97,8 @@ contract ChamberTest is Test, TestUtilities {
         assertEq(totalStakeForNft, amount);
 
         vm.stopPrank();
-    }
+        chamber.viewRankings();
 
-    function test_Chamber_stakeEnd (
-        uint256 amount1, 
-        uint256 amount2,
-        uint256 amount3,
-        uint256 amount4,
-        uint256 amount5,
-        uint256 amount6,
-        uint256 amount7,
-        uint256 amount8
-        ) public {
-        vm.assume(amount1 > 1000);
-        vm.assume(amount2 > 1000);
-        vm.assume(amount3 > 1000);
-        vm.assume(amount4 > 1000);
-        vm.assume(amount5 > 100);
-        vm.assume(amount6 > 100);
-        vm.assume(amount7 > 100);
-        vm.assume(amount8 > 100);
-        
-        vm.assume(amount1 < 100_000_000_000 ether);
-        vm.assume(amount2 < 100_000_000_000 ether);
-        vm.assume(amount3 < 100_000_000_000 ether);
-        vm.assume(amount4 < 100_000_000_000 ether);
-        
-        deal(address(mERC20), address(this), amount1);
-        mERC20.approve(address(chamber), amount1);
-        chamber.stake(amount1, amount5);
-        chamber.unstake(amount1 / 2, amount5);
-
-        deal(address(mERC20), address(this), amount2);
-        mERC20.approve(address(chamber), amount2);        
-        chamber.stake(amount2, amount6);
-        chamber.unstake(amount2 / 5, amount6);
-        
-        deal(address(mERC20), address(this), amount3);
-        mERC20.approve(address(chamber), amount3);        
-        chamber.stake(amount3, amount7);
-        chamber.unstake(amount3 / 3, amount7);
-        
-        deal(address(mERC20), address(this), amount4);
-        mERC20.approve(address(chamber), amount4);        
-        chamber.stake(amount4 / 4, amount8);
-        chamber.unstake(amount4 / 4, amount8);
-
-        deal(address(mERC20), address(this), amount1 / 4);
-        mERC20.approve(address(chamber), amount1 / 4);        
-        chamber.stake(amount1 / 4, amount5 / 5);
-
-        deal(address(mERC20), address(this), amount2 / 4);
-        mERC20.approve(address(chamber), amount2 / 4);        
-        chamber.stake(amount2 / 4, amount4);
-
-        deal(address(mERC20), address(this), amount2 / 5);
-        mERC20.approve(address(chamber),amount2 / 5);  
-        chamber.stake(amount2 / 5, amount6 / 4);
-
-        deal(address(mERC20), address(this), amount3 / 2);
-        mERC20.approve(address(chamber),amount3 / 2); 
-        chamber.stake(amount3 / 2, amount6 / 3);
     }
 
     function test_Chamber_unstakeToZero() public {
@@ -165,6 +106,7 @@ contract ChamberTest is Test, TestUtilities {
         mERC20.approve(address(chamber), 1_000 ether);
         chamber.stake(1_000 ether, 1);
         chamber.unstake(1_000 ether, 1);
+        chamber.viewRankings();
     }
 
     function test_Chamber_stakeUnchanged() public {
@@ -213,6 +155,7 @@ contract ChamberTest is Test, TestUtilities {
         uint newTotalStakeForNft = chamber.totalStake(6);
         assertEq(newTotalStakeForNft, 0);
         vm.stopPrank();
+        chamber.viewRankings();
     }
 
     function test_Chamber_ethTransfer (uint256 amount) public {

@@ -11,7 +11,7 @@ interface IChamber {
         address[]   target;
         uint256[]   value;
         bytes[]     data;
-        uint8[9]     voters;
+        uint8[5]     voters;
         uint8     approvals;
         State       state;
     }
@@ -71,7 +71,7 @@ interface IChamber {
      * @param data          The array of data payloads associated with each target
      * @param voters   The array of voters associated with each target
      */
-    event ProposalCreated(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint8[9] voters);
+    event ProposalCreated(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint8[5] voters);
 
     /**
      * @notice Emitted when a proposal is executed
