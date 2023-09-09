@@ -39,7 +39,7 @@ contract ChamberTest is Test, TestUtilities {
         chamber.stake(250_000 ether, 4);
         chamber.stake(70_000 ether, 5);
 
-        (uint8[5] memory ranksTop, uint256[5] memory stakesTop) = chamber.viewRankings();
+        (uint8[5] memory ranksTop, uint256[5] memory stakesTop) = chamber.getLeaderboard();
         (ranksTop, stakesTop);
 
     }
@@ -81,7 +81,7 @@ contract ChamberTest is Test, TestUtilities {
         // Execute Proposal
 
         chamber.approveProposal(1, 1);
-        chamber.viewRankings();
+        chamber.getLeaderboard();
     }
 
     function test_Chamber_stake (uint256 amount) public {
@@ -97,7 +97,7 @@ contract ChamberTest is Test, TestUtilities {
         assertEq(totalStakeForNft, amount);
 
         vm.stopPrank();
-        chamber.viewRankings();
+        chamber.getLeaderboard();
 
     }
 
@@ -106,7 +106,7 @@ contract ChamberTest is Test, TestUtilities {
         mERC20.approve(address(chamber), 1_000 ether);
         chamber.stake(1_000 ether, 1);
         chamber.unstake(1_000 ether, 1);
-        chamber.viewRankings();
+        chamber.getLeaderboard();
     }
 
     function test_Chamber_stakeUnchanged() public {
@@ -133,7 +133,7 @@ contract ChamberTest is Test, TestUtilities {
 
         chamber.stake(1 ether, 2);
         chamber.stake(1 ether, 7);
-        chamber.viewRankings();
+        chamber.getLeaderboard();
     }
 
     function test_Chamber_unstake (uint256 amount) public {
@@ -155,7 +155,7 @@ contract ChamberTest is Test, TestUtilities {
         uint newTotalStakeForNft = chamber.totalStake(6);
         assertEq(newTotalStakeForNft, 0);
         vm.stopPrank();
-        chamber.viewRankings();
+        chamber.getLeaderboard();
     }
 
     function test_Chamber_ethTransfer (uint256 amount) public {
