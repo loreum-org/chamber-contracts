@@ -58,7 +58,7 @@ contract ProposalCycleTest is Test {
 
     function helperLogger() public {
         // for logging out the leaderboard
-        (uint8[5] memory ranksTop, uint256[5] memory stakesTop) = chamber.viewRankings();
+        (uint8[5] memory ranksTop, uint256[5] memory stakesTop) = chamber.getLeaderboard();
         emit Log(ranksTop, stakesTop);
     }
 
@@ -171,7 +171,7 @@ contract ProposalCycleTest is Test {
         assertTrue(state == IChamber.State.Initialized);
 
         // 4. nft holder should not be able to approve if not a leader
-        chamber.viewRankings();
+        chamber.getLeaderboard();
         vm.startPrank(blackbeard);
         vm.expectRevert();
         chamber.approveProposal(1, 7);
