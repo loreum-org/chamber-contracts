@@ -21,7 +21,7 @@ contract ChamberPerfTest is Test {
     address jack = address(4);
     address danny = address(5);
     address shifty = address(6);
-    address blackbeard = address(7); 
+    address blackbeard = address(7);
 
     address[7] lorians = [bones,coconut,hurricane,jack,danny,shifty,blackbeard];
 
