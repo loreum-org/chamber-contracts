@@ -71,13 +71,9 @@ forge test
 
 ### Deployments
 
-**Tenderly**
-
-Registry: `0x69e41faF363A6Be4Cde76268315F48Ef0034C8b8`
-
 **Sepolia**
 
-Registry: `0x3DE26F56E26A6b115681C039E851Bd9cb8F1063D`
+Registry: `0x5f4D5Eb931d5e65a1E6A1264bBD9ea3FCeefA693`
 
 LoreToken: `0x831Ae6cd498342A7aCf3F1067f7E46F9E69a0001`
 
