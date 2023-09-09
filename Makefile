@@ -11,13 +11,26 @@ deploy-anvil :; forge script script/${contract}.s.sol:Deploy${contract} \
 	--private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
 	--broadcast
 
-deploy :; export $(xargs < .env) && forge script script/${contract}.s.sol:Deploy${contract} \
-	--rpc-url ${RPC_URL}  \
-	--private-key ${PRIVATE_KEY} \
-	--broadcast
+deploy :; forge script script/${contract}.s.sol:Deploy${contract} \
+	--chain-id ${chain} \
+	--rpc-url ${rpc}  \
+	--private-key ${private} \
+	--broadcast \
+	--verify
 
 coverage :; forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage
 
 show-coverage :; npx http-server ./coverage
 
 clean :; rm -rf out coverage lcov.info cache artifacts
+
+verify :; forge verify-contract \
+	--chain-id ${chain} \
+	--num-of-optimizations ${runs} \
+	--constructor-args ${args} \
+	--watch  \
+	--compiler-version ${compiler} \
+	--etherscan-api-key ${etherscan} \
+	${address} \
+	src/${contract}.sol:${contract}
+

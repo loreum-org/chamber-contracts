@@ -28,7 +28,7 @@ contract RegistryCycle is Test {
             address(100)
         );
 
-        chamber = new Chamber(address(NFT), address(LORE), 1, 1);
+        chamber = new Chamber(address(NFT), address(LORE));
         vm.deal(address(chamber), 100 ether);
     }
 

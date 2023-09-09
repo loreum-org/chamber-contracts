@@ -39,7 +39,7 @@ contract ChamberSecTest is Test {
             address(100)
         );
 
-        chamber = new Chamber(address(Explorers), address(LORE), 3, 20);
+        chamber = new Chamber(address(Explorers), address(LORE));
         USD = new MockERC20("US Dollar", "USD", address(chamber));
 
         vm.label(bones, "Bones");

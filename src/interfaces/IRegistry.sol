@@ -5,8 +5,8 @@ interface IRegistry {
 
     struct ChamberData {
         address chamber;
-        address govToken;
         address memberToken;
+        address govToken;
         uint8 version;
     }
 
@@ -22,10 +22,9 @@ interface IRegistry {
 
     /** 
      * @notice create Creates a new Chamber
-     * @param  _govToken    The Governance (ERC20) token
      * @param  _memberToken The Membership (NFT) token
-     * @param  _leaders     The number of leaders for the chamber
-     * @param  _quorum      The number of approvals required to execute a transaction
+     * @param  _govToken    The Governance (ERC20) token 
+
      */ 
-    function create(address _govToken, address _memberToken, uint8 _leaders, uint8 _quorum) external returns (address);
+    function create(address _memberToken, address _govToken) external returns (address);
 }
