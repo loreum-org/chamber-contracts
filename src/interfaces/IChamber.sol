@@ -11,8 +11,8 @@ interface IChamber {
         address[]   target;
         uint256[]   value;
         bytes[]     data;
-        uint256[]   voters;
-        uint256     approvals;
+        uint8[9]     voters;
+        uint8     approvals;
         State       state;
     }
 
@@ -45,7 +45,7 @@ interface IChamber {
      * @param amt      The amount of "stakingToken" staked
      * @param tokenId  The ID of the NFT that tokens will be staked against
      */ 
-    event Staked(address staker, uint256 amt, uint256 tokenId);
+    event Staked(address staker, uint256 amt, uint8 tokenId);
 
     /** 
      * @notice Emitted upon unstake()
@@ -53,25 +53,25 @@ interface IChamber {
      * @param amt      The amount of "stakingToken" unstaked
      * @param tokenId  The ID of the NFT that tokens were staked against
      */ 
-    event Unstaked(address staker, uint256 amt, uint256 tokenId);
+    event Unstaked(address staker, uint256 amt, uint8 tokenId);
     
     /**
      * @notice Emitted when a proposal is approved
      * @param proposalId The unique identifier of the approved proposal
-     * @param tokenId      The tokenId that the proposal was associated with
+     * @param tokenId    The tokenId that the proposal was associated with
      * @param approvals  The total number of approvals that the proposal received
      */
-    event ProposalApproved(uint256 proposalId, uint256 tokenId, uint256 approvals);
+    event ProposalApproved(uint256 proposalId, uint8 tokenId, uint256 approvals);
 
     /**
      * @notice Emitted when a proposal is created
-     * @param proposalId The unique identifier of the created proposal
-     * @param target     The array of addresses that the proposal targets
-     * @param value      The array of monetary values associated with each target
-     * @param data       The array of data payloads associated with each target
-     * @param voters     The array of votes associated with each target
+     * @param proposalId    The unique identifier of the created proposal
+     * @param target        The array of addresses that the proposal targets
+     * @param value         The array of monetary values associated with each target
+     * @param data          The array of data payloads associated with each target
+     * @param voters   The array of voters associated with each target
      */
-    event ProposalCreated(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint256[] voters);
+    event ProposalCreated(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint8[9] voters);
 
     /**
      * @notice Emitted when a proposal is executed
@@ -95,7 +95,7 @@ interface IChamber {
      * @param  _proposalId The ID of the proposal to approve
      * @param  _tokenId    The ID of the NFT to vote
      */ 
-    function approveProposal(uint256 _proposalId, uint256 _tokenId) external;
+    function approveProposal(uint256 _proposalId, uint8 _tokenId) external;
 
     /** 
      * @notice create Proposal function
@@ -110,12 +110,12 @@ interface IChamber {
      * @param _amt      The amount of "stakingToken" to stake
      * @param _tokenId  The ID of the NFT to stake against
      */
-    function stake(uint256 _amt, uint256 _tokenId) external;
+    function stake(uint256 _amt, uint8 _tokenId) external;
 
     /** 
      * @notice Unstakes a given amount of "stakingToken" from the provided NFT ID
      * @param _amt      The amount of "stakingToken" to unstake
      * @param _tokenId  The ID of the NFT to unstake from
      */ 
-    function unstake(uint256 _amt, uint256 _tokenId) external;
+    function unstake(uint256 _amt, uint8 _tokenId) external;
 }
