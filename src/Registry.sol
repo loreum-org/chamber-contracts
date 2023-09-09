@@ -28,22 +28,22 @@ contract Registry is IRegistry {
     event ChamberCreated(
         address indexed chamber,
         address indexed deployer,
-        address govToken,
         address memberToken,
-        uint8 leaders,
+        address govToken,
         uint8 quorum,
+        uint8 leaders,
         uint8 version
     );
 
     /// @inheritdoc IRegistry
     function create(
-        address _govToken,
         address _memberToken,
-        uint8 _leaders,
-        uint8 _quorum
+        address _govToken,
+        uint8 _quorum,
+        uint8 _leaders
         ) external returns (address) {
             Chamber chamber;
-            chamber = new Chamber(_govToken, _memberToken, _leaders, _quorum);
+            chamber = new Chamber(_memberToken, _govToken, _quorum, _leaders);
             ChamberData memory chamberData = ChamberData({ 
                 chamber: address(chamber), 
                 govToken: _govToken, 
@@ -55,7 +55,7 @@ contract Registry is IRegistry {
         deployers[msg.sender].push(chamberData);
         totalChambers++;
         
-        emit ChamberCreated(address(chamber), msg.sender, _govToken, _memberToken, _leaders, _quorum, version);
+        emit ChamberCreated(address(chamber), msg.sender, _memberToken, _govToken, _quorum, _leaders, version);
         return address(chamber);
     }
 }

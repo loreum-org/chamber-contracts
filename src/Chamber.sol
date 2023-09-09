@@ -72,6 +72,7 @@ contract Chamber is IChamber, LinkedList, ReentrancyGuard, Context, ERC721Holder
      * @param _leaders         The number of leaders at the top of the leaderboard.
      */ 
     constructor(address _memberToken, address _govToken, uint8 _quorum, uint8 _leaders) {
+        require(_leaders >= _quorum, "Chamber: leaders must be greater than or equal to quorum");
         memberToken = _memberToken;
         govToken = _govToken;
         quorum = _quorum;
