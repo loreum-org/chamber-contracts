@@ -58,14 +58,14 @@ contract ProposalCycleTest is Test {
 
     function helperLogger() public {
         // for logging out the leaderboard
-        (uint8[5] memory ranksTop, uint256[5] memory stakesTop) = chamber.getLeaderboard();
-        emit Log(ranksTop, stakesTop);
+        (uint8[5] memory leaders, uint256[5] memory delegation) = chamber.getLeaderboard();
+        emit Log(leaders, delegation);
     }
 
-    // helper to Mint tokenIds to each Lorian and stake LORE amounts to Chamber
+    // helper to Mint tokenIds to each Lorian and delegate LORE amounts to Chamber
     function chamberSetup () public {
         
-        // setup the chamber with stake amounts of 33k
+        // setup the chamber with delegations of 33k
         // from each of the team members above
         for (uint8 i = 0; i <= lorians.length - 1; i++) {
             vm.deal(lorians[i], 100 ether);
@@ -74,7 +74,7 @@ contract ProposalCycleTest is Test {
             vm.startPrank(lorians[i]);
             Explorers.publicMint{ value: 0.05 ether }(1);
             LORE.approve(address(chamber), LORE.balanceOf(lorians[i]));
-            chamber.stake(LORE.balanceOf(lorians[i]), i + 1);
+            chamber.promote(LORE.balanceOf(lorians[i]), i + 1);
             vm.stopPrank();
         }
 
@@ -87,13 +87,13 @@ contract ProposalCycleTest is Test {
 
         /**  @dev transaction lifecycle tests
         * 1. nft holder should be able to create a proposal
-        * 2. nft holder without stake should not be able to approve transaction
+        * 2. nft holder without delegation should not be able to approve transaction
         * 3. nft holder should not be able to approve transaction using unowned tokenId
         * 4. nft holder should not be able to approve if not a leader
         * 5. Leaders should be able to approve transaction
         * 6. Quorum of leaders should execute transaction
-        * 7. nft hodler with stake allocation after leader snapshot should not be able to approve
-        * 8. nft holder that unstaked erc20 should be able to approve
+        * 7. nft hodler promoted after leader snapshot should not be able to approve
+        * 8. nft holder that is demoted after proposal created can still approve
         */
         vm.startPrank(address(1776));
 
@@ -114,7 +114,7 @@ contract ProposalCycleTest is Test {
         chamber.createProposal(targetArray1, valueArray1, dataArray1);
         assertEq(chamber.proposalCount(), 1);
 
-        // 2. nft holder without stake should not be able to approve transaction
+        // 2. nft holder without delegation should not be able to approve transaction
         vm.expectRevert();
         chamber.approveProposal(1, 8);
 
@@ -202,16 +202,16 @@ contract ProposalCycleTest is Test {
             assertEq(LORE.balanceOf(lorians[i]), amount);
         }
 
-        // 7. nft hodler with stake allocation after snapshot should not be able to approve
+        // 7. nft hodler promoted after snapshot should not be able to approve
         vm.startPrank(bones);
-        // stake more LORE to chamber
+        // promote more LORE to chamber
         LORE.approve(address(chamber), 10000 ether);
-        chamber.stake(10000 ether, 1);
-        assertEq(chamber.getUserStake(bones, 1), 43333 ether);
+        chamber.promote(10000 ether, 1);
+        assertEq(chamber.getUserDelegation(bones, 1), 43333 ether);
 
-        // 8. nft holder that unstaked erc20 should be able to approve
+        // 8. nft holder that was demoted after proposal creation can still approve
         vm.startPrank(jack);
-        chamber.unstake(33333 ether, 4);
+        chamber.demote(33333 ether, 4);
         helperLogger();
         chamber.approveProposal(1, 4);
         vm.stopPrank();

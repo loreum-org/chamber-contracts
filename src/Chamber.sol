@@ -31,31 +31,31 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
     uint8[5] public leaderboard;
 
     /**
-     * @notice Tracks the amount of "govToken" staked for a given NFT ID.
-     * @dev    1st element -> NFT tokenID, 2nd element -> amountStaked.
+     * @notice Tracks the amount of "govToken" delegated to a given NFT ID.
+     * @dev    1st element -> NFT tokenID, 2nd element -> amountDelegated.
      */
-    mapping(uint8 => uint256) public totalStake;
+    mapping(uint8 => uint256) public totalDelegation;
 
     /** 
-     * @notice Tracks a given address's stake amount of "govToken" for a given NFT ID.
-     * @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountStaked.
+     * @notice Tracks a given address's delegatation balance of govToken for a given NFT ID.
+     * @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountDelegated.
      */
-    mapping(address => mapping(uint8 => uint256)) public accountNftStake;
+    mapping(address => mapping(uint8 => uint256)) public accountDelegation;
     
     /** 
      * @notice Mapping of the Proposals
      * @dev    1st element -> index, 2nd element -> Proposal struct
      */
-    mapping(uint256 => Proposal) public proposals;
+    mapping(uint8 => Proposal) public proposals;
 
     /** @notice proposalCount The number of proposals.*/
-    uint256 public proposalCount;
+    uint8 public proposalCount;
 
     /** 
      * @notice Tracks which tokenIds have voted on proposals
      * @dev    1st element -> proposalId, 2nd element -> tokenId, 3rd element-> voted boolean
      */
-    mapping(uint256 => mapping(uint256 => bool)) public voted;
+    mapping(uint8 => mapping(uint8 => bool)) public voted;
     
     /**************************************************
         Constructor
@@ -75,21 +75,22 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
      **************************************************/
 
     /** 
-     * @notice Returns amount a user has staked against a given tokenId.
-     * @param _member   The address staking.
-     * @param _tokenId  The NFT tokenId a member has staked against.
+     * @notice Returns amount a user has delegated against a given tokenId.
+     * @param _member   The address of the member or user.
+     * @param _tokenId  The NFT tokenId a member has promoted.
      */
-    function getUserStake(address _member, uint8 _tokenId) external view returns (uint256) {
-        return accountNftStake[_member][_tokenId];
+    function getUserDelegation(address _member, uint8 _tokenId) external view returns (uint256) {
+        return accountDelegation[_member][_tokenId];
     }
-
+    
+    /// @notice Returns the leaderboard of tokenIds and the amount delegated per tokenId
     function getLeaderboard() external view returns (uint8[5] memory, uint256[5] memory) {
         uint8[5] memory _leaderboard = leaderboard;
-        uint256[5] memory _stakes;
+        uint256[5] memory _delegations;
         for (uint8 i = 0; i < 5; i++) {
-            _stakes[i] = totalStake[_leaderboard[i]];
+            _delegations[i] = totalDelegation[_leaderboard[i]];
         }
-        return (_leaderboard, _stakes);
+        return (_leaderboard, _delegations);
     }
 
     /// @inheritdoc IChamber
@@ -109,7 +110,7 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
     }
 
     /// @inheritdoc IChamber
-    function approveProposal(uint256 _proposalId, uint8 _tokenId) external {
+    function approveProposal(uint8 _proposalId, uint8 _tokenId) external {
         if(_msgSender() != IERC721(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't owner");
         if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
         if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID aleready voted");
@@ -135,7 +136,7 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
      * @notice _executeProposal function
      * @param  _proposalId The ID of the proposal to execute.
      */
-    function _executeProposal(uint256 _proposalId) private {
+    function _executeProposal(uint8 _proposalId) private {
         if(proposals[_proposalId].state != State.Initialized) revert invalidProposalState();
        
         Proposal memory proposal = proposals[_proposalId];
@@ -149,22 +150,35 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
     }
 
     /// @inheritdoc IChamber
-    function stake(uint256 _amt, uint8 _tokenId) public nonReentrant {
-        if(_amt == 0 && _tokenId == 0) revert invalidStake();
+    function promote(uint256 _amt, uint8 _tokenId) public nonReentrant {
+        if(_amt == 0 && _tokenId == 0) revert invalidPromotion();
         
-        totalStake[_tokenId] += _amt;
-        accountNftStake[_msgSender()][_tokenId] += _amt;
+        totalDelegation[_tokenId] += _amt;
+        accountDelegation[_msgSender()][_tokenId] += _amt;
         _updateLeaderboard(_tokenId);
         
         SafeERC20.safeTransferFrom(IERC20(govToken), _msgSender(), address(this), _amt);
-        emit Staked(_msgSender(), _amt, _tokenId);
+        emit Promoted(_msgSender(), _amt, _tokenId);
+    }
+
+    /// @inheritdoc IChamber
+    function demote(uint256 _amt, uint8 _tokenId) public nonReentrant {
+        if(_amt == 0 && _tokenId == 0) revert invalidDemotion();
+        if(accountDelegation[_msgSender()][_tokenId] < _amt) revert invalidDemotion();
+        
+        totalDelegation[_tokenId] -= _amt;
+        accountDelegation[_msgSender()][_tokenId] -= _amt;
+        _updateLeaderboard(_tokenId);
+        
+        SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), _amt);
+        emit Demoted(_msgSender(), _amt, _tokenId);
     }
 
     /// @notice Updates the leaderboard
     function _updateLeaderboard (uint8 _tokenId) private {
         for (uint8 i = 0; i < 5; i++) {
             if (leaderboard[i] == _tokenId) break;
-            if (totalStake[_tokenId] > totalStake[leaderboard[i]]) {
+            if (totalDelegation[_tokenId] > totalDelegation[leaderboard[i]]) {
                 uint8 temp = leaderboard[i];
                 leaderboard[i] = _tokenId;
                 for (uint8 j = i; j < 5; j++) {
@@ -178,22 +192,11 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
         }
     }
 
-    /// @inheritdoc IChamber
-    function unstake(uint256 _amt, uint8 _tokenId) public nonReentrant {
-        if(_amt == 0 && _tokenId == 0) revert invalidUnStake();
-        if(accountNftStake[_msgSender()][_tokenId] < _amt) revert invalidUnStake();
-        
-        totalStake[_tokenId] -= _amt;
-        accountNftStake[_msgSender()][_tokenId] -= _amt;
-        _updateLeaderboard(_tokenId);
-        
-        SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), _amt);
-        emit Unstaked(_msgSender(), _amt, _tokenId);
-    }
-
     fallback() external payable { 
         if (msg.value > 0) emit ReceivedEther(_msgSender(), msg.value);
     }
 
-    receive() external payable {}
+    receive() external payable {
+        if (msg.value > 0) emit ReceivedFallback(msg.sender, msg.value);
+    }
 }

@@ -16,9 +16,9 @@ interface IChamber {
         State       state;
     }
 
-    error invalidUnStake();
+    error invalidDemotion();
 
-    error invalidStake();
+    error invalidPromotion();
 
     error invalidTokenOwner();
 
@@ -40,20 +40,20 @@ interface IChamber {
      **************************************************/
 
     /** 
-     * @notice Emitted upon stake()
-     * @param staker   The address staking
-     * @param amt      The amount of "stakingToken" staked
-     * @param tokenId  The ID of the NFT that tokens will be staked against
+     * @notice Emitted upon promote()
+     * @param promoter   The address of the promoter
+     * @param amt        The amount of "govToken" delegated
+     * @param tokenId    The ID of the NFT that tokens will be promoted against
      */ 
-    event Staked(address staker, uint256 amt, uint8 tokenId);
+    event Promoted(address promoter, uint256 amt, uint8 tokenId);
 
     /** 
-     * @notice Emitted upon unstake()
-     * @param staker   The address unstaking
-     * @param amt      The amount of "stakingToken" unstaked
-     * @param tokenId  The ID of the NFT that tokens were staked against
+     * @notice Emitted upon demote()
+     * @param demoter   The address of the demoter
+     * @param amt       The amount of "govToken" demoted
+     * @param tokenId   The ID of the NFT that tokens were demoted against
      */ 
-    event Unstaked(address staker, uint256 amt, uint8 tokenId);
+    event Demoted(address demoter, uint256 amt, uint8 tokenId);
     
     /**
      * @notice Emitted when a proposal is approved
@@ -61,7 +61,7 @@ interface IChamber {
      * @param tokenId    The tokenId that the proposal was associated with
      * @param approvals  The total number of approvals that the proposal received
      */
-    event ProposalApproved(uint256 proposalId, uint8 tokenId, uint256 approvals);
+    event ProposalApproved(uint8 proposalId, uint8 tokenId, uint256 approvals);
 
     /**
      * @notice Emitted when a proposal is created
@@ -69,15 +69,15 @@ interface IChamber {
      * @param target        The array of addresses that the proposal targets
      * @param value         The array of monetary values associated with each target
      * @param data          The array of data payloads associated with each target
-     * @param voters   The array of voters associated with each target
+     * @param voters        The array of voters associated with each target
      */
-    event ProposalCreated(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint8[5] voters);
+    event ProposalCreated(uint8 proposalId, address[] target, uint256[] value, bytes[] data, uint8[5] voters);
 
     /**
      * @notice Emitted when a proposal is executed
      * @param proposalId The unique identifier of the executed proposal
      */
-    event ProposalExecuted(uint256 proposalId);
+    event ProposalExecuted(uint8 proposalId);
 
     /**
      * @notice Emitted when Ether is received
@@ -85,6 +85,13 @@ interface IChamber {
      * @param value  The amount of Ether received
      */
     event ReceivedEther(address indexed sender, uint256 value);
+
+    /**
+     * @notice Emitted when Payable received
+     * @param sender The address of Asset sender
+     * @param value  The amount received
+     */
+    event ReceivedFallback(address indexed sender, uint256 value);
 
     /**************************************************
         Functions
@@ -95,7 +102,7 @@ interface IChamber {
      * @param  _proposalId The ID of the proposal to approve
      * @param  _tokenId    The ID of the NFT to vote
      */ 
-    function approveProposal(uint256 _proposalId, uint8 _tokenId) external;
+    function approveProposal(uint8 _proposalId, uint8 _tokenId) external;
 
     /** 
      * @notice create Proposal function
@@ -106,16 +113,16 @@ interface IChamber {
     function createProposal(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external;
 
     /** 
-     * @notice Stakes a given amount of "stakingToken" against the provided NFT ID
-     * @param _amt      The amount of "stakingToken" to stake
-     * @param _tokenId  The ID of the NFT to stake against
+     * @notice Promotes an amount of govToken against a provided memberToken Id
+     * @param _amt      The amount of govToken for promotion
+     * @param _tokenId  The Id of the memberToken to promote
      */
-    function stake(uint256 _amt, uint8 _tokenId) external;
+    function promote(uint256 _amt, uint8 _tokenId) external;
 
     /** 
-     * @notice Unstakes a given amount of "stakingToken" from the provided NFT ID
-     * @param _amt      The amount of "stakingToken" to unstake
-     * @param _tokenId  The ID of the NFT to unstake from
+     * @notice Demotes an amount of govToken from the provided memberToken Id
+     * @param _amt      The amount of govToken for demotion
+     * @param _tokenId  The Id of the memberToken to demote from
      */ 
-    function unstake(uint256 _amt, uint8 _tokenId) external;
+    function demote(uint256 _amt, uint8 _tokenId) external;
 }
