@@ -16,8 +16,8 @@ contract DeployRegistry is Script {
         console2.log("Chamber address: ", address(chamber));
 
         vm.startBroadcast();
-        new Registry(address(chamber));
+        Registry registry = new Registry(address(chamber));
         vm.stopBroadcast();
-        console2.log("Registry address: ", address(chamber));
+        console2.log("Registry address: ", address(registry));
     }
 }

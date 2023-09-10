@@ -28,16 +28,23 @@ interface IRegistry {
         Errors
      **************************************************/
 
-    error createFailed();
+    error deployFailed();
 
     /**************************************************
         Functions
      **************************************************/
 
+    /// @notice Returns the Chamber implmentation address
+    function chamberVersion() external returns (address);
+    
+    /**
+     * @notice Sets the Chamber version
+     * @param _chamberVersion The address of the Chamber version
+     */
     function setChamberVersion(address _chamberVersion) external;
 
     /** 
-     * @notice create Creates a new Chamber
+     * @notice deploy Deploys a new Chamber
      * @param  _memberToken The Membership (NFT) token
      * @param  _govToken    The Governance (ERC20) token 
 
