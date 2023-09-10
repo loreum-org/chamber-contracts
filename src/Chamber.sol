@@ -9,23 +9,31 @@ import { Context } from "openzeppelin-contracts/contracts/utils/Context.sol";
 import { IERC20 } from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 import { IERC721 } from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
 import { SafeERC20 } from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ERC1155Holder } from "openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import { ERC721Holder } from "openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
+import { ERC1155Holder } from "openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import { ReentrancyGuard } from "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
+import { 
+    ERC1967UpgradeUpgradeable 
+} from "openzeppelin-contracts-upgradeable/contracts/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
 
-contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Holder {
+contract Chamber is IChamber, 
+    ERC1967UpgradeUpgradeable, 
+    ReentrancyGuard, 
+    Context, 
+    ERC721Holder, 
+    ERC1155Holder {
 
-    uint8 constant public VERSION = 1;
+    string public version;
 
     /**************************************************
         Chamber State Variables
      **************************************************/
 
     /// @notice memberToken The ERC721 contract used for membership.
-    address public immutable memberToken;
+    address public memberToken;
 
     /// @notice govToken The ERC20 contract used for staking.
-    address public immutable govToken;
+    address public govToken;
 
     /// @notice The leaderboard
     uint8[5] public leaderboard;
@@ -61,29 +69,26 @@ contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Hol
         Constructor
      **************************************************/
 
-    /** 
-     * @param _memberToken The NFT collection used for membership.
-     * @param _govToken    The fungible token use for amplifying governance power.
-     */ 
-    constructor(address _memberToken, address _govToken) {
-        memberToken = _memberToken;
-        govToken = _govToken;
+    constructor() {
+        _disableInitializers();
     }
 
     /**************************************************
         Functions
      **************************************************/
-
-    /** 
-     * @notice Returns amount a user has delegated against a given tokenId.
-     * @param _member   The address of the member or user.
-     * @param _tokenId  The NFT tokenId a member has promoted.
+    
+    /**
+     * @notice Initializes a new version of Chamber
+     * @param _memberToken  The address of the ERC721 contract used for membership.
+     * @param _govToken     The address of the ERC20 contract used for delegation.
      */
-    function getUserDelegation(address _member, uint8 _tokenId) external view returns (uint256) {
-        return accountDelegation[_member][_tokenId];
+    function initialize(address _memberToken, address _govToken) external initializer {
+        version = "0.1.0-alpha";
+        memberToken = _memberToken;
+        govToken = _govToken;
     }
     
-    /// @notice Returns the leaderboard of tokenIds and the amount delegated per tokenId
+    /// @inheritdoc IChamber
     function getLeaderboard() external view returns (uint8[5] memory, uint256[5] memory) {
         uint8[5] memory _leaderboard = leaderboard;
         uint256[5] memory _delegations;

@@ -97,6 +97,27 @@ interface IChamber {
         Functions
      **************************************************/
 
+    /// @notice Initializes the Chamber
+    function initialize(address _memberToken, address _govToken) external;
+    
+    /// @notice Returns the version of the Chamber
+    function version() external view returns (string memory);
+
+    /// @notice Returns the amount of govToken delegated against a given tokenId by an account
+    function accountDelegation(address _account, uint8 _tokenId) external view returns (uint256);
+
+    /// @notice Returns the total amount of govToken delegated against a given tokenId
+    function totalDelegation(uint8 _tokenId) external view returns (uint256);
+
+    /// @notice Returns the total number of proposals
+    function proposalCount() external view returns (uint8);
+
+    /// @notice Returns the number of approvals and the state of a proposal
+    function proposals(uint8 _proposalId) external view returns (uint8 approvals, State state);
+
+    /// @notice Returns two arrays, the leaders and their delegations
+    function getLeaderboard() external view returns (uint8[5] memory, uint256[5] memory);
+
     /** 
      * @notice approve Proposal function
      * @param  _proposalId The ID of the proposal to approve

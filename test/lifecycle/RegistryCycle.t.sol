@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import "../../lib/forge-std/src/Test.sol";
 
+import { Registry } from "../../src/Registry.sol";
 import { Chamber } from "../../src/Chamber.sol";
 import { IChamber } from "../../src/interfaces/IChamber.sol";
 
@@ -12,12 +13,12 @@ import { LoreumToken } from "../../lib/loreum-token/src/LoreumToken.sol";
 contract RegistryCycle is Test {
 
     LoreumToken LORE;
-    LoreumNFT NFT;
-    Chamber chamber;
+    LoreumNFT Explorers;
+    IChamber chamber;
 
     function setUp() public {
         LORE = new LoreumToken(address(100), 1000000 ether, 10000000 ether);
-        NFT = new LoreumNFT(
+        Explorers = new LoreumNFT(
             "Loreum Explorers",
             "LOREUM",
             "ipfs://QmcTBMUiaDQTCt3KT3JLadwKMcBGKTYtiuhopTUafo1h9L/",
@@ -28,7 +29,9 @@ contract RegistryCycle is Test {
             address(100)
         );
 
-        chamber = new Chamber(address(NFT), address(LORE));
+        Registry registry = new Registry(address(new Chamber()));
+        address newChamber = registry.deploy(address(Explorers), address(LORE));
+        chamber = IChamber(newChamber);
         vm.deal(address(chamber), 100 ether);
     }
 

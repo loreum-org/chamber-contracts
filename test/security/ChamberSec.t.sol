@@ -3,7 +3,10 @@ pragma solidity ^0.8.19;
 
 import { Test } from "../../lib/forge-std/src/Test.sol";
 
+import { Registry } from "../../src/Registry.sol";
 import { Chamber } from "../../src/Chamber.sol";
+import { IChamber } from "../../src/interfaces/IChamber.sol";
+
 import { MockERC20 } from "../../lib/contract-utils/src/MockERC20.sol";
 import { LoreumNFT } from "../../lib/loreum-nft/src/LoreumNFT.sol";
 import { LoreumToken } from "../../lib/loreum-token/src/LoreumToken.sol";
@@ -14,7 +17,7 @@ contract ChamberSecTest is Test {
     MockERC20 USD;
     LoreumToken LORE;
     LoreumNFT Explorers;
-    Chamber chamber;
+    IChamber chamber;
 
     address bones = address(1);
     address coconut = address(2);
@@ -39,7 +42,9 @@ contract ChamberSecTest is Test {
             address(100)
         );
 
-        chamber = new Chamber(address(Explorers), address(LORE));
+        Registry registry = new Registry(address(new Chamber()));
+        address newChamber = registry.deploy(address(Explorers), address(LORE));
+        chamber = IChamber(newChamber);
         USD = new MockERC20("US Dollar", "USD", address(chamber));
 
         vm.label(bones, "Bones");
