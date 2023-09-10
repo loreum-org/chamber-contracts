@@ -83,7 +83,7 @@ contract Chamber is IChamber,
      * @param _govToken     The address of the ERC20 contract used for delegation.
      */
     function initialize(address _memberToken, address _govToken) external initializer {
-        version = "0.0.6-alpha";
+        version = "0.1.0-alpha";
         memberToken = _memberToken;
         govToken = _govToken;
     }
