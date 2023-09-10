@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import "../../lib/forge-std/src/Test.sol";
 
+import { Registry } from "../../src/Registry.sol";
 import { Chamber } from "../../src/Chamber.sol";
 import { IChamber } from "../../src/interfaces/IChamber.sol";
 
@@ -16,7 +17,7 @@ contract ProposalCycleTest is Test {
     MockERC20 USD;
     LoreumToken LORE;
     LoreumNFT Explorers;
-    Chamber chamber;
+    IChamber chamber;
     address bones = address(1);
     address coconut = address(2);
     address hurricane = address(3);
@@ -40,7 +41,10 @@ contract ProposalCycleTest is Test {
             address(100)
         );
 
-        chamber = new Chamber(address(Explorers), address(LORE));
+        Registry registry = new Registry(address(new Chamber()));
+        address newChamber = registry.deploy(address(Explorers), address(LORE));
+        chamber = IChamber(newChamber);
+
         USD = new MockERC20("US Dollar", "USD", address(chamber));
 
         vm.deal(address(chamber), 100 ether);

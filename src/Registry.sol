@@ -2,11 +2,11 @@
 pragma solidity 0.8.19;
 
 import { Chamber } from "./Chamber.sol";
+import { IChamber } from "./interfaces/IChamber.sol";
 import { IRegistry } from "./interfaces/IRegistry.sol";
+import { Clones } from "openzeppelin-contracts/contracts/proxy/Clones.sol";
 
 contract Registry is IRegistry {
-
-    uint8 public version = 1;
 
     /// @notice Total number of Chambers
     uint256 public totalChambers;
@@ -17,40 +17,43 @@ contract Registry is IRegistry {
     /// @notice Chamber deployer addresses
     mapping(address => ChamberData[]) public deployers;
 
-    /**
-     * @notice Emitted when a new Chamber is created
-     * @param chamber       The address of the new Chamber.
-     * @param govToken      Address of the ERC20 governance token.
-     * @param memberToken   Address of the NFT membership token.
-     */
-    event ChamberCreated(
-        address indexed chamber,
-        address indexed deployer,
-        address memberToken,
-        address govToken,
-        uint8 version
-    );
+    address public chamberVersion;
+
+    address public owner;
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Registry: caller is not the owner");
+        _;
+    }
+
+    constructor(address _chamberVersion) {
+        owner = msg.sender;
+        chamberVersion = _chamberVersion;
+    }
+
+    function setChamberVersion(address _chamberVersion) external onlyOwner {
+        chamberVersion = _chamberVersion;
+    }
 
     /// @inheritdoc IRegistry
-    function create(
-        address _memberToken,
-        address _govToken
-        ) external returns (address) {
-            Chamber chamber;
-            chamber = new Chamber(_memberToken, _govToken);
-            ChamberData memory chamberData = ChamberData({ 
-                chamber: address(chamber), 
-                memberToken: _memberToken,
-                govToken: _govToken, 
-                version: version
+    function deploy(address _memberToken, address _govToken) external returns (address) {
+        
+        address newChamber = Clones.clone(chamberVersion);
+        IChamber(newChamber).initialize(_memberToken, _govToken);
+
+        ChamberData memory chamberData = ChamberData({ 
+            chamber: newChamber,
+            memberToken: _memberToken,
+            govToken: _govToken, 
+            version: IChamber(newChamber).version()
         });
         
-        chambers[address(chamber)] = chamberData;
+        chambers[newChamber] = chamberData;
         deployers[msg.sender].push(chamberData);
         totalChambers++;
         
-        emit ChamberCreated(address(chamber), msg.sender, _memberToken, _govToken, version);
-        return address(chamber);
+        emit ChamberDeployed(newChamber, msg.sender, _memberToken, _govToken, IChamber(newChamber).version());
+        return newChamber;
     }
 }
 

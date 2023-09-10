@@ -3,7 +3,9 @@ pragma solidity ^0.8.19;
 
 import "../lib/forge-std/src/Test.sol";
 
+import { Registry } from "../src/Registry.sol";
 import { Chamber } from "../src/Chamber.sol";
+
 import { IChamber } from "../src/interfaces/IChamber.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
@@ -15,17 +17,19 @@ contract ChamberTest is Test, TestUtilities {
     MockERC20 USD;
     MockERC20 mERC20;
     MockNFT mNFT;
-    Chamber chamber;
+    IChamber chamber;
 
     function setUp() public {
         
         mERC20 = new MockERC20("MockERC20", "mERC20", address(this));
         mNFT = new MockNFT("MockNFT", "mNFT", address(this));
-        chamber = new Chamber(address(mNFT), address(mERC20));
+
+        Registry registry = new Registry(address(new Chamber()));
+        address newChamber = registry.deploy(address(mNFT), address(mERC20));
+        chamber = IChamber(newChamber);
+
         USD = new MockERC20("US Dollar", "USD", address(chamber));
-
         vm.deal(address(chamber), 100 ether);
-
     }
 
     function promoteExplorers() public {
@@ -41,7 +45,6 @@ contract ChamberTest is Test, TestUtilities {
 
         (uint8[5] memory leaders, uint256[5] memory delegations) = chamber.getLeaderboard();
         (leaders, delegations);
-
     }
 
     function test_Chamber_proposal() public {
