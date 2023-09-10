@@ -5,8 +5,9 @@ import { Chamber } from "./Chamber.sol";
 import { IChamber } from "./interfaces/IChamber.sol";
 import { IRegistry } from "./interfaces/IRegistry.sol";
 import { Clones } from "openzeppelin-contracts/contracts/proxy/Clones.sol";
+import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract Registry is IRegistry {
+contract Registry is IRegistry, Ownable {
 
     /// @notice Total number of Chambers
     uint256 public totalChambers;
@@ -19,15 +20,7 @@ contract Registry is IRegistry {
 
     address public chamberVersion;
 
-    address public owner;
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Registry: caller is not the owner");
-        _;
-    }
-
-    constructor(address _chamberVersion) {
-        owner = msg.sender;
+    constructor(address _chamberVersion) Ownable() {
         chamberVersion = _chamberVersion;
     }
 
