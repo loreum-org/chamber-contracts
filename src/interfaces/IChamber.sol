@@ -118,8 +118,6 @@ interface IChamber {
     /// @notice Returns two arrays, the leaders and their delegations
     function getLeaderboard() external view returns (uint8[5] memory, uint256[5] memory);
 
-    /// @notice Returns the amount delegated by a user to a tokenId
-    function getUserDelegation(address _member, uint8 _tokenId) external view returns (uint256);
     /** 
      * @notice approve Proposal function
      * @param  _proposalId The ID of the proposal to approve

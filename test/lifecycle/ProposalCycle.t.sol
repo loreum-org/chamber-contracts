@@ -211,7 +211,7 @@ contract ProposalCycleTest is Test {
         // promote more LORE to chamber
         LORE.approve(address(chamber), 10000 ether);
         chamber.promote(10000 ether, 1);
-        assertEq(chamber.getUserDelegation(bones, 1), 43333 ether);
+        assertEq(chamber.accountDelegation(bones, 1), 43333 ether);
 
         // 8. nft holder that was demoted after proposal creation can still approve
         vm.startPrank(jack);

@@ -88,15 +88,6 @@ contract Chamber is IChamber,
         govToken = _govToken;
     }
     
-    /** 
-     * @notice Returns amount a user has delegated against a given tokenId.
-     * @param _member   The address of the member or user.
-     * @param _tokenId  The NFT tokenId a member has promoted.
-     */
-    function getUserDelegation(address _member, uint8 _tokenId) external view returns (uint256) {
-        return accountDelegation[_member][_tokenId];
-    }
-    
     /// @inheritdoc IChamber
     function getLeaderboard() external view returns (uint8[5] memory, uint256[5] memory) {
         uint8[5] memory _leaderboard = leaderboard;
