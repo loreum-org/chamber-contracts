@@ -12,22 +12,10 @@ import { SafeERC20 } from "openzeppelin-contracts/contracts/token/ERC20/utils/Sa
 import { ERC721Holder } from "openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { ERC1155Holder } from "openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import { ReentrancyGuard } from "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
-import { 
-    ERC1967UpgradeUpgradeable 
-} from "openzeppelin-contracts-upgradeable/contracts/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
 
-contract Chamber is IChamber, 
-    ERC1967UpgradeUpgradeable, 
-    ReentrancyGuard, 
-    Context, 
-    ERC721Holder, 
-    ERC1155Holder {
+contract Chamber is IChamber, ReentrancyGuard, Context, ERC721Holder, ERC1155Holder {
 
     string public version;
-
-    /**************************************************
-        Chamber State Variables
-     **************************************************/
 
     /// @notice memberToken The ERC721 contract used for membership.
     address public memberToken;
