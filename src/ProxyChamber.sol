@@ -3,7 +3,7 @@
 
 pragma solidity 0.8.19;
 
-import "./interfaces/IProxyChamber.sol";
+import { IProxyChamber } from "./interfaces/IProxyChamber.sol";
 import { ERC1967Proxy } from "openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract ProxyChamber is IProxyChamber, ERC1967Proxy {
