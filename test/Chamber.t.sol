@@ -10,9 +10,7 @@ import { IChamber } from "../src/interfaces/IChamber.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
 
-import { TestUtilities } from "../lib/contract-utils/src/TestUtilities.sol";
-
-contract ChamberTest is Test, TestUtilities {
+contract ChamberTest is Test {
 
     MockERC20 USD;
     MockERC20 mERC20;

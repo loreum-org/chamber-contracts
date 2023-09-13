@@ -1,25 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import { Chamber } from "./Chamber.sol";
 import { IChamber } from "./interfaces/IChamber.sol";
 import { IRegistry } from "./interfaces/IRegistry.sol";
-import { ERC1967Proxy } from "openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { ProxyChamber } from "./ProxyChamber.sol";
 import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract Registry is IRegistry, Ownable {
 
-    /// @notice Total number of Chambers
+    /// @notice totalChamber The tsotal number of Chambers
     uint256 public totalChambers;
 
-    /// @notice Deployed Chambers
-    mapping(address => ChamberData) public chambers;
+    /// @notice chambers The Deployed Chambers
+    /// @dev serial index -> ChamberData Struct
+    mapping(uint256 => ChamberData) public chambers;
 
-    /// @notice Chamber deployer addresses
-    mapping(address => ChamberData[]) public deployers;
-
+    /// @notice chamerVersion is the latest version of the Chamber contract
     address public chamberVersion;
 
+    /// @notice contructor receives the base Chamber implementation address
     constructor(address _chamberVersion) Ownable() {
         chamberVersion = _chamberVersion;
     }
@@ -30,26 +29,31 @@ contract Registry is IRegistry, Ownable {
     }
 
     /// @inheritdoc IRegistry
+    function getChambers(uint8 limit, uint8 skip) external view returns (ChamberData[] memory) {
+        ChamberData[] memory _chambers = new ChamberData[](limit);
+        for (uint8 i = 0; i < limit; i++) {
+            _chambers[i] = chambers[i + skip];
+        }
+        return _chambers;
+    }
+
+    /// @inheritdoc IRegistry
     function deploy(address _memberToken, address _govToken) external returns (address) {
         
-        bytes memory data = abi.encodeWithSelector(Chamber.initialize.selector, _memberToken, _govToken);
-        ERC1967Proxy chamberProxy = new ERC1967Proxy(chamberVersion, data);
+        bytes memory data = abi.encodeWithSelector(IChamber.initialize.selector, _memberToken, _govToken);
+        ProxyChamber proxyChamber = new ProxyChamber(chamberVersion, data, msg.sender);
 
-        IChamber chamber = IChamber(address(chamberProxy));
-
-        ChamberData memory chamberData = ChamberData({ 
-            chamber: address(chamberProxy),
+        ChamberData memory chamberData = ChamberData({
+            chamber: address(proxyChamber),
             memberToken: _memberToken,
-            govToken: _govToken, 
-            version: chamber.version()
+            govToken: _govToken
         });
         
-        chambers[address(chamberProxy)] = chamberData;
-        deployers[msg.sender].push(chamberData);
+        chambers[totalChambers] = chamberData;
         totalChambers++;
-        
-        emit ChamberDeployed(address(chamberProxy), msg.sender, _memberToken, _govToken, chamber.version());
-        return address(chamberProxy);
+
+        emit ChamberDeployed(address(proxyChamber), totalChambers, msg.sender, _memberToken, _govToken);
+        return address(proxyChamber);
     }
 }
 
