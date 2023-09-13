@@ -4,30 +4,9 @@
 pragma solidity 0.8.19;
 
 import { IChamber } from "./interfaces/IChamber.sol";
+import "./Common.sol";
 
-import { Context } from "openzeppelin-contracts/contracts/utils/Context.sol";
-import { IERC20 } from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
-import { IERC721 } from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
-import { SafeERC20 } from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ERC721Holder } from "openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
-import { ERC1155Holder } from "openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import { ReentrancyGuard } from "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
-import { 
-    ERC1967UpgradeUpgradeable 
-} from "openzeppelin-contracts-upgradeable/contracts/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
-
-contract Chamber is IChamber, 
-    ERC1967UpgradeUpgradeable, 
-    ReentrancyGuard, 
-    Context, 
-    ERC721Holder, 
-    ERC1155Holder {
-
-    string public version;
-
-    /**************************************************
-        Chamber State Variables
-     **************************************************/
+contract Chamber is IChamber, Common {
 
     /// @notice memberToken The ERC721 contract used for membership.
     address public memberToken;
@@ -35,55 +14,34 @@ contract Chamber is IChamber,
     /// @notice govToken The ERC20 contract used for staking.
     address public govToken;
 
-    /// @notice The leaderboard
+    /// @notice leaderboard ff members based on total delegation.
+    /// @dev    Limited to maximum 5 leaders requiring 3 approvals
     uint8[5] public leaderboard;
 
-    /**
-     * @notice Tracks the amount of "govToken" delegated to a given NFT ID.
-     * @dev    1st element -> NFT tokenID, 2nd element -> amountDelegated.
-     */
-    mapping(uint8 => uint256) public totalDelegation;
-
-    /** 
-     * @notice Tracks a given address's delegatation balance of govToken for a given NFT ID.
-     * @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountDelegated.
-     */
-    mapping(address => mapping(uint8 => uint256)) public accountDelegation;
-    
-    /** 
-     * @notice Mapping of the Proposals
-     * @dev    1st element -> index, 2nd element -> Proposal struct
-     */
-    mapping(uint8 => Proposal) public proposals;
-
-    /** @notice proposalCount The number of proposals.*/
+    /// @notice proposalCount The number of proposals.
     uint8 public proposalCount;
 
-    /** 
-     * @notice Tracks which tokenIds have voted on proposals
-     * @dev    1st element -> proposalId, 2nd element -> tokenId, 3rd element-> voted boolean
-     */
+    /// @notice totalDelegation Tracks the amount of govToken delegated to a given NFT ID.
+    /// @dev    1st element -> NFT tokenID, 2nd element -> amountDelegated.
+    mapping(uint8 => uint256) public totalDelegation;
+
+    /// @notice accountDelegation Tracks a given address's delegatation balance of govToken for a given NFT ID.
+    /// @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountDelegated.
+    mapping(address => mapping(uint8 => uint256)) public accountDelegation;
+    
+    /// @notice proposals Mapping of the Proposals.
+    /// @dev    1st element -> index, 2nd element -> Proposal struct
+    mapping(uint8 => Proposal) public proposals;
+
+    /// @notice vtoed Tracks which tokenIds have voted on proposals
+    /// @dev    1st element -> proposalId, 2nd element -> tokenId, 3rd element-> voted boolean
     mapping(uint8 => mapping(uint8 => bool)) public voted;
-    
-    /**************************************************
-        Constructor
-     **************************************************/
 
-    constructor() {
-        _disableInitializers();
-    }
-
-    /**************************************************
-        Functions
-     **************************************************/
+    /// @notice contrcutor disables initialize function on deployment of base implementation.
+    constructor() { _disableInitializers(); }
     
-    /**
-     * @notice Initializes a new version of Chamber
-     * @param _memberToken  The address of the ERC721 contract used for membership.
-     * @param _govToken     The address of the ERC20 contract used for delegation.
-     */
+    /// @inheritdoc IChamber
     function initialize(address _memberToken, address _govToken) external initializer {
-        version = "0.1.0-alpha";
         memberToken = _memberToken;
         govToken = _govToken;
     }
@@ -116,7 +74,7 @@ contract Chamber is IChamber,
 
     /// @inheritdoc IChamber
     function approveProposal(uint8 _proposalId, uint8 _tokenId) external {
-        if(_msgSender() != IERC721(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't owner");
+        if(_msgSender() != IERC721(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't NFT owner");
         if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
         if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID aleready voted");
         
@@ -135,23 +93,6 @@ contract Chamber is IChamber,
         if (proposals[_proposalId].approvals == 3) {
             _executeProposal(_proposalId);
         }
-    }
-
-    /** 
-     * @notice _executeProposal function
-     * @param  _proposalId The ID of the proposal to execute.
-     */
-    function _executeProposal(uint8 _proposalId) private {
-        if(proposals[_proposalId].state != State.Initialized) revert invalidProposalState();
-       
-        Proposal memory proposal = proposals[_proposalId];
-        proposals[_proposalId].state = State.Executed;
-        
-        for (uint256 i = 0; i < proposal.data.length; i++) {
-            (bool success,) = proposal.target[i].call{value: proposal.value[i]}(proposal.data[i]);
-            if(!success) revert executionFailed();
-        }
-        emit ProposalExecuted(_proposalId);
     }
 
     /// @inheritdoc IChamber
@@ -179,7 +120,27 @@ contract Chamber is IChamber,
         emit Demoted(_msgSender(), _amt, _tokenId);
     }
 
-    /// @notice Updates the leaderboard
+    /// @notice _executeProposal function executes the proposal
+    /// @param  _proposalId The ID of the proposal to execute.
+    function _executeProposal(uint8 _proposalId) private {
+
+        // TODO Implement Gas handling and Optimizations
+        // TODO Implement before and after guards
+
+        if(proposals[_proposalId].state != State.Initialized) revert invalidProposalState();
+       
+        Proposal memory proposal = proposals[_proposalId];
+        proposals[_proposalId].state = State.Executed;
+        
+        for (uint256 i = 0; i < proposal.data.length; i++) {
+            (bool success,) = proposal.target[i].call{value: proposal.value[i]}(proposal.data[i]);
+            if(!success) revert executionFailed();
+        }
+        emit ProposalExecuted(_proposalId);
+    }
+
+    /// @notice _updateLeaderboard Updates the leaderboard array 
+    /// @param _tokenId The ID of the NFT to update.
     function _updateLeaderboard (uint8 _tokenId) private {
         for (uint8 i = 0; i < 5; i++) {
             if (leaderboard[i] == _tokenId) break;
@@ -197,7 +158,7 @@ contract Chamber is IChamber,
         }
     }
 
-    fallback() external payable { 
+    fallback() external payable {
         if (msg.value > 0) emit ReceivedEther(_msgSender(), msg.value);
     }
 
