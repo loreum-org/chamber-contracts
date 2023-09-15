@@ -14,7 +14,7 @@ contract DeployRegistry is Script {
         vm.startBroadcast();
         Chamber chamber = new Chamber();
         vm.stopBroadcast();
-        console2.log("Chamber address: ", address(chamber));
+        console2.log("Chamber Implementation address: ", address(chamber));
 
         vm.startBroadcast();
 
@@ -22,6 +22,6 @@ contract DeployRegistry is Script {
         bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(registryImpl), msg.sender);
         Proxy registry = new Proxy(address(registryImpl), data, msg.sender);
         vm.stopBroadcast();
-        console2.log("Registry address: ", address(registry));
+        console2.log("Registry Proxy address: ", address(registry));
     }
 }
