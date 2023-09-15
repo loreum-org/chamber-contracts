@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
+import { Proxy } from "./Proxy.sol";
 import { IChamber } from "./interfaces/IChamber.sol";
 import { IRegistry } from "./interfaces/IRegistry.sol";
-import { ProxyChamber } from "./ProxyChamber.sol";
 import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
+import { Initializable } from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
-contract Registry is IRegistry, Ownable {
+contract Registry is IRegistry, Initializable, Ownable {
 
-    /// @notice totalChamber The tsotal number of Chambers
+    /// @notice totalChamber The total number of Chambers
     uint256 public totalChambers;
 
     /// @notice chambers The Deployed Chambers
@@ -18,8 +19,12 @@ contract Registry is IRegistry, Ownable {
     /// @notice chamerVersion is the latest version of the Chamber contract
     address public chamberVersion;
 
-    /// @notice contructor receives the base Chamber implementation address
-    constructor(address _chamberVersion) Ownable() {
+    /// @notice contructor disables initializers
+    constructor() { _disableInitializers(); }
+
+    /// @inheritdoc IRegistry
+    function initialize(address _chamberVersion, address _owner) external initializer {
+        super._transferOwnership(_owner);
         chamberVersion = _chamberVersion;
     }
 
@@ -41,10 +46,10 @@ contract Registry is IRegistry, Ownable {
     function deploy(address _memberToken, address _govToken) external returns (address) {
         
         bytes memory data = abi.encodeWithSelector(IChamber.initialize.selector, _memberToken, _govToken);
-        ProxyChamber proxyChamber = new ProxyChamber(chamberVersion, data, msg.sender);
+        Proxy chamber = new Proxy(chamberVersion, data, msg.sender);
 
         ChamberData memory chamberData = ChamberData({
-            chamber: address(proxyChamber),
+            chamber: address(chamber),
             memberToken: _memberToken,
             govToken: _govToken
         });
@@ -52,8 +57,8 @@ contract Registry is IRegistry, Ownable {
         chambers[totalChambers] = chamberData;
         totalChambers++;
 
-        emit ChamberDeployed(address(proxyChamber), totalChambers, msg.sender, _memberToken, _govToken);
-        return address(proxyChamber);
+        emit ChamberDeployed(address(chamber), totalChambers, msg.sender, _memberToken, _govToken);
+        return address(chamber);
     }
 }
 

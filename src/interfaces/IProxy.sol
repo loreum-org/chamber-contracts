@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-interface IProxyChamber {
+interface IProxy {
 
     function getImplementation() external view returns (address);
 

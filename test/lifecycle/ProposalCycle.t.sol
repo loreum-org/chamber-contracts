@@ -4,8 +4,10 @@ pragma solidity ^0.8.19;
 import "../../lib/forge-std/src/Test.sol";
 
 import { Registry } from "../../src/Registry.sol";
+import { IRegistry } from "../../src/interfaces/IRegistry.sol";
 import { Chamber } from "../../src/Chamber.sol";
 import { IChamber } from "../../src/interfaces/IChamber.sol";
+import { DeployRegistry } from "../utils/DeployRegistry.sol";
 
 import { MockERC20 } from "../../lib/contract-utils/src/MockERC20.sol";
 import { MockNFT } from "../../lib/contract-utils/src/MockNFT.sol";
@@ -13,6 +15,9 @@ import { LoreumNFT } from "../../lib/loreum-nft/src/LoreumNFT.sol";
 import { LoreumToken } from "../../lib/loreum-token/src/LoreumToken.sol";
 
 contract ProposalCycleTest is Test {
+
+    address registryProxyAddr;
+    address chamberProxyAddr;
 
     MockERC20 USD;
     LoreumToken LORE;
@@ -41,9 +46,10 @@ contract ProposalCycleTest is Test {
             address(100)
         );
 
-        Registry registry = new Registry(address(new Chamber()));
-        address newChamber = registry.deploy(address(Explorers), address(LORE));
-        chamber = IChamber(newChamber);
+        DeployRegistry registryDeployer = new DeployRegistry();
+        registryProxyAddr = registryDeployer.deploy(address(this));
+        chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(Explorers), address(LORE));
+        chamber = IChamber(chamberProxyAddr);
 
         USD = new MockERC20("US Dollar", "USD", address(chamber));
 
