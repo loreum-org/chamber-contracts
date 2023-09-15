@@ -31,6 +31,12 @@ interface IRegistry {
         Functions
      **************************************************/
 
+    function initialize(address _chamberVersion, address _owner) external;
+
+    function totalChambers() external returns (uint256);
+
+    function chambers(uint256 _index) external returns (address chamber, address memberToken, address govToken);
+
     /// @notice Returns the Chamber implmentation address
     function chamberVersion() external returns (address);
     

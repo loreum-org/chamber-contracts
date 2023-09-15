@@ -6,6 +6,8 @@ import "../lib/forge-std/src/Test.sol";
 import { Registry } from "../src/Registry.sol";
 import { Chamber } from "../src/Chamber.sol";
 
+import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
+import { IRegistry } from "../src/interfaces/IRegistry.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
@@ -16,21 +18,26 @@ contract ChamberTest is Test {
     MockERC20 mERC20;
     MockNFT mNFT;
     IChamber chamber;
+    IRegistry registry;
+
+    address registryProxyAddr;
+    address chamberProxyAddr;
 
     function setUp() public {
         
         mERC20 = new MockERC20("MockERC20", "mERC20", address(this));
         mNFT = new MockNFT("MockNFT", "mNFT", address(this));
 
-        Registry registry = new Registry(address(new Chamber()));
-        address newChamber = registry.deploy(address(mNFT), address(mERC20));
-        chamber = IChamber(newChamber);
+        DeployRegistry registryDeployer = new DeployRegistry();
+        registryProxyAddr = registryDeployer.deploy(address(this));
+        chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mNFT), address(mERC20));
+        chamber = IChamber(chamberProxyAddr);
 
         USD = new MockERC20("US Dollar", "USD", address(chamber));
         vm.deal(address(chamber), 100 ether);
     }
 
-    function promoteExplorers() public {
+    function promoteMembers() public {
         
         // Approve Chamber for large amount of LORE
         mERC20.approve(address(chamber), 10_000_000_000 ether);
@@ -47,7 +54,7 @@ contract ChamberTest is Test {
 
     function test_Chamber_proposal() public {
 
-        promoteExplorers();
+        promoteMembers();
 
         // Create Proposal
 

@@ -5,7 +5,12 @@ import { Test } from "../../lib/forge-std/src/Test.sol";
 
 import { Registry } from "../../src/Registry.sol";
 import { Chamber } from "../../src/Chamber.sol";
+
 import { IChamber } from "../../src/interfaces/IChamber.sol";
+import { IRegistry } from "../../src/interfaces/IRegistry.sol";
+import { IProxy } from "../../src/interfaces/IProxy.sol";
+
+import { DeployRegistry } from "../utils/DeployRegistry.sol";
 
 import { MockERC20 } from "../../lib/contract-utils/src/MockERC20.sol";
 import { LoreumNFT } from "../../lib/loreum-nft/src/LoreumNFT.sol";
@@ -18,6 +23,8 @@ contract ChamberSecTest is Test {
     LoreumToken LORE;
     LoreumNFT Explorers;
     IChamber chamber;
+    address registryProxyAddr;
+    address chamberProxyAddr;
 
     address bones = address(1);
     address coconut = address(2);
@@ -42,9 +49,11 @@ contract ChamberSecTest is Test {
             address(100)
         );
 
-        Registry registry = new Registry(address(new Chamber()));
-        address newChamber = registry.deploy(address(Explorers), address(LORE));
-        chamber = IChamber(newChamber);
+        DeployRegistry registryDeployer = new DeployRegistry();
+        registryProxyAddr = registryDeployer.deploy(address(this));
+        chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(Explorers), address(LORE));
+        chamber = IChamber(chamberProxyAddr);
+
         USD = new MockERC20("US Dollar", "USD", address(chamber));
 
         vm.label(bones, "Bones");
@@ -61,12 +70,14 @@ contract ChamberSecTest is Test {
     // by promoteing another leader and demote victim leader
     function test_Chamber_sec_demotionTheft() public {
 
+        IProxy(registryProxyAddr).getImplementation();
+
         vm.startPrank(bones);
         deal(address(LORE), bones, 1_000_000);
         LORE.approve(address(chamber), 1_000_000);
 
         // promote tokenId 1
-        chamber.promote(5, 1);
+        chamber.promote(5,1);
 
         // promote another fnt to increase total amount delegated
         chamber.promote(7, 10);
@@ -80,7 +91,7 @@ contract ChamberSecTest is Test {
         chamber.promote(7, 1);
         vm.stopPrank();
 
-        // can bones demote tokenId 1?
+        // bones should not be able to demote tokenId 1
         vm.startPrank(bones);
         vm.expectRevert();
         chamber.demote(12, 1);

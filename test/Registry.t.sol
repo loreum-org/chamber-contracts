@@ -3,55 +3,75 @@ pragma solidity ^0.8.19;
 
 import "../lib/forge-std/src/Test.sol";
 
+import { Proxy } from "../src/Proxy.sol";
 import { Chamber } from "../src/Chamber.sol";
 import { Registry } from "../src/Registry.sol";
 
 import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 
+import { IProxy } from "../src/interfaces/IProxy.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
 import { IRegistry } from "../src/interfaces/IRegistry.sol";
+import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
 
 contract RegistryTest is Test {
     MockERC20 mERC20;
     MockNFT mNFT;
-    Registry registry;
-    Chamber chamber;
+
+    address registryProxyAddr;
+    address chamberProxyAddr;
+    
+    IProxy registryProxy;
+    IProxy chamberProxy;
+
+    IChamber chamber;
+    IRegistry registry;
 
     function setUp() public {
+
         mERC20 = new MockERC20("MockERC20", "mERC20", address(this));
         mNFT = new MockNFT("MockNFT", "mNFT", address(this));
-        chamber = new Chamber();
-        registry = new Registry(address(chamber));
+
+        DeployRegistry registryDeployer = new DeployRegistry();
+        registryProxyAddr = registryDeployer.deploy(address(this));
+        chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mNFT), address(mERC20));
+
+        registryProxy = IProxy(registryProxyAddr);
+        chamberProxy = IProxy(chamberProxyAddr);
+
+        chamber = IChamber(chamberProxyAddr);
+        registry = IRegistry(registryProxyAddr);
     }
 
-    function test_registry_create() public {
+    function test_Registry_create() public {
         address newChamber = registry.deploy(address(mERC20), address(mNFT));
-        (address _chamber, address _gov, address _member) = registry.chambers(0);
+        (address _chamber, address _gov, address _member) = registry.chambers(1);
         assertEq(_chamber, newChamber);
         assertEq(_gov, address(mERC20));
         assertEq(_member, address(mNFT));
     }
 
-    function test_registry_getChambers() public {
+    function test_Registry_getChambers() public {
         registry.deploy(address(mERC20), address(mNFT));
         registry.deploy(address(mERC20), address(mNFT));
         registry.deploy(address(mERC20), address(mNFT));
         registry.deploy(address(mERC20), address(mNFT));
         registry.deploy(address(mERC20), address(mNFT));
-        address newChamber5 = registry.deploy(address(mERC20), address(mNFT));
+        address newChamber6 = registry.deploy(address(mERC20), address(mNFT));
+        address newChamber7 = registry.deploy(address(mERC20), address(mNFT));
         registry.deploy(address(mERC20), address(mNFT));
         registry.deploy(address(mERC20), address(mNFT));
         registry.deploy(address(mERC20), address(mNFT));
-        registry.deploy(address(mERC20), address(mNFT));
-
-        IRegistry.ChamberData[] memory chambers = registry.getChambers(5, 5);
-        assertEq(chambers.length, 5);
-        assertEq(chambers[0].chamber, address(newChamber5));
+        
+        // test the skip and limit
+        IRegistry.ChamberData[] memory chambers = registry.getChambers(2, 6);
+        assertEq(chambers.length, 2);
+        assertEq(chambers[0].chamber, address(newChamber6));
+        assertEq(chambers[1].chamber, address(newChamber7));
     }
 
-    function test_registry_version() public {
-        assertEq(registry.chamberVersion(), address(chamber));
+    function test_Registry_version() public {
         Chamber newChamber = new Chamber();
         registry.setChamberVersion(address(newChamber));
         assertEq(registry.chamberVersion(), address(newChamber));
@@ -62,4 +82,21 @@ contract RegistryTest is Test {
         registry.setChamberVersion(address(chamber));
     }
 
+    function test_Registry_proxy() public {
+        Registry newRegistryImpl = new Registry();
+        registryProxy.upgradeTo(address(newRegistryImpl));
+        assertEq(registryProxy.getImplementation(), address(newRegistryImpl));
+    }
+
+    function test_Registry_initialize() public {
+        Chamber chamberImpl = new Chamber();
+        Registry registryImpl = new Registry();
+        vm.expectRevert();
+        registryImpl.initialize(address(chamberImpl), address(1));
+        address _owner = address(1);
+        bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberImpl), _owner);
+        registryProxy = new Proxy(address(registryImpl), data, _owner);
+        assertEq(registryProxy.getImplementation(), address(registryImpl));
+        assertEq(registryProxy.getAdmin(), _owner);
+    }
 }
