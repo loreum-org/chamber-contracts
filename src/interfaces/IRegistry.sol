@@ -31,18 +31,24 @@ interface IRegistry {
         Functions
      **************************************************/
 
-    function initialize(address _chamberVersion, address _owner) external;
+    /// @notice Initializes the Registry
+    /// @param chamberVersion The address of the Chamber version
+    /// @param owner          The address of the owner
+    function initialize(address chamberVersion, address owner) external;
 
+    // @notice Returns the total number of Chambers
     function totalChambers() external returns (uint256);
 
-    function chambers(uint256 _index) external returns (address chamber, address memberToken, address govToken);
+    /// @notice Returns the Chamber data for a given index
+    /// @param  index The index of the Chamber to query
+    function chambers(uint256 index) external returns (address chamber, address memberToken, address govToken);
 
     /// @notice Returns the Chamber implmentation address
     function chamberVersion() external returns (address);
     
     /// @notice Sets the Chamber version
-    /// @param _chamberVersion The address of the Chamber version
-    function setChamberVersion(address _chamberVersion) external;
+    /// @param chamberVersion The address of the Chamber version
+    function setChamberVersion(address chamberVersion) external;
 
     /// @notice getChambers Returns an array of ChamberData structs
     /// @param  limit The maximum number of Chambers to return
@@ -51,8 +57,8 @@ interface IRegistry {
     function getChambers(uint8 limit, uint8 skip) external view returns (ChamberData[] memory);
 
     /// @notice deploy Deploys a new Chamber
-    /// @param  _memberToken The Membership (NFT) token
-    /// @param  _govToken    The Governance (ERC20) token
+    /// @param  memberToken The Membership (NFT) token
+    /// @param  govToken    The Governance (ERC20) token
     /// @return address      The address of the new Chamber
-    function deploy(address _memberToken, address _govToken) external returns (address);
+    function deploy(address memberToken, address govToken) external returns (address);
 }
