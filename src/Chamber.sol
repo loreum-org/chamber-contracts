@@ -76,7 +76,7 @@ contract Chamber is IChamber, Common {
     function approveProposal(uint8 _proposalId, uint8 _tokenId) external {
         if(_msgSender() != IERC721(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't NFT owner");
         if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
-        if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID aleready voted");
+        if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID already voted");
         
         uint8[5] memory voters = proposals[_proposalId].voters;
         bool onVoterList = false;

@@ -1,4 +1,4 @@
-
+export .env
 
 ci-test :; forge test
 
@@ -34,3 +34,8 @@ verify :; forge verify-contract \
 	${address} \
 	src/${contract}.sol:${contract}
 
+
+call :; cast call ${address} ${method} ${args} \
+	--chain-id ${chain} \
+	--rpc-url ${rpc}
+	--private-key ${private}
