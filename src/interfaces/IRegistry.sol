@@ -37,24 +37,24 @@ interface IRegistry {
     function initialize(address chamberVersion, address owner) external;
 
     // @notice Returns the total number of Chambers
-    function totalChambers() external returns (uint256);
+    function totalChambers() external view returns (uint256);
 
     /// @notice Returns the Chamber data for a given index
     /// @param  index The index of the Chamber to query
-    function chambers(uint256 index) external returns (address chamber, address memberToken, address govToken);
+    function chambers(uint256 index) external view returns (address chamber, address memberToken, address govToken);
 
     /// @notice Returns the Chamber implmentation address
-    function chamberVersion() external returns (address);
-    
-    /// @notice Sets the Chamber version
-    /// @param chamberVersion The address of the Chamber version
-    function setChamberVersion(address chamberVersion) external;
+    function chamberVersion() external view returns (address);
 
     /// @notice getChambers Returns an array of ChamberData structs
     /// @param  limit The maximum number of Chambers to return
     /// @param  skip  The number of Chambers to skip
     /// @return       ChamberData[] An array of ChamberData structs
     function getChambers(uint8 limit, uint8 skip) external view returns (ChamberData[] memory);
+
+    /// @notice Sets the Chamber version
+    /// @param chamberVersion The address of the Chamber version
+    function setChamberVersion(address chamberVersion) external;
 
     /// @notice deploy Deploys a new Chamber
     /// @param  memberToken The Membership (NFT) token
