@@ -2,15 +2,15 @@
 pragma solidity 0.8.19;
 
 import "forge-std/Script.sol";
-import { Registry } from "../src/Registry.sol";
+import { Chamber } from "../src/Chamber.sol";
 import "forge-std/console2.sol";
 
-contract DeployRegistry is Script {
+contract DeployChamber is Script {
 
     function run() external {
         vm.startBroadcast();
-        Registry registryImpl = new Registry();
+        Chamber chamberImpl = new Chamber();
         vm.stopBroadcast();
-        console2.log("Registry Implementation: ", address(registryImpl));
+        console2.log("Chamber Implementation: ", address(chamberImpl));
     }
 }

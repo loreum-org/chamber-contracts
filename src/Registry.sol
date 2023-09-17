@@ -35,6 +35,7 @@ contract Registry is IRegistry, Initializable, Ownable {
 
     /// @inheritdoc IRegistry
     function getChambers(uint8 limit, uint8 skip) external view returns (ChamberData[] memory) {
+        if (limit > totalChambers && totalChambers <= 255) limit = uint8(totalChambers);
         ChamberData[] memory _chambers = new ChamberData[](limit);
         for (uint8 i = 0; i < limit; i++) {
             _chambers[i] = chambers[i + skip];
