@@ -16,7 +16,7 @@ contract Chamber is IChamber, Common {
 
     /// @notice leaderboard ff members based on total delegation.
     /// @dev    Limited to maximum 5 leaders requiring 3 approvals
-    uint8[5] public leaderboard;
+    uint8[] public leaderboard;
 
     /// @notice proposalCount The number of proposals.
     uint8 public proposalCount;
@@ -47,10 +47,10 @@ contract Chamber is IChamber, Common {
     }
     
     /// @inheritdoc IChamber
-    function getLeaderboard() external view returns (uint8[5] memory, uint256[5] memory) {
-        uint8[5] memory _leaderboard = leaderboard;
-        uint256[5] memory _delegations;
-        for (uint8 i = 0; i < 5; i++) {
+    function getLeaderboard() external view returns (uint8[] memory, uint256[] memory) {
+        uint8[] memory _leaderboard = leaderboard;
+        uint256[] memory _delegations = new uint256[](_leaderboard.length);
+        for (uint8 i = 0; i < _leaderboard.length; i++) {
             _delegations[i] = totalDelegation[_leaderboard[i]];
         }
         return (_leaderboard, _delegations);
@@ -59,17 +59,20 @@ contract Chamber is IChamber, Common {
     /// @inheritdoc IChamber
     function createProposal(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
         if(IERC721(memberToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
-        
+        uint8[5] memory topFiveLeader;
+        for (uint8 i=0; i<5; i++){
+            topFiveLeader[i]= leaderboard[i];
+        }
         proposalCount++;
         proposals[proposalCount] = Proposal({
             target: _target,
             value: _value,
             data: _data,
-            voters: leaderboard,
+            voters: topFiveLeader,
             approvals: 0,
             state: State.Initialized
         });
-        emit ProposalCreated(proposalCount, _target, _value, _data, leaderboard);
+        emit ProposalCreated(proposalCount, _target, _value, _data, topFiveLeader);
     }
 
     /// @inheritdoc IChamber
@@ -90,7 +93,7 @@ contract Chamber is IChamber, Common {
         voted[_proposalId][_tokenId] = true;
         proposals[_proposalId].approvals += 1;
         emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
-        if (proposals[_proposalId].approvals == 3) {
+        if (proposals[_proposalId].approvals == 3) { // TODO: Make quorum dynamic
             _executeProposal(_proposalId);
         }
     }
@@ -114,7 +117,11 @@ contract Chamber is IChamber, Common {
         
         totalDelegation[_tokenId] -= _amt;
         accountDelegation[_msgSender()][_tokenId] -= _amt;
-        _updateLeaderboard(_tokenId);
+        if (totalDelegation[_tokenId]== 0){
+            _removeFromLeaderboard(_tokenId);
+        }else{
+            _updateLeaderboard(_tokenId);
+        }
         
         SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), _amt);
         emit Demoted(_msgSender(), _amt, _tokenId);
@@ -141,18 +148,48 @@ contract Chamber is IChamber, Common {
 
     /// @notice _updateLeaderboard Updates the leaderboard array 
     /// @param _tokenId The ID of the NFT to update.
-    function _updateLeaderboard (uint8 _tokenId) private {
-        for (uint8 i = 0; i < 5; i++) {
-            if (leaderboard[i] == _tokenId) break;
-            if (totalDelegation[_tokenId] > totalDelegation[leaderboard[i]]) {
-                uint8 temp = leaderboard[i];
-                leaderboard[i] = _tokenId;
-                for (uint8 j = i; j < 5; j++) {
-                    if (j == 4) break;
-                    uint8 temp2 = leaderboard[j + 1];
-                    leaderboard[j + 1] = temp;
-                    temp = temp2;
+    function _updateLeaderboard(uint8 _tokenId) private {
+        bool tokenIdExists = false;
+        for (uint256 i = 0; i < leaderboard.length; i++) {
+            if (leaderboard[i] == _tokenId) {
+                tokenIdExists = true;
+                break;
+            }
+        }
+        if (tokenIdExists) {
+            _bubbleSort();
+        } else {
+            leaderboard.push(_tokenId);
+            _bubbleSort();
+        }
+    }
+
+    /// @notice _bubbleSort Updates the leaderboard with bubble sort
+    function _bubbleSort() private {
+        bool swapped;
+        for (uint256 i = 0; i < leaderboard.length; i++) {
+            swapped = false;
+            for (uint256 j = 0; j < leaderboard.length - i - 1; j++) {
+                if (totalDelegation[leaderboard[j]] < totalDelegation[leaderboard[j + 1]]) {
+                    (leaderboard[j], leaderboard[j + 1]) = (leaderboard[j + 1], leaderboard[j]);
+                    swapped = true;
                 }
+            }
+            if (!swapped) {
+                break;
+            }
+        }
+    }
+
+    /// @notice _removeFromLeaderboard Removes the Token ID
+    /// @param _tokenId The ID of the NFT to remove.
+    function _removeFromLeaderboard(uint8 _tokenId) private {
+        for (uint256 i = 0; i < leaderboard.length; i++) {
+            if (leaderboard[i] == _tokenId) {
+                for (uint256 j = i; j < leaderboard.length - 1; j++) {
+                    leaderboard[j] = leaderboard[j + 1];
+                }
+                leaderboard.pop();
                 break;
             }
         }

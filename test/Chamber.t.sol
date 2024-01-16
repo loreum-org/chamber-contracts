@@ -48,7 +48,7 @@ contract ChamberTest is Test {
         chamber.promote(250_000 ether, 4);
         chamber.promote(70_000 ether, 5);
 
-        (uint8[5] memory leaders, uint256[5] memory delegations) = chamber.getLeaderboard();
+        (uint8[] memory leaders, uint256[] memory delegations) = chamber.getLeaderboard();
         (leaders, delegations);
     }
 
@@ -183,4 +183,75 @@ contract ChamberTest is Test {
         uint256 bal2 = address(chamber).balance;
         assertEq(bal1, bal2 - amount);
     }
+
+    function tesFail_Chamber_demoteToZeroAndUpdateLeaderboard() public{
+        deal(address(mERC20), address(this), 10_000_000 ether);
+        mERC20.approve(address(chamber), 15_000 ether);
+        chamber.promote(5_000 ether, 5);
+        chamber.promote(4_000 ether, 4);
+        chamber.promote(3_000 ether, 3);
+        chamber.promote(2_000 ether, 2);
+        chamber.promote(1_000 ether, 1);
+
+        (uint8[] memory _leaderboard, uint256[] memory _delegations) = chamber.getLeaderboard();
+        assertEq(_leaderboard[0], 5);
+        assertEq(_leaderboard[1], 4);
+        assertEq(_leaderboard[2], 3);
+        assertEq(_leaderboard[3], 2);
+        assertEq(_leaderboard[4], 1);
+
+        assertEq(_delegations[0], 5_000 ether);
+        assertEq(_delegations[1], 4_000 ether);
+        assertEq(_delegations[2], 3_000 ether);
+        assertEq(_delegations[3], 2_000 ether);
+        assertEq(_delegations[4], 1_000 ether);
+
+        chamber.demote(5_000 ether, 5);
+
+        (uint8[] memory _leaderboard2, uint256[] memory _delegations2) = chamber.getLeaderboard();
+
+		// The totalDelegation of tokenId 5 demote to 0
+		// but the position did not changed
+        assertEq(_leaderboard2[0], 5);
+        assertEq(_leaderboard2[1], 4);
+        assertEq(_leaderboard2[2], 3);
+        assertEq(_leaderboard2[3], 2);
+        assertEq(_leaderboard2[4], 1);
+
+        assertEq(_delegations2[0], 0);
+        assertEq(_delegations2[1], 4_000 ether);
+        assertEq(_delegations2[2], 3_000 ether);
+        assertEq(_delegations2[3], 2_000 ether);
+        assertEq(_delegations2[4], 1_000 ether);
+    }
+
+    function testFail_Chamber_promote_duplicateLeader() public{
+        deal(address(mERC20), address(this), 10_000_000 ether);
+        mERC20.approve(address(chamber), 15_000 ether);
+        chamber.promote(5_000 ether, 5);
+        chamber.promote(4_000 ether, 4);
+        chamber.promote(3_000 ether, 3);
+        chamber.promote(2_000 ether, 2);
+        chamber.promote(1_000 ether, 1);
+
+        deal(address(mERC20), address(1), 10_000_000 ether);
+        vm.startPrank(address(1));
+        mERC20.approve(address(chamber),15_000 ether );
+        chamber.promote(4_000 ether, 4);
+        
+        (uint8[] memory _leaderboard, uint256[] memory _delegations) = chamber.getLeaderboard();
+
+        assertEq(_leaderboard[0], 4);
+        assertEq(_leaderboard[1], 5);
+        assertEq(_leaderboard[2], 4); // Duplicate
+        assertEq(_leaderboard[3], 3);
+        assertEq(_leaderboard[4], 2);
+
+        assertEq(_delegations[0], 8_000 ether);
+        assertEq(_delegations[1], 5_000 ether);
+        assertEq(_delegations[2], 8_000 ether); // Duplicate
+        assertEq(_delegations[3], 3_000 ether);
+        assertEq(_delegations[4], 2_000 ether);
+        vm.stopPrank();
+}
 }

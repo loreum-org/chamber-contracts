@@ -64,11 +64,11 @@ contract ProposalCycleTest is Test {
 
     }
 
-    event Log(uint8[5], uint256[5]);
+    event Log(uint8[], uint256[]);
 
     function helperLogger() public {
         // for logging out the leaderboard
-        (uint8[5] memory leaders, uint256[5] memory delegation) = chamber.getLeaderboard();
+        (uint8[] memory leaders, uint256[] memory delegation) = chamber.getLeaderboard();
         emit Log(leaders, delegation);
     }
 

@@ -90,7 +90,7 @@ interface IChamber {
     function proposals(uint8 proposalId) external view returns (uint8 approvals, State state);
 
     /// @notice Returns two arrays, the leaders and their delegations
-    function getLeaderboard() external view returns (uint8[5] memory, uint256[5] memory);
+    function getLeaderboard() external view returns (uint8[] memory, uint256[] memory);
 
 
     /// @notice approve Proposal function

@@ -49,11 +49,11 @@ contract ProxyUpgradeTest is Test {
         chamberProxy.getImplementation();
         mERC20.approve(address(chamberProxy), 1000);
         chamber.promote(1, 1);
-        (uint8[5] memory leaders, uint256[5] memory amounts) = chamber.getLeaderboard();
+        (uint8[] memory leaders, uint256[] memory amounts) = chamber.getLeaderboard();
         Chamber chamberV2 = new Chamber();
 
         chamberProxy.upgradeTo(address(chamberV2));
-        (uint8[5] memory newLeaders, uint256[5] memory newAmounts) = chamber.getLeaderboard();
+        (uint8[] memory newLeaders, uint256[] memory newAmounts) = chamber.getLeaderboard();
         assertEq(newLeaders[0], leaders[0]);
         assertEq(newAmounts[0], amounts[0]); 
         assertEq(chamberProxy.getImplementation(), address(chamberV2));
