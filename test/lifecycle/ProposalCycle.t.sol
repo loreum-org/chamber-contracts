@@ -23,18 +23,18 @@ contract ProposalCycleTest is Test {
     LoreumToken LORE;
     LoreumNFT Explorers;
     IChamber chamber;
-    address bones = address(1);
-    address coconut = address(2);
-    address hurricane = address(3);
-    address jack = address(4);
-    address danny = address(5);
-    address shifty = address(6);
-    address blackbeard = address(7); 
+    address bones = vm.addr(1);
+    address coconut = vm.addr(2);
+    address hurricane = vm.addr(3);
+    address jack = vm.addr(4);
+    address danny = vm.addr(5);
+    address shifty = vm.addr(6);
+    address blackbeard = vm.addr(7); 
 
     address[7] lorians = [bones,coconut,hurricane,jack,danny,shifty,blackbeard];
 
     function setUp() public {
-        LORE = new LoreumToken(address(100), 1000000 ether, 10000000 ether);
+        LORE = new LoreumToken(vm.addr(100), 1000000 ether, 10000000 ether);
         Explorers = new LoreumNFT(
             "Loreum Explorers",
             "LOREUM",
@@ -43,7 +43,7 @@ contract ProposalCycleTest is Test {
             500,
             10000,
             100,
-            address(100)
+            vm.addr(100)
         );
 
         DeployRegistry registryDeployer = new DeployRegistry();
@@ -72,6 +72,13 @@ contract ProposalCycleTest is Test {
         emit Log(leaders, delegation);
     }
 
+    function getSignature(uint8 _proposalId, uint8 _tokenId, uint256 _privateKey)public view returns(bytes memory){
+        bytes32 digest = chamber.constructMessageHash(_proposalId,_tokenId);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(_privateKey, digest);
+        bytes memory signature = abi.encodePacked(r, s, v); 
+        return signature;
+    }
+
     // helper to Mint tokenIds to each Lorian and delegate LORE amounts to Chamber
     function chamberSetup () public {
         
@@ -79,7 +86,7 @@ contract ProposalCycleTest is Test {
         // from each of the team members above
         for (uint8 i = 0; i <= lorians.length - 1; i++) {
             vm.deal(lorians[i], 100 ether);
-            vm.prank(address(100));
+            vm.prank(vm.addr(100));
             LORE.transfer(lorians[i], 33333 ether);
             vm.startPrank(lorians[i]);
             Explorers.publicMint{ value: 0.05 ether }(1);
@@ -105,12 +112,12 @@ contract ProposalCycleTest is Test {
         * 7. nft hodler promoted after leader snapshot should not be able to approve
         * 8. nft holder that is demoted after proposal created can still approve
         */
-        vm.startPrank(address(1776));
+        vm.startPrank(vm.addr(1776));
 
         // mint an nft to 1776
-        vm.deal(address(1776), 100 ether);
+        vm.deal(vm.addr(1776), 100 ether);
         Explorers.publicMint{ value: 0.05 ether }(1);
-        assertEq(Explorers.balanceOf(address(1776)), 1);
+        assertEq(Explorers.balanceOf(vm.addr(1776)), 1);
 
         // 1. nft holder should be able to create a proposal
         bytes[] memory dataArray1 = new bytes[](1);
@@ -125,12 +132,14 @@ contract ProposalCycleTest is Test {
         assertEq(chamber.proposalCount(), 1);
 
         // 2. nft holder without delegation should not be able to approve transaction
+        bytes memory signature = getSignature(1,8,1776);
         vm.expectRevert();
-        chamber.approveProposal(1, 8);
+        chamber.approveProposal(1, 8,signature);
 
         // 3. nft holder should not be able to approve transaction using unowned tokenId
+        bytes memory signature1 = getSignature(1,5,1776);
         vm.expectRevert();
-        chamber.approveProposal(1, 5);
+        chamber.approveProposal(1, 5,signature1);
  
         vm.stopPrank();
 
@@ -176,34 +185,38 @@ contract ProposalCycleTest is Test {
         vm.startPrank(bones);
         chamber.createProposal(targetArray, valueArray, dataArray);
         assertEq(chamber.proposalCount(), 2);
-        (votes, state) = chamber.proposals(2);
+        (votes, state) = chamber.proposal(2);
         assertEq(votes, 0);
         assertTrue(state == IChamber.State.Initialized);
 
         // 4. nft holder should not be able to approve if not a leader
         chamber.getLeaderboard();
         vm.startPrank(blackbeard);
+        bytes memory signature2 = getSignature(1,7,7);
         vm.expectRevert();
-        chamber.approveProposal(1, 7);
+        chamber.approveProposal(1, 7,signature2);
         vm.stopPrank();
         
         // 5. Leaders should be able to approve transaction
-        vm.prank(danny);
-        chamber.approveProposal(2, 5);
-        (votes, state) = chamber.proposals(2);
+        vm.startPrank(danny);
+        chamber.approveProposal(2, 5,getSignature(2,5,5));
+        vm.stopPrank();
+        (votes, state) = chamber.proposal(2);
         assertEq(votes, 1);
         assertTrue(state == IChamber.State.Initialized);
 
-        vm.prank(bones);
-        chamber.approveProposal(2, 1);
-        (votes, state) = chamber.proposals(2);
+        vm.startPrank(bones);
+        chamber.approveProposal(2, 1,getSignature(2,1,1));
+        vm.stopPrank();
+        (votes, state) = chamber.proposal(2);
         assertEq(votes, 2);
         assertTrue(state == IChamber.State.Initialized);
         
         // 6. Quorum of leaders should execute proposal
-        vm.prank(hurricane);
-        chamber.approveProposal(2, 3);
-        (votes, state) = chamber.proposals(2);
+        vm.startPrank(hurricane);
+        chamber.approveProposal(2, 3,getSignature(2,3,3));
+        vm.stopPrank();
+        (votes, state) = chamber.proposal(2);
         assertEq(votes, 3);
         assertTrue(state == IChamber.State.Executed);
 
@@ -223,7 +236,7 @@ contract ProposalCycleTest is Test {
         vm.startPrank(jack);
         chamber.demote(33333 ether, 4);
         helperLogger();
-        chamber.approveProposal(1, 4);
+        chamber.approveProposal(1, 4,getSignature(1,4,4));
         vm.stopPrank();
     }
 }

@@ -23,10 +23,19 @@ contract ChamberTest is Test {
     address registryProxyAddr;
     address chamberProxyAddr;
 
+    function getSignature(uint8 _proposalId, uint8 _tokenId, uint256 _privateKey)public view returns(bytes memory){
+        bytes32 digest = chamber.constructMessageHash(_proposalId,_tokenId);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(_privateKey, digest);
+        bytes memory signature = abi.encodePacked(r, s, v); 
+        return signature;
+    }
+
     function setUp() public {
         
-        mERC20 = new MockERC20("MockERC20", "mERC20", address(this));
-        mNFT = new MockNFT("MockNFT", "mNFT", address(this));
+        mERC20 = new MockERC20("MockERC20", "mERC20", vm.addr(1));
+        mNFT = new MockNFT("MockNFT", "mNFT", vm.addr(1));
+        // mERC20 = new MockERC20("MockERC20", "mERC20", address(this));
+        // mNFT = new MockNFT("MockNFT", "mNFT", address(this));
 
         DeployRegistry registryDeployer = new DeployRegistry();
         registryProxyAddr = registryDeployer.deploy(address(this));
@@ -39,6 +48,7 @@ contract ChamberTest is Test {
 
     function promoteMembers() public {
         
+        vm.startPrank(vm.addr(1));
         // Approve Chamber for large amount of LORE
         mERC20.approve(address(chamber), 10_000_000_000 ether);
 
@@ -50,11 +60,13 @@ contract ChamberTest is Test {
 
         (uint8[] memory leaders, uint256[] memory delegations) = chamber.getLeaderboard();
         (leaders, delegations);
+        vm.stopPrank();
     }
 
     function test_Chamber_proposal() public {
 
         promoteMembers();
+        vm.startPrank(vm.addr(1));
 
         // Create Proposal
 
@@ -83,13 +95,13 @@ contract ChamberTest is Test {
 
         // Approve Proposal
 
-        chamber.approveProposal(1, 3);
-        chamber.approveProposal(1, 2);
+        chamber.approveProposal(1, 3,getSignature(1,3,1));
+        chamber.approveProposal(1, 2,getSignature(1,2,1));
 
         // Execute Proposal
-
-        chamber.approveProposal(1, 1);
+        chamber.approveProposal(1, 1,getSignature(1,1,1));
         chamber.getLeaderboard();
+        vm.stopPrank();
     }
 
     function test_Chamber_promote (uint256 amount) public {
@@ -184,7 +196,7 @@ contract ChamberTest is Test {
         assertEq(bal1, bal2 - amount);
     }
 
-    function tesFail_Chamber_demoteToZeroAndUpdateLeaderboard() public{
+    function testFail_Chamber_demoteToZeroAndUpdateLeaderboard() public{
         deal(address(mERC20), address(this), 10_000_000 ether);
         mERC20.approve(address(chamber), 15_000 ether);
         chamber.promote(5_000 ether, 5);
@@ -253,5 +265,5 @@ contract ChamberTest is Test {
         assertEq(_delegations[3], 3_000 ether);
         assertEq(_delegations[4], 2_000 ether);
         vm.stopPrank();
-}
+    }
 }

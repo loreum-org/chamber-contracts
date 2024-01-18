@@ -7,6 +7,7 @@ import { IChamber } from "./interfaces/IChamber.sol";
 import "./Common.sol";
 
 contract Chamber is IChamber, Common {
+    using ECDSA for bytes32;
 
     /// @notice memberToken The ERC721 contract used for membership.
     address public memberToken;
@@ -21,6 +22,9 @@ contract Chamber is IChamber, Common {
     /// @notice proposalCount The number of proposals.
     uint8 public proposalCount;
 
+    /// @notice Counter to track the nonce for each proposal
+    uint256 public nonce;
+
     /// @notice totalDelegation Tracks the amount of govToken delegated to a given NFT ID.
     /// @dev    1st element -> NFT tokenID, 2nd element -> amountDelegated.
     mapping(uint8 => uint256) public totalDelegation;
@@ -31,7 +35,12 @@ contract Chamber is IChamber, Common {
     
     /// @notice proposals Mapping of the Proposals.
     /// @dev    1st element -> index, 2nd element -> Proposal struct
-    mapping(uint8 => Proposal) public proposals;
+    mapping(uint8 => Proposal) private proposals;
+
+    /// @inheritdoc IChamber
+    function proposal(uint8 proposalId) public view returns(uint8 approvals, State state){
+        return (proposals[proposalId].approvals, proposals[proposalId].state);
+    }
 
     /// @notice vtoed Tracks which tokenIds have voted on proposals
     /// @dev    1st element -> proposalId, 2nd element -> tokenId, 3rd element-> voted boolean
@@ -64,23 +73,27 @@ contract Chamber is IChamber, Common {
             topFiveLeader[i]= leaderboard[i];
         }
         proposalCount++;
+        nonce++;
         proposals[proposalCount] = Proposal({
             target: _target,
             value: _value,
             data: _data,
             voters: topFiveLeader,
             approvals: 0,
+            nonce: nonce,
             state: State.Initialized
         });
-        emit ProposalCreated(proposalCount, _target, _value, _data, topFiveLeader);
+        emit ProposalCreated(proposalCount, _target, _value, _data, topFiveLeader, nonce);
     }
 
     /// @inheritdoc IChamber
-    function approveProposal(uint8 _proposalId, uint8 _tokenId) external {
+    function approveProposal(uint8 _proposalId, uint8 _tokenId, bytes memory _signature) external {
         if(_msgSender() != IERC721(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't NFT owner");
         if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
         if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID already voted");
-        
+
+        require(verifySignature(_proposalId, _tokenId, _signature), "Invalid signature");
+
         uint8[5] memory voters = proposals[_proposalId].voters;
         bool onVoterList = false;
 
@@ -136,11 +149,11 @@ contract Chamber is IChamber, Common {
 
         if(proposals[_proposalId].state != State.Initialized) revert invalidProposalState();
        
-        Proposal memory proposal = proposals[_proposalId];
+        Proposal memory proposalData = proposals[_proposalId];
         proposals[_proposalId].state = State.Executed;
         
-        for (uint256 i = 0; i < proposal.data.length; i++) {
-            (bool success,) = proposal.target[i].call{value: proposal.value[i]}(proposal.data[i]);
+        for (uint256 i = 0; i < proposalData.data.length; i++) {
+            (bool success,) = proposalData.target[i].call{value: proposalData.value[i]}(proposalData.data[i]);
             if(!success) revert executionFailed();
         }
         emit ProposalExecuted(_proposalId);
@@ -193,6 +206,38 @@ contract Chamber is IChamber, Common {
                 break;
             }
         }
+    }
+
+    /// @inheritdoc IChamber
+    function verifySignature(
+        uint8 _proposalId,
+        uint8 _tokenId,
+        bytes memory _signature
+    ) public view returns (bool) {
+        bytes32 messageHash = constructMessageHash(_proposalId, _tokenId);
+
+        address signer = ECDSA.recover(messageHash, _signature);
+        return signer == IERC721(memberToken).ownerOf(_tokenId);
+    }
+
+    /// @inheritdoc IChamber
+    function constructMessageHash(
+        uint8 _proposalId, 
+        uint8 _tokenId
+    ) public view returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(
+                address(this),
+                _proposalId,
+                _tokenId,
+                proposals[_proposalId].nonce,
+                proposals[_proposalId].target,
+                proposals[_proposalId].value,
+                proposals[_proposalId].voters,
+                proposals[_proposalId].approvals,
+                proposals[_proposalId].state
+            )
+        );
     }
 
     fallback() external payable {
