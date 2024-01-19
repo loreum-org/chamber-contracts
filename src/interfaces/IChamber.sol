@@ -15,8 +15,9 @@ interface IChamber {
         address[]   target;
         uint256[]   value;
         bytes[]     data;
-        uint8[5]     voters;
-        uint8     approvals;
+        uint8[5]    voters;
+        uint8       approvals;
+        uint256     nonce;
         State       state;
     }
 
@@ -48,7 +49,8 @@ interface IChamber {
     /// @param value         The array of monetary values associated with each target
     /// @param data          The array of data payloads associated with each target
     /// @param voters        The array of voters associated with each target
-    event ProposalCreated(uint8 proposalId, address[] target, uint256[] value, bytes[] data, uint8[5] voters);
+    /// @param nonce         The nonce associated with the created proposal
+    event ProposalCreated(uint8 proposalId, address[] target, uint256[] value, bytes[] data, uint8[5] voters, uint256 nonce);
 
     /// @notice Emitted when a proposal is executed
     /// @param proposalId The unique identifier of the executed proposal
@@ -87,7 +89,7 @@ interface IChamber {
 
     /// @notice Returns the number of approvals and the state of a proposal
     /// @param proposalId The ID of the proposal to query
-    function proposals(uint8 proposalId) external view returns (uint8 approvals, State state);
+    function proposal(uint8 proposalId) external view returns (uint8 approvals, State state);
 
     /// @notice Returns two arrays, the leaders and their delegations
     function getLeaderboard() external view returns (uint8[] memory, uint256[] memory);
@@ -96,7 +98,8 @@ interface IChamber {
     /// @notice approve Proposal function
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 
-    function approveProposal(uint8 proposalId, uint8 tokenId) external;
+    /// @param  signature  The cryptographic signature to be verified
+    function approveProposal(uint8 proposalId, uint8 tokenId,bytes memory signature) external;
 
     /// @notice create Proposal function
     /// @param  target The address of contract to send transaction
@@ -113,6 +116,17 @@ interface IChamber {
     /// @param amount   The amount of govToken for demotion
     /// @param tokenId  The Id of the memberToken to demote from 
     function demote(uint256 amount, uint8 tokenId) external;
+
+    /// @notice verify Signature function
+    /// @param  proposalId The ID of the proposal to approve
+    /// @param  tokenId    The ID of the NFT to vote 
+    /// @param  signature  The cryptographic signature to be verified
+    function verifySignature(uint8 proposalId, uint8 tokenId, bytes memory signature) external view returns (bool);
+
+    /// @notice construct Message Hash function
+    /// @param  proposalId The ID of the proposal to approve
+    /// @param  tokenId    The ID of the NFT to vote 
+    function constructMessageHash(uint8 proposalId, uint8 tokenId) external view returns (bytes32);
 
     /**************************************************
         Errors
