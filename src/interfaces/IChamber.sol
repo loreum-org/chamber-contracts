@@ -117,6 +117,10 @@ interface IChamber {
     /// @param tokenId  The Id of the memberToken to demote from 
     function demote(uint256 amount, uint8 tokenId) external;
 
+    /// @notice Returns the domain separator for this contract, as defined in the EIP-712 standard.
+    /// @return bytes32 The domain separator hash.
+    function domainSeparator() external view returns (bytes32);
+
     /// @notice verify Signature function
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 

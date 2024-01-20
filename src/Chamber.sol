@@ -9,6 +9,9 @@ import "./Common.sol";
 contract Chamber is IChamber, Common {
     using ECDSA for bytes32;
 
+    // keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
+    bytes32 private constant DOMAIN_SEPARATOR_TYPEHASH= 0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218;
+
     /// @notice memberToken The ERC721 contract used for membership.
     address public memberToken;
 
@@ -215,9 +218,44 @@ contract Chamber is IChamber, Common {
         bytes memory _signature
     ) public view returns (bool) {
         bytes32 messageHash = constructMessageHash(_proposalId, _tokenId);
-
         address signer = ECDSA.recover(messageHash, _signature);
         return signer == IERC721(memberToken).ownerOf(_tokenId);
+    }
+
+    /// @inheritdoc IChamber
+    function domainSeparator() public view returns (bytes32) {
+        uint256 chainId;
+        assembly {
+           chainId := chainid()
+        }
+        return keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, chainId, this));
+    }
+
+    function encodeData(
+        address[] memory _to,
+        uint256[] memory _value,
+        bytes[]   memory _data,
+        uint8[5]  memory _voters,
+        uint8            _approvals,
+        uint256          _nonce,
+        State            _state,
+        uint256          _proposalId,
+        uint8            _tokenId
+    )internal view returns(bytes memory){
+        bytes32 txHash  = keccak256(
+            abi.encode(
+                _to,
+                _value,
+                _data,
+                _voters,
+                _approvals,
+                _nonce,
+                _state,
+                _proposalId,
+                _tokenId
+            )
+        );
+        return abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), txHash);
     }
 
     /// @inheritdoc IChamber
@@ -226,16 +264,16 @@ contract Chamber is IChamber, Common {
         uint8 _tokenId
     ) public view returns (bytes32) {
         return keccak256(
-            abi.encodePacked(
-                address(this),
-                _proposalId,
-                _tokenId,
-                proposals[_proposalId].nonce,
+            encodeData(
                 proposals[_proposalId].target,
                 proposals[_proposalId].value,
+                proposals[_proposalId].data,
                 proposals[_proposalId].voters,
                 proposals[_proposalId].approvals,
-                proposals[_proposalId].state
+                proposals[_proposalId].nonce,
+                proposals[_proposalId].state,
+                _proposalId,
+                _tokenId
             )
         );
     }
