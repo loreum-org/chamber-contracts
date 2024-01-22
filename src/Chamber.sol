@@ -106,6 +106,30 @@ contract Chamber is IChamber, Common {
 
         if (!onVoterList) revert invalidApproval("TokenId not on voter list");
 
+        if ((proposals[_proposalId].approvals+1)==3){
+            // Gas estimation for the first proposal
+            uint256 baseGas = 110539;
+
+            // Average gas difference for each additional proposal
+            uint256 averageGasDifference = 31560;
+
+            // Safety margin percentage (e.g., 10%)
+            uint256 safetyMarginPercentage = 10;
+
+            // Ensure proposal array (target) is not empty
+            require(proposals[_proposalId].target.length > 0, "Proposal array is empty");
+
+            // Calculate the expected gas limit for the entire transaction
+            uint256 expectedGasLimit = baseGas + (proposals[_proposalId].target.length - 1) * averageGasDifference;
+
+            // Add a safety margin to the expected gas limit
+            uint256 safetyMargin = (expectedGasLimit * safetyMarginPercentage) / 100;
+            uint256 totalGasLimit = expectedGasLimit + safetyMargin;
+
+            // Ensure the actual gas used matches the expected gas limit with safety margin
+            require(gasleft() >= totalGasLimit, "Insufficient gas limit");
+        }
+
         voted[_proposalId][_tokenId] = true;
         proposals[_proposalId].approvals += 1;
         emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
