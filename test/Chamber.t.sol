@@ -11,6 +11,8 @@ import { IRegistry } from "../src/interfaces/IRegistry.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
+import { DelegateCallTransactionGuard } from "../src/example/DelegateCallTransactionGuard.sol";
+import { GuardManager } from "../src/GuardManager.sol";
 
 contract ChamberTest is Test {
 
@@ -19,6 +21,7 @@ contract ChamberTest is Test {
     MockNFT mNFT;
     IChamber chamber;
     IRegistry registry;
+    GuardManager guardManager;
 
     address registryProxyAddr;
     address chamberProxyAddr;
@@ -41,6 +44,8 @@ contract ChamberTest is Test {
         registryProxyAddr = registryDeployer.deploy(address(this));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mNFT), address(mERC20));
         chamber = IChamber(chamberProxyAddr);
+
+        guardManager = new GuardManager();
 
         USD = new MockERC20("US Dollar", "USD", address(chamber));
         vm.deal(address(chamber), 100 ether);
@@ -92,6 +97,15 @@ contract ChamberTest is Test {
         valueArray[3] = 5 ether;
 
         chamber.createProposal(targetArray, valueArray, dataArray);
+
+        DelegateCallTransactionGuard guard = new DelegateCallTransactionGuard(targetArray);
+        vm.stopPrank();
+        
+        vm.startPrank(address(guardManager));
+        guardManager.setGuard(address(guard));
+        vm.stopPrank();
+
+         vm.startPrank(vm.addr(1));
 
         // Approve Proposal
 
