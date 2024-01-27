@@ -108,13 +108,13 @@ contract ChamberTest is Test {
         dataArray1[0] = abi.encodeWithSignature("transfer()");
         dataArray1[1] = abi.encodeWithSignature("transfer()");
 
-        targetArray1[0] = address(10);
-        targetArray1[1] = address(11);
+        targetArray1[0] = vm.addr(10);
+        targetArray1[1] = vm.addr(11); // Address blacklisted
 
         valueArray1[0] = 10 ether;
         valueArray1[1] = 5 ether;
 
-        chamber.createProposal(targetArray, valueArray, dataArray);
+        chamber.createProposal(targetArray1, valueArray1, dataArray1);
 
         // Approve Proposal
         chamber.approveProposal(2, 3,getSignature(2,3,1));

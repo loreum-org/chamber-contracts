@@ -50,7 +50,7 @@ contract DenyTransactionGuard is BaseGuard {
         uint8,
         uint8
     ) external view override {
-        require(checkAddressBlacklisted(to),"You are sending the transaction to an unallowed address");
+        require(!checkAddressBlacklisted(to), "You are sending the transaction to an unallowed address");
     }
 
     function checkAfterExecution(bytes32 txHash, bool success) external override {
