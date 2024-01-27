@@ -5,10 +5,7 @@ import "../GuardManager.sol";
 import "../interfaces/IChamber.sol";
 
 contract DenyTransactionGuard is BaseGuard {
-    fallback() external {
-        // We don't revert on fallback to avoid issues in case of a chamber upgrade
-        // E.g. The expected check method might change and then the chamber would be locked.
-    }
+    fallback() external {}
 
     modifier onlychamber() {
         require(msg.sender == chamberAddress, "Not the chamber");

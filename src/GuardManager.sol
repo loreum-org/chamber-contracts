@@ -11,6 +11,7 @@ interface Guard is IERC165{
     /// @param to The addresses to which the transaction is intended.
     /// @param value The values of the transaction in Wei.
     /// @param data The transaction data.
+    /// @param voters The voters eligible to vote .
     /// @param state The State of a proposal.
     /// @param signature The signatures of the transaction.
     /// @param executor The address of the message sender.
