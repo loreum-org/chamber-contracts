@@ -11,8 +11,7 @@ import { IRegistry } from "../src/interfaces/IRegistry.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
-import { DelegateCallTransactionGuard } from "../src/example/DelegateCallTransactionGuard.sol";
-import { GuardManager } from "../src/GuardManager.sol";
+import { DenyTransactionGuard } from "../src/example/DenyTransactionGuard.sol";
 
 contract ChamberTest is Test {
 
@@ -21,7 +20,7 @@ contract ChamberTest is Test {
     MockNFT mNFT;
     IChamber chamber;
     IRegistry registry;
-    GuardManager guardManager;
+    DenyTransactionGuard guard;
 
     address registryProxyAddr;
     address chamberProxyAddr;
@@ -45,8 +44,6 @@ contract ChamberTest is Test {
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mNFT), address(mERC20));
         chamber = IChamber(chamberProxyAddr);
 
-        guardManager = new GuardManager();
-
         USD = new MockERC20("US Dollar", "USD", address(chamber));
         vm.deal(address(chamber), 100 ether);
     }
@@ -65,6 +62,67 @@ contract ChamberTest is Test {
 
         (uint8[] memory leaders, uint256[] memory delegations) = chamber.getLeaderboard();
         (leaders, delegations);
+        vm.stopPrank();
+    }
+
+    function testFail_guard()public{
+        promoteMembers();
+        vm.startPrank(vm.addr(1));
+
+        /**************************************************************
+         Create a proposal to set a guard with three blocked addresses.
+        ***************************************************************/
+        address[] memory blockedAddresses = new address[](3);
+        blockedAddresses[0] = vm.addr(11);
+        blockedAddresses[1] = vm.addr(12);
+        blockedAddresses[2] = vm.addr(13);
+
+        // Deploy the guard
+        guard = new DenyTransactionGuard(blockedAddresses, address(chamber));
+
+        bytes[] memory dataArray = new bytes[](1);
+        address[] memory targetArray = new address[](1);
+        uint256[] memory valueArray = new uint256[](1);
+
+        dataArray[0] = abi.encodeWithSignature("setGuard(address)", guard);
+        targetArray[0] = address(chamber);
+        valueArray[0] = 0;
+
+        chamber.createProposal(targetArray, valueArray, dataArray);
+
+        chamber.approveProposal(1, 3,getSignature(1,3,1));
+        chamber.approveProposal(1, 2,getSignature(1,2,1));
+
+        // Execute Proposal
+        chamber.approveProposal(1, 1,getSignature(1,1,1));
+
+        /**************************************************
+         Create a proposal to send Ether to two addresses, 
+         but one address is in the blocked list address(11).
+        ***************************************************/
+
+        bytes[] memory dataArray1 = new bytes[](2);
+        address[] memory targetArray1 = new address[](2);
+        uint256[] memory valueArray1 = new uint256[](2);
+
+        dataArray1[0] = abi.encodeWithSignature("transfer()");
+        dataArray1[1] = abi.encodeWithSignature("transfer()");
+
+        targetArray1[0] = address(10);
+        targetArray1[1] = address(11);
+
+        valueArray1[0] = 10 ether;
+        valueArray1[1] = 5 ether;
+
+        chamber.createProposal(targetArray, valueArray, dataArray);
+
+        // Approve Proposal
+        chamber.approveProposal(2, 3,getSignature(2,3,1));
+        chamber.approveProposal(2, 2,getSignature(2,2,1));
+
+        // Execute Proposal
+        chamber.approveProposal(2, 1,getSignature(2,1,1));
+
         vm.stopPrank();
     }
 
@@ -97,15 +155,6 @@ contract ChamberTest is Test {
         valueArray[3] = 5 ether;
 
         chamber.createProposal(targetArray, valueArray, dataArray);
-
-        DelegateCallTransactionGuard guard = new DelegateCallTransactionGuard(targetArray);
-        vm.stopPrank();
-        
-        vm.startPrank(address(guardManager));
-        guardManager.setGuard(address(guard));
-        vm.stopPrank();
-
-         vm.startPrank(vm.addr(1));
 
         // Approve Proposal
 
