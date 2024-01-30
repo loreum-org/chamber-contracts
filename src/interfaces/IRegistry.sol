@@ -50,7 +50,7 @@ interface IRegistry {
     /// @param  limit The maximum number of Chambers to return
     /// @param  skip  The number of Chambers to skip
     /// @return       ChamberData[] An array of ChamberData structs
-    function getChambers(uint8 limit, uint8 skip) external view returns (ChamberData[] memory);
+    function getChambers(uint256 limit, uint256 skip) external view returns (ChamberData[] memory);
 
     /// @notice Sets the Chamber version
     /// @param chamberVersion The address of the Chamber version
