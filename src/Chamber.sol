@@ -4,9 +4,10 @@
 pragma solidity 0.8.19;
 
 import { IChamber } from "./interfaces/IChamber.sol";
+import "./GuardManager.sol";
 import "./Common.sol";
 
-contract Chamber is IChamber, Common {
+contract Chamber is IChamber, Common, GuardManager{
     using ECDSA for bytes32;
 
     // keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
@@ -110,7 +111,7 @@ contract Chamber is IChamber, Common {
         proposals[_proposalId].approvals += 1;
         emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
         if (proposals[_proposalId].approvals == 3) { // TODO: Make quorum dynamic
-            _executeProposal(_proposalId);
+            _executeProposal(_proposalId, _tokenId, _signature);
         }
     }
 
@@ -145,7 +146,7 @@ contract Chamber is IChamber, Common {
 
     /// @notice _executeProposal function executes the proposal
     /// @param  _proposalId The ID of the proposal to execute.
-    function _executeProposal(uint8 _proposalId) private {
+    function _executeProposal(uint8 _proposalId, uint8 _tokenId, bytes memory _signature) private {
 
         // TODO Implement Gas handling and Optimizations
         // TODO Implement before and after guards
@@ -154,12 +155,33 @@ contract Chamber is IChamber, Common {
        
         Proposal memory proposalData = proposals[_proposalId];
         proposals[_proposalId].state = State.Executed;
-        
+
+        address guard = getGuard();
+        if (guard != address (0)){
+            Guard(guard).checkTransaction(
+                proposals[_proposalId].target,
+                proposals[_proposalId].value,
+                proposals[_proposalId].data,
+                proposals[_proposalId].voters,
+                proposals[_proposalId].state,
+                _signature,
+                msg.sender,
+                _proposalId,
+                _tokenId
+            );
+        }
+        bool finalSuccess;
         for (uint256 i = 0; i < proposalData.data.length; i++) {
             (bool success,) = proposalData.target[i].call{value: proposalData.value[i]}(proposalData.data[i]);
+            finalSuccess = success;
             if(!success) revert executionFailed();
         }
         emit ProposalExecuted(_proposalId);
+        {
+            if (guard != address(0)){
+                Guard(guard).checkAfterExecution(constructMessageHash(_proposalId, _tokenId), finalSuccess);
+            }
+        }
     }
 
     /// @notice _updateLeaderboard Updates the leaderboard array 

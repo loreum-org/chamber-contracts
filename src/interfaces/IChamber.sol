@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-interface IChamber {
+import "./IGuardManager.sol";
+
+interface IChamber is IGuardManager{
 
     /**************************************************
         State
