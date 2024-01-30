@@ -66,7 +66,7 @@ contract ChamberPerfTest is Test {
     }
 
     // Test the performance of the promote function
-    function test_Chamber_perf_promote_one(uint8 tokenId, uint256 amount) public {
+    function test_Chamber_perf_promote_one(uint256 tokenId, uint256 amount) public {
 
         vm.assume(amount > 0);
         vm.assume(tokenId > 0);
@@ -81,8 +81,8 @@ contract ChamberPerfTest is Test {
 
         vm.assume(amount > 0);
 
-        uint8 runs = 50;
-        for (uint8 i = 1; i <= runs; i++) {
+        uint256 runs = 50;
+        for (uint256 i = 1; i <= runs; i++) {
             vm.startPrank(bones);
             deal(address(LORE), bones, amount);
             LORE.approve(address(chamber), amount);

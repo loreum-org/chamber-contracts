@@ -43,12 +43,12 @@ contract DenyTransactionGuard is BaseGuard {
         address[] memory to,
         uint256[] memory,
         bytes[] memory,
-        uint8[5] memory ,
+        uint256[5] memory ,
         IChamber.State,
         bytes memory ,
         address,
-        uint8,
-        uint8
+        uint256,
+        uint256
     ) external view override {
         require(!checkAddressBlacklisted(to), "You are sending the transaction to an unallowed address");
     }

@@ -25,7 +25,7 @@ contract ChamberTest is Test {
     address registryProxyAddr;
     address chamberProxyAddr;
 
-    function getSignature(uint8 _proposalId, uint8 _tokenId, uint256 _privateKey)public view returns(bytes memory){
+    function getSignature(uint256 _proposalId, uint256 _tokenId, uint256 _privateKey)public view returns(bytes memory){
         bytes32 digest = chamber.constructMessageHash(_proposalId,_tokenId);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(_privateKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v); 
@@ -60,7 +60,7 @@ contract ChamberTest is Test {
         chamber.promote(250_000 ether, 4);
         chamber.promote(70_000 ether, 5);
 
-        (uint8[] memory leaders, uint256[] memory delegations) = chamber.getLeaderboard();
+        (uint256[] memory leaders, uint256[] memory delegations) = chamber.getLeaderboard();
         (leaders, delegations);
         vm.stopPrank();
     }
@@ -268,7 +268,7 @@ contract ChamberTest is Test {
         chamber.promote(2_000 ether, 2);
         chamber.promote(1_000 ether, 1);
 
-        (uint8[] memory _leaderboard, uint256[] memory _delegations) = chamber.getLeaderboard();
+        (uint256[] memory _leaderboard, uint256[] memory _delegations) = chamber.getLeaderboard();
         assertEq(_leaderboard[0], 5);
         assertEq(_leaderboard[1], 4);
         assertEq(_leaderboard[2], 3);
@@ -283,7 +283,7 @@ contract ChamberTest is Test {
 
         chamber.demote(5_000 ether, 5);
 
-        (uint8[] memory _leaderboard2, uint256[] memory _delegations2) = chamber.getLeaderboard();
+        (uint256[] memory _leaderboard2, uint256[] memory _delegations2) = chamber.getLeaderboard();
 
 		// The totalDelegation of tokenId 5 demote to 0
 		// but the position did not changed
@@ -314,7 +314,7 @@ contract ChamberTest is Test {
         mERC20.approve(address(chamber),15_000 ether );
         chamber.promote(4_000 ether, 4);
         
-        (uint8[] memory _leaderboard, uint256[] memory _delegations) = chamber.getLeaderboard();
+        (uint256[] memory _leaderboard, uint256[] memory _delegations) = chamber.getLeaderboard();
 
         assertEq(_leaderboard[0], 4);
         assertEq(_leaderboard[1], 5);

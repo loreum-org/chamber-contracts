@@ -64,15 +64,15 @@ contract ProposalCycleTest is Test {
 
     }
 
-    event Log(uint8[], uint256[]);
+    event Log(uint256[], uint256[]);
 
     function helperLogger() public {
         // for logging out the leaderboard
-        (uint8[] memory leaders, uint256[] memory delegation) = chamber.getLeaderboard();
+        (uint256[] memory leaders, uint256[] memory delegation) = chamber.getLeaderboard();
         emit Log(leaders, delegation);
     }
 
-    function getSignature(uint8 _proposalId, uint8 _tokenId, uint256 _privateKey)public view returns(bytes memory){
+    function getSignature(uint256 _proposalId, uint256 _tokenId, uint256 _privateKey)public view returns(bytes memory){
         bytes32 digest = chamber.constructMessageHash(_proposalId,_tokenId);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(_privateKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v); 
@@ -84,7 +84,7 @@ contract ProposalCycleTest is Test {
         
         // setup the chamber with delegations of 33k
         // from each of the team members above
-        for (uint8 i = 0; i <= lorians.length - 1; i++) {
+        for (uint256 i = 0; i <= lorians.length - 1; i++) {
             vm.deal(lorians[i], 100 ether);
             vm.prank(vm.addr(100));
             LORE.transfer(lorians[i], 33333 ether);
@@ -221,7 +221,7 @@ contract ProposalCycleTest is Test {
         assertTrue(state == IChamber.State.Executed);
 
         // Lorians should now have the amount of LORE
-        for (uint8 i = 0; i <= lorians.length - 1; i++) {
+        for (uint256 i = 0; i <= lorians.length - 1; i++) {
             assertEq(LORE.balanceOf(lorians[i]), amount);
         }
 

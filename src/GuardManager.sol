@@ -21,12 +21,12 @@ interface Guard is IERC165{
         address[] memory to,
         uint256[] memory value,
         bytes[] memory data,
-        uint8[5] memory voters,
+        uint256[5] memory voters,
         IChamber.State state,
         bytes memory signature,
         address executor,
-        uint8 proposalId,
-        uint8 tokenId
+        uint256 proposalId,
+        uint256 tokenId
     )external;
     
     /// @notice Checks after execution of transaction.

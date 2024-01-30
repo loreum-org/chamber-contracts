@@ -20,35 +20,35 @@ contract Chamber is IChamber, Common, GuardManager{
     address public govToken;
 
     /// @notice leaderboard ff members based on total delegation.
-    /// @dev    Limited to maximum 5 leaders requiring 3 approvals
-    uint8[] public leaderboard;
+    /// @dev    Limited to top 5 leaders requiring 3 approvals
+    uint256[] public leaderboard;
 
     /// @notice proposalCount The number of proposals.
-    uint8 public proposalCount;
+    uint256 public proposalCount;
 
     /// @notice Counter to track the nonce for each proposal
     uint256 public nonce;
 
     /// @notice totalDelegation Tracks the amount of govToken delegated to a given NFT ID.
     /// @dev    1st element -> NFT tokenID, 2nd element -> amountDelegated.
-    mapping(uint8 => uint256) public totalDelegation;
+    mapping(uint256 => uint256) public totalDelegation;
 
     /// @notice accountDelegation Tracks a given address's delegatation balance of govToken for a given NFT ID.
     /// @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountDelegated.
-    mapping(address => mapping(uint8 => uint256)) public accountDelegation;
+    mapping(address => mapping(uint256 => uint256)) public accountDelegation;
     
     /// @notice proposals Mapping of the Proposals.
     /// @dev    1st element -> index, 2nd element -> Proposal struct
-    mapping(uint8 => Proposal) private proposals;
+    mapping(uint256 => Proposal) private proposals;
 
     /// @inheritdoc IChamber
-    function proposal(uint8 proposalId) public view returns(uint8 approvals, State state){
+    function proposal(uint256 proposalId) public view returns(uint256 approvals, State state){
         return (proposals[proposalId].approvals, proposals[proposalId].state);
     }
 
     /// @notice vtoed Tracks which tokenIds have voted on proposals
     /// @dev    1st element -> proposalId, 2nd element -> tokenId, 3rd element-> voted boolean
-    mapping(uint8 => mapping(uint8 => bool)) public voted;
+    mapping(uint256 => mapping(uint256 => bool)) public voted;
 
     /// @notice contrcutor disables initialize function on deployment of base implementation.
     constructor() { _disableInitializers(); }
@@ -60,10 +60,10 @@ contract Chamber is IChamber, Common, GuardManager{
     }
     
     /// @inheritdoc IChamber
-    function getLeaderboard() external view returns (uint8[] memory, uint256[] memory) {
-        uint8[] memory _leaderboard = leaderboard;
+    function getLeaderboard() external view returns (uint256[] memory, uint256[] memory) {
+        uint256[] memory _leaderboard = leaderboard;
         uint256[] memory _delegations = new uint256[](_leaderboard.length);
-        for (uint8 i = 0; i < _leaderboard.length; i++) {
+        for (uint256 i = 0; i < _leaderboard.length; i++) {
             _delegations[i] = totalDelegation[_leaderboard[i]];
         }
         return (_leaderboard, _delegations);
@@ -72,8 +72,8 @@ contract Chamber is IChamber, Common, GuardManager{
     /// @inheritdoc IChamber
     function createProposal(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
         if(IERC721(memberToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
-        uint8[5] memory topFiveLeader;
-        for (uint8 i=0; i<5; i++){
+        uint256[5] memory topFiveLeader;
+        for (uint256 i=0; i<5; i++){
             topFiveLeader[i]= leaderboard[i];
         }
         proposalCount++;
@@ -91,14 +91,14 @@ contract Chamber is IChamber, Common, GuardManager{
     }
 
     /// @inheritdoc IChamber
-    function approveProposal(uint8 _proposalId, uint8 _tokenId, bytes memory _signature) external {
+    function approveProposal(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) external {
         if(_msgSender() != IERC721(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't NFT owner");
         if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
         if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID already voted");
 
         require(verifySignature(_proposalId, _tokenId, _signature), "Invalid signature");
 
-        uint8[5] memory voters = proposals[_proposalId].voters;
+        uint256[5] memory voters = proposals[_proposalId].voters;
         bool onVoterList = false;
 
         for (uint i = 0; i < voters.length; i++) {
@@ -116,7 +116,7 @@ contract Chamber is IChamber, Common, GuardManager{
     }
 
     /// @inheritdoc IChamber
-    function promote(uint256 _amt, uint8 _tokenId) public nonReentrant {
+    function promote(uint256 _amt, uint256 _tokenId) public nonReentrant {
         if(_amt == 0 && _tokenId == 0) revert invalidPromotion();
         
         totalDelegation[_tokenId] += _amt;
@@ -128,7 +128,7 @@ contract Chamber is IChamber, Common, GuardManager{
     }
 
     /// @inheritdoc IChamber
-    function demote(uint256 _amt, uint8 _tokenId) public nonReentrant {
+    function demote(uint256 _amt, uint256 _tokenId) public nonReentrant {
         if(_amt == 0 && _tokenId == 0) revert invalidDemotion();
         if(accountDelegation[_msgSender()][_tokenId] < _amt) revert invalidDemotion();
         
@@ -146,7 +146,7 @@ contract Chamber is IChamber, Common, GuardManager{
 
     /// @notice _executeProposal function executes the proposal
     /// @param  _proposalId The ID of the proposal to execute.
-    function _executeProposal(uint8 _proposalId, uint8 _tokenId, bytes memory _signature) private {
+    function _executeProposal(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) private {
 
         // TODO Implement Gas handling and Optimizations
         // TODO Implement before and after guards
@@ -186,7 +186,7 @@ contract Chamber is IChamber, Common, GuardManager{
 
     /// @notice _updateLeaderboard Updates the leaderboard array 
     /// @param _tokenId The ID of the NFT to update.
-    function _updateLeaderboard(uint8 _tokenId) private {
+    function _updateLeaderboard(uint256 _tokenId) private {
         bool tokenIdExists = false;
         for (uint256 i = 0; i < leaderboard.length; i++) {
             if (leaderboard[i] == _tokenId) {
@@ -221,7 +221,7 @@ contract Chamber is IChamber, Common, GuardManager{
 
     /// @notice _removeFromLeaderboard Removes the Token ID
     /// @param _tokenId The ID of the NFT to remove.
-    function _removeFromLeaderboard(uint8 _tokenId) private {
+    function _removeFromLeaderboard(uint256 _tokenId) private {
         for (uint256 i = 0; i < leaderboard.length; i++) {
             if (leaderboard[i] == _tokenId) {
                 for (uint256 j = i; j < leaderboard.length - 1; j++) {
@@ -235,8 +235,8 @@ contract Chamber is IChamber, Common, GuardManager{
 
     /// @inheritdoc IChamber
     function verifySignature(
-        uint8 _proposalId,
-        uint8 _tokenId,
+        uint256 _proposalId,
+        uint256 _tokenId,
         bytes memory _signature
     ) public view returns (bool) {
         bytes32 messageHash = constructMessageHash(_proposalId, _tokenId);
@@ -257,12 +257,12 @@ contract Chamber is IChamber, Common, GuardManager{
         address[] memory _to,
         uint256[] memory _value,
         bytes[]   memory _data,
-        uint8[5]  memory _voters,
-        uint8            _approvals,
+        uint256[5]  memory _voters,
+        uint256            _approvals,
         uint256          _nonce,
         State            _state,
         uint256          _proposalId,
-        uint8            _tokenId
+        uint256            _tokenId
     )internal view returns(bytes memory){
         bytes32 txHash  = keccak256(
             abi.encode(
@@ -282,8 +282,8 @@ contract Chamber is IChamber, Common, GuardManager{
 
     /// @inheritdoc IChamber
     function constructMessageHash(
-        uint8 _proposalId, 
-        uint8 _tokenId
+        uint256 _proposalId, 
+        uint256 _tokenId
     ) public view returns (bytes32) {
         return keccak256(
             encodeData(

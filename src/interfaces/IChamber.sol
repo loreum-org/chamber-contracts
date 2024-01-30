@@ -17,8 +17,8 @@ interface IChamber is IGuardManager{
         address[]   target;
         uint256[]   value;
         bytes[]     data;
-        uint8[5]    voters;
-        uint8       approvals;
+        uint256[5]    voters;
+        uint256       approvals;
         uint256     nonce;
         State       state;
     }
@@ -31,19 +31,19 @@ interface IChamber is IGuardManager{
     /// @param promoter   The address of the promoter
     /// @param amt        The amount of "govToken" delegated
     /// @param tokenId    The ID of the NFT that tokens will be promoted against
-    event Promoted(address promoter, uint256 amt, uint8 tokenId);
+    event Promoted(address promoter, uint256 amt, uint256 tokenId);
 
     /// @notice Emitted upon demote()
     /// @param demoter   The address of the demoter
     /// @param amt       The amount of "govToken" demoted
     /// @param tokenId   The ID of the NFT that tokens were demoted against
-    event Demoted(address demoter, uint256 amt, uint8 tokenId);
+    event Demoted(address demoter, uint256 amt, uint256 tokenId);
     
     /// @notice Emitted when a proposal is approved
     /// @param proposalId The unique identifier of the approved proposal
     /// @param tokenId    The tokenId that the proposal was associated with
     /// @param approvals  The total number of approvals that the proposal received
-    event ProposalApproved(uint8 proposalId, uint8 tokenId, uint256 approvals);
+    event ProposalApproved(uint256 proposalId, uint256 tokenId, uint256 approvals);
 
     /// @notice Emitted when a proposal is created
     /// @param proposalId    The unique identifier of the created proposal
@@ -52,11 +52,11 @@ interface IChamber is IGuardManager{
     /// @param data          The array of data payloads associated with each target
     /// @param voters        The array of voters associated with each target
     /// @param nonce         The nonce associated with the created proposal
-    event ProposalCreated(uint8 proposalId, address[] target, uint256[] value, bytes[] data, uint8[5] voters, uint256 nonce);
+    event ProposalCreated(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint256[5] voters, uint256 nonce);
 
     /// @notice Emitted when a proposal is executed
     /// @param proposalId The unique identifier of the executed proposal
-    event ProposalExecuted(uint8 proposalId);
+    event ProposalExecuted(uint256 proposalId);
 
     /// @notice Emitted when Ether is received
     /// @param sender The address of the sender of the Ether
@@ -80,28 +80,28 @@ interface IChamber is IGuardManager{
     /// @notice Returns the amount of govToken delegated against a given tokenId by an account
     /// @param account The address of the account to query
     /// @param tokenId The ID of the NFT to query
-    function accountDelegation(address account, uint8 tokenId) external view returns (uint256);
+    function accountDelegation(address account, uint256 tokenId) external view returns (uint256);
 
     /// @notice Returns the total amount of govToken delegated against a given tokenId
     /// @param tokenId The ID of the NFT to query
-    function totalDelegation(uint8 tokenId) external view returns (uint256);
+    function totalDelegation(uint256 tokenId) external view returns (uint256);
 
     /// @notice Returns the total number of proposals
-    function proposalCount() external view returns (uint8);
+    function proposalCount() external view returns (uint256);
 
     /// @notice Returns the number of approvals and the state of a proposal
     /// @param proposalId The ID of the proposal to query
-    function proposal(uint8 proposalId) external view returns (uint8 approvals, State state);
+    function proposal(uint256 proposalId) external view returns (uint256 approvals, State state);
 
     /// @notice Returns two arrays, the leaders and their delegations
-    function getLeaderboard() external view returns (uint8[] memory, uint256[] memory);
+    function getLeaderboard() external view returns (uint256[] memory, uint256[] memory);
 
 
     /// @notice approve Proposal function
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 
     /// @param  signature  The cryptographic signature to be verified
-    function approveProposal(uint8 proposalId, uint8 tokenId,bytes memory signature) external;
+    function approveProposal(uint256 proposalId, uint256 tokenId,bytes memory signature) external;
 
     /// @notice create Proposal function
     /// @param  target The address of contract to send transaction
@@ -112,12 +112,12 @@ interface IChamber is IGuardManager{
     /// @notice Promotes an amount of govToken against a provided memberToken Id
     /// @param amount   The amount of govToken for promotion
     /// @param tokenId  The Id of the memberToken to promote
-    function promote(uint256 amount, uint8 tokenId) external;
+    function promote(uint256 amount, uint256 tokenId) external;
 
     /// @notice Demotes an amount of govToken from the provided memberToken Id
     /// @param amount   The amount of govToken for demotion
     /// @param tokenId  The Id of the memberToken to demote from 
-    function demote(uint256 amount, uint8 tokenId) external;
+    function demote(uint256 amount, uint256 tokenId) external;
 
     /// @notice Returns the domain separator for this contract, as defined in the EIP-712 standard.
     /// @return bytes32 The domain separator hash.
@@ -127,12 +127,12 @@ interface IChamber is IGuardManager{
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 
     /// @param  signature  The cryptographic signature to be verified
-    function verifySignature(uint8 proposalId, uint8 tokenId, bytes memory signature) external view returns (bool);
+    function verifySignature(uint256 proposalId, uint256 tokenId, bytes memory signature) external view returns (bool);
 
     /// @notice construct Message Hash function
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 
-    function constructMessageHash(uint8 proposalId, uint8 tokenId) external view returns (bytes32);
+    function constructMessageHash(uint256 proposalId, uint256 tokenId) external view returns (bytes32);
 
     /**************************************************
         Errors
