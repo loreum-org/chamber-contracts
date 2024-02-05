@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import { Proxy } from "./Proxy.sol";
+import { ChamberProxy } from "./ChamberProxy.sol";
 import { IChamber } from "./interfaces/IChamber.sol";
 import { IRegistry } from "./interfaces/IRegistry.sol";
 import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
@@ -24,12 +24,15 @@ contract Registry is IRegistry, Initializable, Ownable {
 
     /// @inheritdoc IRegistry
     function initialize(address _chamberVersion, address _owner) external initializer {
+        require(_owner != address(0),"The address is zero");
+        require(_chamberVersion != address(0),"The address is zero");
         super._transferOwnership(_owner);
         chamberVersion = _chamberVersion;
     }
 
     /// @inheritdoc IRegistry
     function setChamberVersion(address _chamberVersion) external onlyOwner {
+        require(_chamberVersion != address(0), "The address is zero");
         chamberVersion = _chamberVersion;
     }
 
@@ -47,7 +50,7 @@ contract Registry is IRegistry, Initializable, Ownable {
     function deploy(address _memberToken, address _govToken) external returns (address) {
         
         bytes memory data = abi.encodeWithSelector(IChamber.initialize.selector, _memberToken, _govToken);
-        Proxy chamber = new Proxy(chamberVersion, data, msg.sender);
+        ChamberProxy chamber = new ChamberProxy(chamberVersion, data, msg.sender);
 
         ChamberData memory chamberData = ChamberData({
             chamber: address(chamber),

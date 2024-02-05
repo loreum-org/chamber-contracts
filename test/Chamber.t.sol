@@ -92,9 +92,10 @@ contract ChamberTest is Test {
 
         chamber.approveProposal(1, 3,getSignature(1,3,1));
         chamber.approveProposal(1, 2,getSignature(1,2,1));
-
-        // Execute Proposal
         chamber.approveProposal(1, 1,getSignature(1,1,1));
+        
+        // Execute Proposal
+        chamber.executeProposal(1, 1,getSignature(1,1,1));
 
         /**************************************************
          Create a proposal to send Ether to two addresses, 
@@ -119,9 +120,10 @@ contract ChamberTest is Test {
         // Approve Proposal
         chamber.approveProposal(2, 3,getSignature(2,3,1));
         chamber.approveProposal(2, 2,getSignature(2,2,1));
+        chamber.approveProposal(2, 1,getSignature(2,1,1));
 
         // Execute Proposal
-        chamber.approveProposal(2, 1,getSignature(2,1,1));
+        chamber.executeProposal(2, 1,getSignature(2,1,1));
 
         vm.stopPrank();
     }
@@ -160,9 +162,11 @@ contract ChamberTest is Test {
 
         chamber.approveProposal(1, 3,getSignature(1,3,1));
         chamber.approveProposal(1, 2,getSignature(1,2,1));
+        chamber.approveProposal(1, 1,getSignature(1,1,1));
 
         // Execute Proposal
-        chamber.approveProposal(1, 1,getSignature(1,1,1));
+        chamber.executeProposal(1, 1,getSignature(1,1,1));
+
         chamber.getLeaderboard();
         vm.stopPrank();
     }

@@ -103,6 +103,12 @@ interface IChamber is IGuardManager{
     /// @param  signature  The cryptographic signature to be verified
     function approveProposal(uint256 proposalId, uint256 tokenId,bytes memory signature) external;
 
+    /// @notice execute Proposal function
+    /// @param  proposalId The ID of the proposal to approve
+    /// @param  tokenId    The ID of the NFT to vote 
+    /// @param  signature  The cryptographic signature to be verified
+    function executeProposal(uint256 proposalId, uint256 tokenId, bytes memory signature) external;
+
     /// @notice create Proposal function
     /// @param  target The address of contract to send transaction
     /// @param  value  The uint256 amount of ETH to send with transaction

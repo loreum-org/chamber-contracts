@@ -1,0 +1,20 @@
+# Ignores development broadcast logs
+!/broadcast
+/broadcast/*
+/broadcast/*/31337/
+
+.env
+.env*
+!.env.template
+coverage
+coverage.json
+.DS_Store
+
+# Foundry
+out
+lcov.info
+report
+cache
+
+# Others 
+#lib

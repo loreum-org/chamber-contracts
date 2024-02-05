@@ -8,7 +8,20 @@ import "./GuardManager.sol";
 import "./Common.sol";
 
 contract Chamber is IChamber, Common, GuardManager{
+    // Importing ECDSA library for bytes32 type
     using ECDSA for bytes32;
+    
+    /// @notice Flag to indicate contract locking status
+    bool public locked;
+
+    /// @notice Modifier to prevent reentrancy attacks
+    modifier noReentrancy() {
+        require(!locked, "No reentrancy");
+
+        locked = true;
+        _;
+        locked = false;
+    }
 
     // keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
     bytes32 private constant DOMAIN_SEPARATOR_TYPEHASH= 0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218;
@@ -55,6 +68,8 @@ contract Chamber is IChamber, Common, GuardManager{
     
     /// @inheritdoc IChamber
     function initialize(address _memberToken, address _govToken) external initializer {
+        require(_memberToken != address(0),"The address is zero");
+        require(_govToken != address(0),"The address is zero");
         memberToken = _memberToken;
         govToken = _govToken;
     }
@@ -74,7 +89,7 @@ contract Chamber is IChamber, Common, GuardManager{
         if(IERC721(memberToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
         uint256[5] memory topFiveLeader;
         for (uint256 i=0; i<5; i++){
-            topFiveLeader[i]= leaderboard[i];
+            topFiveLeader[i] = leaderboard[i];
         }
         proposalCount++;
         nonce++;
@@ -110,9 +125,6 @@ contract Chamber is IChamber, Common, GuardManager{
         voted[_proposalId][_tokenId] = true;
         proposals[_proposalId].approvals += 1;
         emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
-        if (proposals[_proposalId].approvals == 3) { // TODO: Make quorum dynamic
-            _executeProposal(_proposalId, _tokenId, _signature);
-        }
     }
 
     /// @inheritdoc IChamber
@@ -146,10 +158,23 @@ contract Chamber is IChamber, Common, GuardManager{
 
     /// @notice _executeProposal function executes the proposal
     /// @param  _proposalId The ID of the proposal to execute.
-    function _executeProposal(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) private {
+    /// @param  _tokenId    The tokenId that the proposal was associated with
+    /// @param  _signature  The cryptographic signature to be verified
+    function executeProposal(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) public noReentrancy{
 
         // TODO Implement Gas handling and Optimizations
-        // TODO Implement before and after guards
+
+        require(proposals[_proposalId].approvals >= 3, "Not enough approvals"); // TODO: Make quorum dynamic
+
+        require(verifySignature(_proposalId, _tokenId, _signature), "Invalid signature");
+
+        bool validVoter = false;
+        for (uint256 i = 0 ; i < 5; i++){
+            if (_tokenId == proposals[_proposalId].voters[i]){
+                validVoter = true;
+            }
+        }
+        require(validVoter, "Not a voter");
 
         if(proposals[_proposalId].state != State.Initialized) revert invalidProposalState();
        
@@ -170,7 +195,7 @@ contract Chamber is IChamber, Common, GuardManager{
                 _tokenId
             );
         }
-        bool finalSuccess;
+        bool finalSuccess = false;
         for (uint256 i = 0; i < proposalData.data.length; i++) {
             (bool success,) = proposalData.target[i].call{value: proposalData.value[i]}(proposalData.data[i]);
             finalSuccess = success;
@@ -188,7 +213,8 @@ contract Chamber is IChamber, Common, GuardManager{
     /// @param _tokenId The ID of the NFT to update.
     function _updateLeaderboard(uint256 _tokenId) private {
         bool tokenIdExists = false;
-        for (uint256 i = 0; i < leaderboard.length; i++) {
+        uint256 leaderboardLength = leaderboard.length;
+        for (uint256 i = 0; i < leaderboardLength; i++) {
             if (leaderboard[i] == _tokenId) {
                 tokenIdExists = true;
                 break;
@@ -205,7 +231,8 @@ contract Chamber is IChamber, Common, GuardManager{
     /// @notice _bubbleSort Updates the leaderboard with bubble sort
     function _bubbleSort() private {
         bool swapped;
-        for (uint256 i = 0; i < leaderboard.length; i++) {
+        uint256 leaderboardLength = leaderboard.length;
+        for (uint256 i = 0; i < leaderboardLength; i++) {
             swapped = false;
             for (uint256 j = 0; j < leaderboard.length - i - 1; j++) {
                 if (totalDelegation[leaderboard[j]] < totalDelegation[leaderboard[j + 1]]) {

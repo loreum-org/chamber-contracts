@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 /// @title IGuardManager - A contract interface managing transaction guards which perform pre and post-checks on transactions.
 interface IGuardManager{
+    /// @notice Emitted when the Transaction Guard is changed.
     event ChangedGuard(address indexed guard);
 
     /// @notice Set Transaction Guard `guard` for the chamber. Make sure you trust the guard.
