@@ -3,12 +3,12 @@ pragma solidity ^0.8.19;
 
 import "../../lib/forge-std/src/Test.sol";
 
-import { Proxy } from "../../src/Proxy.sol";
+import { ChamberProxy } from "../../src/ChamberProxy.sol";
 import { Registry } from "../../src/Registry.sol";
 import { Chamber } from "../../src/Chamber.sol";
 import { IChamber } from "../../src/interfaces/IChamber.sol";
 import { IRegistry } from "../../src/interfaces/IRegistry.sol";
-import { IProxy } from "../../src/interfaces/IProxy.sol";
+import { IChamberProxy } from "../../src/interfaces/IChamberProxy.sol";
 
 import { DeployRegistry } from "../utils/DeployRegistry.sol";
 

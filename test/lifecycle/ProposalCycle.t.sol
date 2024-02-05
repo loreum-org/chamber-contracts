@@ -215,7 +215,11 @@ contract ProposalCycleTest is Test {
         // 6. Quorum of leaders should execute proposal
         vm.startPrank(hurricane);
         chamber.approveProposal(2, 3,getSignature(2,3,3));
+        
+        // Execute Proposal
+        chamber.executeProposal(2,3,getSignature(2,3,3));
         vm.stopPrank();
+
         (votes, state) = chamber.proposal(2);
         assertEq(votes, 3);
         assertTrue(state == IChamber.State.Executed);

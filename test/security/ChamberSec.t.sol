@@ -8,7 +8,7 @@ import { Chamber } from "../../src/Chamber.sol";
 
 import { IChamber } from "../../src/interfaces/IChamber.sol";
 import { IRegistry } from "../../src/interfaces/IRegistry.sol";
-import { IProxy } from "../../src/interfaces/IProxy.sol";
+import { IChamberProxy } from "../../src/interfaces/IChamberProxy.sol";
 
 import { DeployRegistry } from "../utils/DeployRegistry.sol";
 
@@ -70,7 +70,7 @@ contract ChamberSecTest is Test {
     // by promoteing another leader and demote victim leader
     function test_Chamber_sec_demotionTheft() public {
 
-        IProxy(registryProxyAddr).getImplementation();
+        IChamberProxy(registryProxyAddr).getImplementation();
 
         vm.startPrank(bones);
         deal(address(LORE), bones, 1_000_000);

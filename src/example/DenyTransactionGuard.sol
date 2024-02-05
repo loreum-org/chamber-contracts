@@ -12,10 +12,11 @@ contract DenyTransactionGuard is BaseGuard {
         _;
     }
 
-    address public chamberAddress; // WILL ONLY WORK IF chamber IS THE OWNER
+    address public immutable chamberAddress; // WILL ONLY WORK IF chamber IS THE OWNER
     mapping (address => bool) public blacklisted;
 
     constructor(address[] memory _blacklisted, address _chamberAddress){
+        require(_chamberAddress != address(0), "The address is zero");
         chamberAddress = _chamberAddress;
         for (uint i = 0; i < _blacklisted.length; i++) {
             blacklisted[_blacklisted[i]] = true;

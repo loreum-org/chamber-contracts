@@ -2,8 +2,9 @@
 pragma solidity 0.8.19;
 
 import { IChamber } from "./interfaces/IChamber.sol";
-import "./interfaces/IERC165.sol";
+import {IERC165} from "openzeppelin-contracts/contracts/utils/introspection/IERC165.sol";
 import "./interfaces/IGuardManager.sol";
+import "./SelfAuthorized.sol";
 
 interface Guard is IERC165{
     /// @notice Checks the transaction details.
@@ -34,18 +35,6 @@ interface Guard is IERC165{
     /// @param txHash The hash of the transaction.
     /// @param success The status of the transaction execution.
     function checkAfterExecution(bytes32 txHash, bool success) external;
-}
-
-/// @title SelfAuthorized - Authorizes current contract to perform actions to itself.
-contract SelfAuthorized {
-    function requireSelfCall() private view{
-        require (msg.sender == address(this), "Method can only be called form this contract");
-    }
-    modifier authorized {
-        // Modifiers are copied around during compilation. This is a function call as it minimized the bytecode size
-        requireSelfCall();
-        _;
-    }
 }
 
 abstract contract BaseGuard is Guard {
