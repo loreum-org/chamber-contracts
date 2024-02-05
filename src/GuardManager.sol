@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import { IChamber } from "./interfaces/IChamber.sol";
-import {IERC165} from "openzeppelin-contracts/contracts/utils/introspection/IERC165.sol";
+import { IERC165 } from "./Common.sol";
 import "./interfaces/IGuardManager.sol";
 import "./SelfAuthorized.sol";
 
