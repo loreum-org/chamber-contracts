@@ -8,10 +8,13 @@ import "./GuardManager.sol";
 import "./Common.sol";
 
 contract Chamber is IChamber, Common, GuardManager{
+    // Importing ECDSA library for bytes32 type
     using ECDSA for bytes32;
     
+    /// @notice Flag to indicate contract locking status
     bool public locked;
 
+    /// @notice Modifier to prevent reentrancy attacks
     modifier noReentrancy() {
         require(!locked, "No reentrancy");
 
