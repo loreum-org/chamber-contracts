@@ -23,8 +23,8 @@ contract ProxyUpgradeTest is Test {
     IRegistry registry;
     IChamber chamber;
 
-    IChamberProxy registryProxy;
-    IChamberProxy RegistryProxy;
+    IChamberProxy multiProxy;
+    IChamberProxy MultiProxy;
 
     address chamberProxyAddr;
     address registryProxyAddr;
@@ -38,49 +38,49 @@ contract ProxyUpgradeTest is Test {
         registryProxyAddr = registryDeployer.deploy(address(this));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mERC721), address(mERC20));
         
-        RegistryProxy = IChamberProxy(chamberProxyAddr);
-        registryProxy = IChamberProxy(registryProxyAddr);
+        MultiProxy = IChamberProxy(chamberProxyAddr);
+        multiProxy = IChamberProxy(registryProxyAddr);
 
         chamber = IChamber(chamberProxyAddr);
         registry = IRegistry(registryProxyAddr);
     }
 
     function test_Proxy_upgrade() public {
-        RegistryProxy.getImplementation();
-        mERC20.approve(address(RegistryProxy), 1000);
+        MultiProxy.getImplementation();
+        mERC20.approve(address(MultiProxy), 1000);
         chamber.promote(1, 1);
         (uint256[] memory leaders, uint256[] memory amounts) = chamber.getLeaderboard();
         Chamber chamberV2 = new Chamber();
 
-        RegistryProxy.upgradeTo(address(chamberV2));
+        MultiProxy.upgradeTo(address(chamberV2));
         (uint256[] memory newLeaders, uint256[] memory newAmounts) = chamber.getLeaderboard();
         assertEq(newLeaders[0], leaders[0]);
         assertEq(newAmounts[0], amounts[0]); 
-        assertEq(RegistryProxy.getImplementation(), address(chamberV2));
-        IChamber(address(RegistryProxy)).getLeaderboard();
+        assertEq(MultiProxy.getImplementation(), address(chamberV2));
+        IChamber(address(MultiProxy)).getLeaderboard();
     }
 
     function test_Proxy_access() public {
         Chamber chamberV2 = new Chamber();
         
         vm.expectRevert();
-        RegistryProxy.changeAdmin(address(0));
+        MultiProxy.changeAdmin(address(0));
 
         vm.startPrank(address(1));
         vm.expectRevert();
-        RegistryProxy.changeAdmin(address(1));
+        MultiProxy.changeAdmin(address(1));
         vm.stopPrank();
 
-        RegistryProxy.changeAdmin(address(1));
-        assertEq(RegistryProxy.getAdmin(), address(1));
+        MultiProxy.changeAdmin(address(1));
+        assertEq(MultiProxy.getAdmin(), address(1));
         
         vm.expectRevert();
-        RegistryProxy.upgradeTo(address(chamberV2));
-        RegistryProxy.getImplementation();
+        MultiProxy.upgradeTo(address(chamberV2));
+        MultiProxy.getImplementation();
 
         Chamber chamberV3 = new Chamber();
         vm.prank(address(1));
-        RegistryProxy.upgradeTo(address(chamberV3));
-        assertEq(RegistryProxy.getImplementation(), address(chamberV3));
+        MultiProxy.upgradeTo(address(chamberV3));
+        assertEq(MultiProxy.getImplementation(), address(chamberV3));
     } 
 }

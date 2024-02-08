@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import { RegistryProxy } from "./RegistryProxy.sol";
+import { MultiProxy } from "./MultiProxy.sol";
 import { IChamber } from "./interfaces/IChamber.sol";
 import { IRegistry } from "./interfaces/IRegistry.sol";
 import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
@@ -50,7 +50,7 @@ contract Registry is IRegistry, Initializable, Ownable {
     function deploy(address _memberToken, address _govToken) external returns (address) {
         
         bytes memory data = abi.encodeWithSelector(IChamber.initialize.selector, _memberToken, _govToken);
-        RegistryProxy chamber = new RegistryProxy(chamberVersion, data, msg.sender);
+        MultiProxy chamber = new MultiProxy(chamberVersion, data, msg.sender);
 
         ChamberData memory chamberData = ChamberData({
             chamber: address(chamber),

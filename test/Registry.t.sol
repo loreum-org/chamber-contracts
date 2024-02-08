@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import "../lib/forge-std/src/Test.sol";
 
-import { RegistryProxy } from "../src/RegistryProxy.sol";
+import { MultiProxy } from "../src/MultiProxy.sol";
 import { Chamber } from "../src/Chamber.sol";
 import { Registry } from "../src/Registry.sol";
 
@@ -22,7 +22,7 @@ contract RegistryTest is Test {
     address registryProxyAddr;
     address chamberProxyAddr;
     
-    IChamberProxy registryProxy;
+    IChamberProxy multiProxy;
     IChamberProxy chamberProxy;
 
     IChamber chamber;
@@ -37,7 +37,7 @@ contract RegistryTest is Test {
         registryProxyAddr = registryDeployer.deploy(address(this));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mNFT), address(mERC20));
 
-        registryProxy = IChamberProxy(registryProxyAddr);
+        multiProxy = IChamberProxy(registryProxyAddr);
         chamberProxy = IChamberProxy(chamberProxyAddr);
 
         chamber = IChamber(chamberProxyAddr);
@@ -84,8 +84,8 @@ contract RegistryTest is Test {
 
     function test_Registry_proxy() public {
         Registry newRegistryImpl = new Registry();
-        registryProxy.upgradeTo(address(newRegistryImpl));
-        assertEq(registryProxy.getImplementation(), address(newRegistryImpl));
+        multiProxy.upgradeTo(address(newRegistryImpl));
+        assertEq(multiProxy.getImplementation(), address(newRegistryImpl));
     }
 
     function test_Registry_initialize() public {
@@ -95,8 +95,8 @@ contract RegistryTest is Test {
         registryImpl.initialize(address(chamberImpl), address(1));
         address _owner = address(1);
         bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberImpl), _owner);
-        registryProxy = new RegistryProxy(address(registryImpl), data, _owner);
-        assertEq(registryProxy.getImplementation(), address(registryImpl));
-        assertEq(registryProxy.getAdmin(), _owner);
+        multiProxy = new MultiProxy(address(registryImpl), data, _owner);
+        assertEq(multiProxy.getImplementation(), address(registryImpl));
+        assertEq(multiProxy.getAdmin(), _owner);
     }
 }

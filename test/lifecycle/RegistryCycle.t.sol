@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import "../../lib/forge-std/src/Test.sol";
 
-import { RegistryProxy } from "../../src/RegistryProxy.sol";
+import { MultiProxy } from "../../src/MultiProxy.sol";
 import { Registry } from "../../src/Registry.sol";
 import { Chamber } from "../../src/Chamber.sol";
 import { IChamber } from "../../src/interfaces/IChamber.sol";
