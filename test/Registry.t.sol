@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import "../lib/forge-std/src/Test.sol";
 
-import { ChamberProxy } from "../src/ChamberProxy.sol";
+import { RegistryProxy } from "../src/RegistryProxy.sol";
 import { Chamber } from "../src/Chamber.sol";
 import { Registry } from "../src/Registry.sol";
 
@@ -95,7 +95,7 @@ contract RegistryTest is Test {
         registryImpl.initialize(address(chamberImpl), address(1));
         address _owner = address(1);
         bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberImpl), _owner);
-        registryProxy = new ChamberProxy(address(registryImpl), data, _owner);
+        registryProxy = new RegistryProxy(address(registryImpl), data, _owner);
         assertEq(registryProxy.getImplementation(), address(registryImpl));
         assertEq(registryProxy.getAdmin(), _owner);
     }
