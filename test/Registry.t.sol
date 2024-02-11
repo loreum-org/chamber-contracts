@@ -10,7 +10,7 @@ import { Registry } from "../src/Registry.sol";
 import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 
-import { IChamberProxy } from "../src/interfaces/IChamberProxy.sol";
+import { IMultiProxy } from "../src/interfaces/IMultiProxy.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
 import { IRegistry } from "../src/interfaces/IRegistry.sol";
 import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
@@ -22,8 +22,8 @@ contract RegistryTest is Test {
     address registryProxyAddr;
     address chamberProxyAddr;
     
-    IChamberProxy multiProxy;
-    IChamberProxy chamberProxy;
+    IMultiProxy multiProxy;
+    IMultiProxy chamberProxy;
 
     IChamber chamber;
     IRegistry registry;
@@ -37,8 +37,8 @@ contract RegistryTest is Test {
         registryProxyAddr = registryDeployer.deploy(address(this));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mNFT), address(mERC20));
 
-        multiProxy = IChamberProxy(registryProxyAddr);
-        chamberProxy = IChamberProxy(chamberProxyAddr);
+        multiProxy = IMultiProxy(registryProxyAddr);
+        chamberProxy = IMultiProxy(chamberProxyAddr);
 
         chamber = IChamber(chamberProxyAddr);
         registry = IRegistry(registryProxyAddr);

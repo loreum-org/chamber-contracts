@@ -8,7 +8,7 @@ import { Registry } from "../../src/Registry.sol";
 import { Chamber } from "../../src/Chamber.sol";
 import { IChamber } from "../../src/interfaces/IChamber.sol";
 import { IRegistry } from "../../src/interfaces/IRegistry.sol";
-import { IChamberProxy } from "../../src/interfaces/IChamberProxy.sol";
+import { IMultiProxy } from "../../src/interfaces/IMultiProxy.sol";
 
 import { DeployRegistry } from "../utils/DeployRegistry.sol";
 

@@ -8,7 +8,7 @@ import { Chamber } from "../src/Chamber.sol";
 
 import { IRegistry } from "../src/interfaces/IRegistry.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
-import { IChamberProxy } from "../src/interfaces/IChamberProxy.sol";
+import { IMultiProxy } from "../src/interfaces/IMultiProxy.sol";
 import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
 
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
@@ -23,8 +23,8 @@ contract ProxyUpgradeTest is Test {
     IRegistry registry;
     IChamber chamber;
 
-    IChamberProxy multiProxy;
-    IChamberProxy MultiProxy;
+    IMultiProxy registryProxy;
+    IMultiProxy chamberProxy;
 
     address chamberProxyAddr;
     address registryProxyAddr;
@@ -38,49 +38,49 @@ contract ProxyUpgradeTest is Test {
         registryProxyAddr = registryDeployer.deploy(address(this));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mERC721), address(mERC20));
         
-        MultiProxy = IChamberProxy(chamberProxyAddr);
-        multiProxy = IChamberProxy(registryProxyAddr);
+        chamberProxy = IMultiProxy(chamberProxyAddr);
+        registryProxy = IMultiProxy(registryProxyAddr);
 
         chamber = IChamber(chamberProxyAddr);
         registry = IRegistry(registryProxyAddr);
     }
 
     function test_Proxy_upgrade() public {
-        MultiProxy.getImplementation();
-        mERC20.approve(address(MultiProxy), 1000);
+        chamberProxy.getImplementation();
+        mERC20.approve(address(chamberProxy), 1000);
         chamber.promote(1, 1);
         (uint256[] memory leaders, uint256[] memory amounts) = chamber.getLeaderboard();
         Chamber chamberV2 = new Chamber();
 
-        MultiProxy.upgradeTo(address(chamberV2));
+        chamberProxy.upgradeTo(address(chamberV2));
         (uint256[] memory newLeaders, uint256[] memory newAmounts) = chamber.getLeaderboard();
         assertEq(newLeaders[0], leaders[0]);
         assertEq(newAmounts[0], amounts[0]); 
-        assertEq(MultiProxy.getImplementation(), address(chamberV2));
-        IChamber(address(MultiProxy)).getLeaderboard();
+        assertEq(chamberProxy.getImplementation(), address(chamberV2));
+        IChamber(address(chamberProxy)).getLeaderboard();
     }
 
     function test_Proxy_access() public {
         Chamber chamberV2 = new Chamber();
         
         vm.expectRevert();
-        MultiProxy.changeAdmin(address(0));
+        chamberProxy.changeAdmin(address(0));
 
         vm.startPrank(address(1));
         vm.expectRevert();
-        MultiProxy.changeAdmin(address(1));
+        chamberProxy.changeAdmin(address(1));
         vm.stopPrank();
 
-        MultiProxy.changeAdmin(address(1));
-        assertEq(MultiProxy.getAdmin(), address(1));
+        chamberProxy.changeAdmin(address(1));
+        assertEq(chamberProxy.getAdmin(), address(1));
         
         vm.expectRevert();
-        MultiProxy.upgradeTo(address(chamberV2));
-        MultiProxy.getImplementation();
+        chamberProxy.upgradeTo(address(chamberV2));
+        chamberProxy.getImplementation();
 
         Chamber chamberV3 = new Chamber();
         vm.prank(address(1));
-        MultiProxy.upgradeTo(address(chamberV3));
-        assertEq(MultiProxy.getImplementation(), address(chamberV3));
+        chamberProxy.upgradeTo(address(chamberV3));
+        assertEq(chamberProxy.getImplementation(), address(chamberV3));
     } 
 }
