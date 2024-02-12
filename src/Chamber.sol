@@ -201,12 +201,12 @@ contract Chamber is IChamber, Common, GuardManager{
             finalSuccess = success;
             if(!success) revert executionFailed();
         }
-        emit ProposalExecuted(_proposalId);
         {
             if (guard != address(0)){
                 Guard(guard).checkAfterExecution(constructMessageHash(_proposalId, _tokenId), finalSuccess);
             }
         }
+        emit ProposalExecuted(_proposalId);
     }
 
     /// @notice _updateLeaderboard Updates the leaderboard array 

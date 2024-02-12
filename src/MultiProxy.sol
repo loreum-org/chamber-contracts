@@ -3,10 +3,10 @@
 
 pragma solidity 0.8.19;
 
-import { IChamberProxy } from "./interfaces/IChamberProxy.sol";
+import { IMultiProxy } from "./interfaces/IMultiProxy.sol";
 import { ERC1967Proxy } from "openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-contract ChamberProxy is IChamberProxy, ERC1967Proxy {
+contract MultiProxy is IMultiProxy, ERC1967Proxy {
 
     modifier onlyAdmin() {
         if(msg.sender != super._getAdmin()) revert notAdmin();

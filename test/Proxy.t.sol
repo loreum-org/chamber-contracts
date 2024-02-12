@@ -8,7 +8,7 @@ import { Chamber } from "../src/Chamber.sol";
 
 import { IRegistry } from "../src/interfaces/IRegistry.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
-import { IChamberProxy } from "../src/interfaces/IChamberProxy.sol";
+import { IMultiProxy } from "../src/interfaces/IMultiProxy.sol";
 import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
 
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
@@ -23,8 +23,8 @@ contract ProxyUpgradeTest is Test {
     IRegistry registry;
     IChamber chamber;
 
-    IChamberProxy registryProxy;
-    IChamberProxy chamberProxy;
+    IMultiProxy registryProxy;
+    IMultiProxy chamberProxy;
 
     address chamberProxyAddr;
     address registryProxyAddr;
@@ -38,8 +38,8 @@ contract ProxyUpgradeTest is Test {
         registryProxyAddr = registryDeployer.deploy(address(this));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mERC721), address(mERC20));
         
-        chamberProxy = IChamberProxy(chamberProxyAddr);
-        registryProxy = IChamberProxy(registryProxyAddr);
+        chamberProxy = IMultiProxy(chamberProxyAddr);
+        registryProxy = IMultiProxy(registryProxyAddr);
 
         chamber = IChamber(chamberProxyAddr);
         registry = IRegistry(registryProxyAddr);

@@ -3,14 +3,14 @@ pragma solidity ^0.8.19;
 
 import "../lib/forge-std/src/Test.sol";
 
-import { ChamberProxy } from "../src/ChamberProxy.sol";
+import { MultiProxy } from "../src/MultiProxy.sol";
 import { Chamber } from "../src/Chamber.sol";
 import { Registry } from "../src/Registry.sol";
 
 import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 
-import { IChamberProxy } from "../src/interfaces/IChamberProxy.sol";
+import { IMultiProxy } from "../src/interfaces/IMultiProxy.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
 import { IRegistry } from "../src/interfaces/IRegistry.sol";
 import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
@@ -22,8 +22,8 @@ contract RegistryTest is Test {
     address registryProxyAddr;
     address chamberProxyAddr;
     
-    IChamberProxy registryProxy;
-    IChamberProxy chamberProxy;
+    IMultiProxy registryProxy;
+    IMultiProxy chamberProxy;
 
     IChamber chamber;
     IRegistry registry;
@@ -37,8 +37,8 @@ contract RegistryTest is Test {
         registryProxyAddr = registryDeployer.deploy(address(this));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mNFT), address(mERC20));
 
-        registryProxy = IChamberProxy(registryProxyAddr);
-        chamberProxy = IChamberProxy(chamberProxyAddr);
+        registryProxy = IMultiProxy(registryProxyAddr);
+        chamberProxy = IMultiProxy(chamberProxyAddr);
 
         chamber = IChamber(chamberProxyAddr);
         registry = IRegistry(registryProxyAddr);
@@ -95,7 +95,7 @@ contract RegistryTest is Test {
         registryImpl.initialize(address(chamberImpl), address(1));
         address _owner = address(1);
         bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberImpl), _owner);
-        registryProxy = new ChamberProxy(address(registryImpl), data, _owner);
+        registryProxy = new MultiProxy(address(registryImpl), data, _owner);
         assertEq(registryProxy.getImplementation(), address(registryImpl));
         assertEq(registryProxy.getAdmin(), _owner);
     }
