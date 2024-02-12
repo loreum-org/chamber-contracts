@@ -7,7 +7,7 @@ import { Chamber } from "../src/Chamber.sol";
 import { MultiProxy } from "../src/MultiProxy.sol";
 import "forge-std/console2.sol";
 
-contract DeployRegistryProxy is Script {
+contract DeployMultiProxy is Script {
 
     function run() external {
 

@@ -11,7 +11,7 @@ contract DeployRegistry {
 
     Chamber chamberImpl;
     Registry registryImpl;
-    MultiProxy proxy;
+    MultiProxy multiProxy;
 
     function deploy(address _owner) public returns (address) {
         chamberImpl = new Chamber();

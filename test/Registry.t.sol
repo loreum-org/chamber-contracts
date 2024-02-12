@@ -22,7 +22,7 @@ contract RegistryTest is Test {
     address registryProxyAddr;
     address chamberProxyAddr;
     
-    IMultiProxy multiProxy;
+    IMultiProxy registryProxy;
     IMultiProxy chamberProxy;
 
     IChamber chamber;
@@ -37,7 +37,7 @@ contract RegistryTest is Test {
         registryProxyAddr = registryDeployer.deploy(address(this));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mNFT), address(mERC20));
 
-        multiProxy = IMultiProxy(registryProxyAddr);
+        registryProxy = IMultiProxy(registryProxyAddr);
         chamberProxy = IMultiProxy(chamberProxyAddr);
 
         chamber = IChamber(chamberProxyAddr);
@@ -84,8 +84,8 @@ contract RegistryTest is Test {
 
     function test_Registry_proxy() public {
         Registry newRegistryImpl = new Registry();
-        multiProxy.upgradeTo(address(newRegistryImpl));
-        assertEq(multiProxy.getImplementation(), address(newRegistryImpl));
+        registryProxy.upgradeTo(address(newRegistryImpl));
+        assertEq(registryProxy.getImplementation(), address(newRegistryImpl));
     }
 
     function test_Registry_initialize() public {
@@ -95,8 +95,8 @@ contract RegistryTest is Test {
         registryImpl.initialize(address(chamberImpl), address(1));
         address _owner = address(1);
         bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberImpl), _owner);
-        multiProxy = new MultiProxy(address(registryImpl), data, _owner);
-        assertEq(multiProxy.getImplementation(), address(registryImpl));
-        assertEq(multiProxy.getAdmin(), _owner);
+        registryProxy = new MultiProxy(address(registryImpl), data, _owner);
+        assertEq(registryProxy.getImplementation(), address(registryImpl));
+        assertEq(registryProxy.getAdmin(), _owner);
     }
 }
