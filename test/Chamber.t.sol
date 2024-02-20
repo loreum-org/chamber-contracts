@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "../lib/forge-std/src/Test.sol";
+import "../lib/forge-std/src/console.sol";
 
 import { Registry } from "../src/Registry.sol";
 import { Chamber } from "../src/Chamber.sol";
@@ -355,9 +356,9 @@ contract ChamberTest is Test {
         chamber.createProposal(targetArray, valueArray, dataArray);
 
         // Approving the transfer proposal
-        chamber.approveProposal(2, 3, getSignature(2, 3, 1));
-        chamber.approveProposal(2, 2, getSignature(2, 2, 1));
-        chamber.approveProposal(2, 1, getSignature(2, 1, 1));
+        chamber.approveProposal(1, 3, getSignature(1, 3, 1));
+        chamber.approveProposal(1, 2, getSignature(1, 2, 1));
+        chamber.approveProposal(1, 1, getSignature(1, 1, 1));
 
         // Creating a proposal to cancel the previous one
         bytes[] memory dataArray1 = new bytes[](1);
@@ -371,13 +372,19 @@ contract ChamberTest is Test {
         chamber.createProposal(targetArray1, valueArray1, dataArray1);
 
         // Approving the cancellation proposal
-        chamber.approveProposal(1, 3, getSignature(1, 3, 1));
-        chamber.approveProposal(1, 2, getSignature(1, 2, 1));
-        chamber.approveProposal(1, 1, getSignature(1, 1, 1));
+        chamber.approveProposal(2, 3, getSignature(2, 3, 1));
+        chamber.approveProposal(2, 2, getSignature(2, 2, 1));
+        chamber.approveProposal(2, 1, getSignature(2, 1, 1));
 
         // Both proposals have reached the quorum, but we execute the second proposal first,
         // which cancels the first proposal, resulting in the cancellation of the first proposal.
         chamber.executeProposal(2, 1, getSignature(2, 1, 1));
+
+        // The first proposal state is now 'Canceled'
+        (, IChamber.State state) = chamber.proposal(1);
+        require(IChamber.State.Canceled == state);
+
+        // Executing the first proposal will result returning 'invalidProposalState()'
         chamber.executeProposal(1, 1, getSignature(1, 1, 1));
 
         vm.stopPrank();
