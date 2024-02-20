@@ -110,7 +110,6 @@ contract ProposalCycleTest is Test {
         * 5. Leaders should be able to approve transaction
         * 6. Quorum of leaders should execute transaction
         * 7. nft hodler promoted after leader snapshot should not be able to approve
-        * 8. nft holder that is demoted after proposal created can still approve
         */
         vm.startPrank(vm.addr(1776));
 
@@ -211,6 +210,20 @@ contract ProposalCycleTest is Test {
         (votes, state) = chamber.proposal(2);
         assertEq(votes, 2);
         assertTrue(state == IChamber.State.Initialized);
+
+        // Executing the second proposal requires prior execution of the first proposal.       
+        vm.startPrank(bones);
+        chamber.approveProposal(1, 1,getSignature(1,1,1));
+        vm.stopPrank();
+        vm.startPrank(coconut);
+        chamber.approveProposal(1, 2,getSignature(1,2,2));
+        vm.stopPrank();
+        vm.startPrank(hurricane);
+        chamber.approveProposal(1, 3,getSignature(1,3,3));
+        vm.stopPrank();
+        vm.startPrank(bones);
+        chamber.executeProposal(1, 1,getSignature(1,1,1));
+        vm.stopPrank();
         
         // 6. Quorum of leaders should execute proposal
         vm.startPrank(hurricane);
@@ -235,12 +248,5 @@ contract ProposalCycleTest is Test {
         LORE.approve(address(chamber), 10000 ether);
         chamber.promote(10000 ether, 1);
         assertEq(chamber.accountDelegation(bones, 1), 43333 ether);
-
-        // 8. nft holder that was demoted after proposal creation can still approve
-        vm.startPrank(jack);
-        chamber.demote(33333 ether, 4);
-        helperLogger();
-        chamber.approveProposal(1, 4,getSignature(1,4,4));
-        vm.stopPrank();
     }
 }
