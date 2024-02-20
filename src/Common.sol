@@ -14,4 +14,26 @@ import { ERC1155Holder } from "openzeppelin-contracts/contracts/token/ERC1155/ut
 import { Initializable } from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 import { ReentrancyGuard } from "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 
-abstract contract Common is Initializable, ReentrancyGuard, Context, ERC721Holder, ERC1155Holder {}
+abstract contract Common is Initializable, ReentrancyGuard, Context, ERC721Holder, ERC1155Holder {
+
+      // Importing ECDSA library for bytes32 type
+    using ECDSA for bytes32;
+    
+    /// @notice Flag to indicate contract locking status
+    bool public locked;
+
+    /// @notice Modifier to prevent reentrancy attacks
+    modifier noReentrancy() {
+        require(!locked, "No reentrancy");
+
+        locked = true;
+        _;
+        locked = false;
+    }
+
+    // keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
+    bytes32 internal constant DOMAIN_SEPARATOR_TYPEHASH= 0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218;
+
+    // Function signature for the cancelProposal function.
+    bytes4 internal constant CANCEL_PROPOSAL_SELECTOR = bytes4(abi.encodeWithSignature("cancelProposal(uint256)"));
+}

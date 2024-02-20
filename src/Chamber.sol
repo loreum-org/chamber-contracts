@@ -7,24 +7,7 @@ import { IChamber } from "./interfaces/IChamber.sol";
 import "./GuardManager.sol";
 import "./Common.sol";
 
-contract Chamber is IChamber, Common, GuardManager{
-    // Importing ECDSA library for bytes32 type
-    using ECDSA for bytes32;
-    
-    /// @notice Flag to indicate contract locking status
-    bool public locked;
-
-    /// @notice Modifier to prevent reentrancy attacks
-    modifier noReentrancy() {
-        require(!locked, "No reentrancy");
-
-        locked = true;
-        _;
-        locked = false;
-    }
-
-    // keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
-    bytes32 private constant DOMAIN_SEPARATOR_TYPEHASH= 0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218;
+contract Chamber is IChamber, Common, GuardManager {
 
     /// @notice memberToken The ERC721 contract used for membership.
     address public memberToken;
@@ -35,9 +18,6 @@ contract Chamber is IChamber, Common, GuardManager{
     /// @notice leaderboard ff members based on total delegation.
     /// @dev    Limited to top 5 leaders requiring 3 approvals
     uint256[] public leaderboard;
-
-    /// @notice proposalCount The number of proposals.
-    uint256 public proposalCount;
 
     /// @notice Counter to track the nonce for each proposal
     uint256 public nonce;
@@ -91,9 +71,8 @@ contract Chamber is IChamber, Common, GuardManager{
         for (uint256 i=0; i<5; i++){
             topFiveLeader[i] = leaderboard[i];
         }
-        proposalCount++;
         nonce++;
-        proposals[proposalCount] = Proposal({
+        proposals[nonce] = Proposal({
             target: _target,
             value: _value,
             data: _data,
@@ -102,7 +81,7 @@ contract Chamber is IChamber, Common, GuardManager{
             nonce: nonce,
             state: State.Initialized
         });
-        emit ProposalCreated(proposalCount, _target, _value, _data, topFiveLeader, nonce);
+        emit ProposalCreated(nonce, _target, _value, _data, topFiveLeader, nonce);
     }
 
     /// @inheritdoc IChamber
@@ -156,13 +135,14 @@ contract Chamber is IChamber, Common, GuardManager{
         emit Demoted(_msgSender(), _amt, _tokenId);
     }
 
-    /// @notice _executeProposal function executes the proposal
-    /// @param  _proposalId The ID of the proposal to execute.
-    /// @param  _tokenId    The tokenId that the proposal was associated with
-    /// @param  _signature  The cryptographic signature to be verified
+    /// @inheritdoc IChamber
     function executeProposal(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) public noReentrancy{
 
         // TODO Implement Gas handling and Optimizations
+
+        if( _proposalId > 1 && !(_isCancellationProposal(_proposalId)) ){
+            require((proposals[_proposalId-1].state == State.Executed || proposals[_proposalId-1].state == State.Canceled), "Previous proposal must be resolved.");
+        }
 
         require(proposals[_proposalId].approvals >= 3, "Not enough approvals"); // TODO: Make quorum dynamic
 
@@ -208,6 +188,32 @@ contract Chamber is IChamber, Common, GuardManager{
         }
         emit ProposalExecuted(_proposalId);
     }
+
+    /// @notice Checks if the proposal corresponds to a cancellation request.
+    /// @param _proposalId The ID of the proposal to check.
+    /// @return Whether the proposal is a cancellation request or not.
+    function _isCancellationProposal(uint256 _proposalId) private view returns (bool) {
+        bytes4 data = bytes4(proposals[_proposalId].data[0]);
+        for (uint i = 0 ; i < 4; i++){
+            if (data[i] != CANCEL_PROPOSAL_SELECTOR[i]){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    //// @inheritdoc IChamber
+    function cancelProposal(uint256 _proposalId) external authorized {
+        require(proposals[_proposalId].state == State.Initialized, "Proposal is not initialized");
+        proposals[_proposalId].target = new address[](1);
+        proposals[_proposalId].value = new uint256[](1);
+        proposals[_proposalId].data = new bytes[](1);
+
+        proposals[_proposalId].state = State.Canceled;
+
+        emit ProposalCanceled(_proposalId);
+    }
+
 
     /// @notice _updateLeaderboard Updates the leaderboard array 
     /// @param _tokenId The ID of the NFT to update.
