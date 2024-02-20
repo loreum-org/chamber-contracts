@@ -91,7 +91,7 @@ interface IChamber is IGuardManager{
     function totalDelegation(uint256 tokenId) external view returns (uint256);
 
     /// @notice Returns the total number of proposals
-    function proposalCount() external view returns (uint256);
+    function nonce() external view returns (uint256);
 
     /// @notice Returns the number of approvals and the state of a proposal
     /// @param proposalId The ID of the proposal to query

@@ -7,27 +7,7 @@ import { IChamber } from "./interfaces/IChamber.sol";
 import "./GuardManager.sol";
 import "./Common.sol";
 
-contract Chamber is IChamber, Common, GuardManager{
-    // Importing ECDSA library for bytes32 type
-    using ECDSA for bytes32;
-    
-    /// @notice Flag to indicate contract locking status
-    bool public locked;
-
-    /// @notice Modifier to prevent reentrancy attacks
-    modifier noReentrancy() {
-        require(!locked, "No reentrancy");
-
-        locked = true;
-        _;
-        locked = false;
-    }
-
-    // keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
-    bytes32 private constant DOMAIN_SEPARATOR_TYPEHASH= 0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218;
-
-    // Function signature for the cancelProposal function.
-    bytes4 private constant CANCEL_PROPOSAL_SELECTOR = bytes4(abi.encodeWithSignature("cancelProposal(uint256)"));
+contract Chamber is IChamber, Common, GuardManager {
 
     /// @notice memberToken The ERC721 contract used for membership.
     address public memberToken;
@@ -38,9 +18,6 @@ contract Chamber is IChamber, Common, GuardManager{
     /// @notice leaderboard ff members based on total delegation.
     /// @dev    Limited to top 5 leaders requiring 3 approvals
     uint256[] public leaderboard;
-
-    /// @notice proposalCount The number of proposals.
-    uint256 public proposalCount;
 
     /// @notice Counter to track the nonce for each proposal
     uint256 public nonce;
@@ -94,9 +71,8 @@ contract Chamber is IChamber, Common, GuardManager{
         for (uint256 i=0; i<5; i++){
             topFiveLeader[i] = leaderboard[i];
         }
-        proposalCount++;
         nonce++;
-        proposals[proposalCount] = Proposal({
+        proposals[nonce] = Proposal({
             target: _target,
             value: _value,
             data: _data,
@@ -105,7 +81,7 @@ contract Chamber is IChamber, Common, GuardManager{
             nonce: nonce,
             state: State.Initialized
         });
-        emit ProposalCreated(proposalCount, _target, _value, _data, topFiveLeader, nonce);
+        emit ProposalCreated(nonce, _target, _value, _data, topFiveLeader, nonce);
     }
 
     /// @inheritdoc IChamber

@@ -128,7 +128,7 @@ contract ProposalCycleTest is Test {
         valueArray1[0] = 1 ether;
 
         chamber.createProposal(targetArray1, valueArray1, dataArray1);
-        assertEq(chamber.proposalCount(), 1);
+        assertEq(chamber.nonce(), 1);
 
         // 2. nft holder without delegation should not be able to approve transaction
         bytes memory signature = getSignature(1,8,1776);
@@ -183,7 +183,7 @@ contract ProposalCycleTest is Test {
 
         vm.startPrank(bones);
         chamber.createProposal(targetArray, valueArray, dataArray);
-        assertEq(chamber.proposalCount(), 2);
+        assertEq(chamber.nonce(), 2);
         (votes, state) = chamber.proposal(2);
         assertEq(votes, 0);
         assertTrue(state == IChamber.State.Initialized);
