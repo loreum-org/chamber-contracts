@@ -32,9 +32,9 @@ interface IRegistry {
      **************************************************/
 
     /// @notice Initializes the Registry
-    /// @param chamberVersion The address of the Chamber version
+    /// @param chamberBeacon The address of the Chamber Beacon
     /// @param owner          The address of the owner
-    function initialize(address chamberVersion, address owner) external;
+    function initialize(address chamberBeacon, address owner) external;
 
     // @notice Returns the total number of Chambers
     function totalChambers() external view returns (uint256);
@@ -43,8 +43,8 @@ interface IRegistry {
     /// @param  index The index of the Chamber to query
     function chambers(uint256 index) external view returns (address chamber, address memberToken, address govToken);
 
-    /// @notice Returns the Chamber implmentation address
-    function chamberVersion() external view returns (address);
+    /// @notice Returns the Chamber Beacon address
+    function chamberBeacon() external view returns (address);
 
     /// @notice getChambers Returns an array of ChamberData structs
     /// @param  limit The maximum number of Chambers to return
@@ -52,9 +52,9 @@ interface IRegistry {
     /// @return       ChamberData[] An array of ChamberData structs
     function getChambers(uint256 limit, uint256 skip) external view returns (ChamberData[] memory);
 
-    /// @notice Sets the Chamber version
-    /// @param chamberVersion The address of the Chamber version
-    function setChamberVersion(address chamberVersion) external;
+    /// @notice Sets the Chamber beacon
+    /// @param chamberBeacon The address of the Chamber Beacon
+    function setChamberBeacon(address chamberBeacon) external;
 
     /// @notice deploy Deploys a new Chamber
     /// @param  memberToken The Membership (NFT) token

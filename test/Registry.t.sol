@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import "../lib/forge-std/src/Test.sol";
 
 import { MultiProxy } from "../src/MultiProxy.sol";
+import { Beacon } from "../src/Beacon.sol";
 import { Chamber } from "../src/Chamber.sol";
 import { Registry } from "../src/Registry.sol";
 
@@ -11,6 +12,7 @@ import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 
 import { IMultiProxy } from "../src/interfaces/IMultiProxy.sol";
+import { IBeacon } from "../src/interfaces/IBeacon.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
 import { IRegistry } from "../src/interfaces/IRegistry.sol";
 import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
@@ -22,8 +24,14 @@ contract RegistryTest is Test {
     address registryProxyAddr;
     address chamberProxyAddr;
     
+    address chamberV1Impl;
+    address registryV1Impl;
+
     IMultiProxy registryProxy;
     IMultiProxy chamberProxy;
+
+    IBeacon registryBeacon;
+    IBeacon chamberBeacon;
 
     IChamber chamber;
     IRegistry registry;
@@ -37,8 +45,13 @@ contract RegistryTest is Test {
         registryProxyAddr = registryDeployer.deploy(address(this));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mNFT), address(mERC20));
 
+        (chamberV1Impl, registryV1Impl) = registryDeployer.getImplementations();
+
         registryProxy = IMultiProxy(registryProxyAddr);
         chamberProxy = IMultiProxy(chamberProxyAddr);
+
+        registryBeacon = IBeacon(registryProxy.getBeacon());
+        chamberBeacon = IBeacon(chamberProxy.getBeacon());
 
         chamber = IChamber(chamberProxyAddr);
         registry = IRegistry(registryProxyAddr);
@@ -71,32 +84,35 @@ contract RegistryTest is Test {
         assertEq(chambers[1].chamber, address(newChamber7));
     }
 
-    function test_Registry_version() public {
+    function test_Registry_Beacon() public {
         Chamber newChamber = new Chamber();
-        registry.setChamberVersion(address(newChamber));
-        assertEq(registry.chamberVersion(), address(newChamber));
+        registry.setChamberBeacon(address(newChamber));
+        assertEq(registry.chamberBeacon(), address(newChamber));
 
         // non owner should not be able to set version
         vm.prank(address(1));
         vm.expectRevert();
-        registry.setChamberVersion(address(chamber));
+        registry.setChamberBeacon(address(chamber));
     }
 
     function test_Registry_proxy() public {
         Registry newRegistryImpl = new Registry();
-        registryProxy.upgradeTo(address(newRegistryImpl));
+        registryBeacon.upgradeImplementaion(address(newRegistryImpl));
         assertEq(registryProxy.getImplementation(), address(newRegistryImpl));
     }
 
     function test_Registry_initialize() public {
         Chamber chamberImpl = new Chamber();
+        Beacon chamberImplBeacon = new Beacon(address(chamberImpl), msg.sender);
         Registry registryImpl = new Registry();
+        Beacon registryImplBeacon = new Beacon(address(registryImpl), msg.sender);
+
         vm.expectRevert();
-        registryImpl.initialize(address(chamberImpl), address(1));
+        registryImpl.initialize(address(chamberImplBeacon), address(1));
+
         address _owner = address(1);
-        bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberImpl), _owner);
-        registryProxy = new MultiProxy(address(registryImpl), data, _owner);
+        bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberImplBeacon), _owner);
+        registryProxy = new MultiProxy(address(registryImplBeacon), data, _owner);
         assertEq(registryProxy.getImplementation(), address(registryImpl));
-        assertEq(registryProxy.getAdmin(), _owner);
     }
 }

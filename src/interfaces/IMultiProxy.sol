@@ -5,11 +5,6 @@ interface IMultiProxy {
 
     function getImplementation() external view returns (address);
 
-    function getAdmin() external view returns (address);
+    function getBeacon() external returns (address);
 
-    function changeAdmin(address newAdmin) external;
-
-    function upgradeTo(address newImplementation) external;
-
-    error notAdmin();
 }
