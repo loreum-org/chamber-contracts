@@ -9,7 +9,7 @@ import { Chamber } from "../src/Chamber.sol";
 
 import { IRegistry } from "../src/interfaces/IRegistry.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
-import { IBeacon } from "../src/interfaces/IBeacon.sol";
+import { IMultiBeacon } from "../src/interfaces/IMultiBeacon.sol";
 import { IMultiProxy } from "../src/interfaces/IMultiProxy.sol";
 import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
 
@@ -25,8 +25,8 @@ contract ProxyUpgradeTest is Test{
     IRegistry registry;
     IChamber chamber;
 
-    IBeacon chamberBeacon;
-    IBeacon registryBeacon;
+    IMultiBeacon chamberBeacon;
+    IMultiBeacon registryBeacon;
 
     IMultiProxy registryProxy;
     IMultiProxy chamberProxy;
@@ -51,8 +51,8 @@ contract ProxyUpgradeTest is Test{
         chamberProxy = IMultiProxy(chamberProxyAddr);
         registryProxy = IMultiProxy(registryProxyAddr);
 
-        registryBeacon = IBeacon(registryProxy.getBeacon());
-        chamberBeacon = IBeacon(chamberProxy.getBeacon());
+        registryBeacon = IMultiBeacon(registryProxy.getBeacon());
+        chamberBeacon = IMultiBeacon(chamberProxy.getBeacon());
 
         chamber = IChamber(chamberProxyAddr);
         registry = IRegistry(registryProxyAddr);

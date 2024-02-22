@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 
 import { MultiProxy } from "../../src/MultiProxy.sol";    
-import { Beacon } from "../../src/Beacon.sol";
+import { MultiBeacon } from "../../src/MultiBeacon.sol";
 import { Chamber } from "../../src/Chamber.sol";
 import { Registry } from "../../src/Registry.sol";
 import { IRegistry } from "../../src/interfaces/IRegistry.sol";
@@ -11,17 +11,17 @@ import { IRegistry } from "../../src/interfaces/IRegistry.sol";
 contract DeployRegistry {
 
     Chamber chamberImpl;
-    Beacon chamberBeacon;
+    MultiBeacon chamberBeacon;
     Registry registryImpl;
-    Beacon registryBeacon;
+    MultiBeacon registryBeacon;
     MultiProxy multiProxy;
 
     function deploy(address _owner) public returns (address) {
         chamberImpl = new Chamber();
-        chamberBeacon = new Beacon(address(chamberImpl), _owner);
+        chamberBeacon = new MultiBeacon(address(chamberImpl), _owner);
 
         registryImpl = new Registry();
-        registryBeacon = new Beacon(address(registryImpl), _owner);
+        registryBeacon = new MultiBeacon(address(registryImpl), _owner);
 
         bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberBeacon), _owner);
         MultiProxy registry = new MultiProxy(address(registryBeacon), data, _owner);

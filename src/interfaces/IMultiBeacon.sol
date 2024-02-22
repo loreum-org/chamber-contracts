@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.19;
 
-interface IBeacon{
+interface IMultiBeacon{
     function getImplementation() external returns(address);
 
     function getOwner() external returns(address);

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IBeacon} from "./interfaces/IBeacon.sol";
+import {IMultiBeacon} from "./interfaces/IMultiBeacon.sol";
 import {UpgradeableBeacon} from "openzeppelin-contracts/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
-contract Beacon is IBeacon, UpgradeableBeacon{
+contract MultiBeacon is IMultiBeacon, UpgradeableBeacon{
 
     constructor(address _newImplementation, address _newOwner) UpgradeableBeacon(_newImplementation) {
         super.transferOwnership(_newOwner);

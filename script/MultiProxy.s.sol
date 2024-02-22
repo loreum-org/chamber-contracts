@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import "forge-std/Script.sol";
 import { Registry } from "../src/Registry.sol";
 import { Chamber } from "../src/Chamber.sol";
-import { Beacon } from "../src/Beacon.sol";
+import { MultiBeacon } from "../src/MultiBeacon.sol";
 import { MultiProxy } from "../src/MultiProxy.sol";
 import "forge-std/console2.sol";
 
@@ -14,15 +14,15 @@ contract DeployMultiProxy is Script {
 
         vm.startBroadcast();
         Chamber chamberImpl = new Chamber();
-        Beacon chamberBeacon = new Beacon(address(chamberImpl),msg.sender);
+        MultiBeacon chamberBeacon = new MultiBeacon(address(chamberImpl),msg.sender);
         vm.stopBroadcast();
         
         console2.log("Chamber Implementation address: ", address(chamberImpl));
-        console2.log("Chamber Beacon address: ", address(chamberBeacon));
+        console2.log("Chamber MultiBeacon address: ", address(chamberBeacon));
 
         vm.startBroadcast();
         Registry registryImpl = new Registry();
-        Beacon registryBeacon = new Beacon(address(registryImpl),msg.sender);
+        MultiBeacon registryBeacon = new MultiBeacon(address(registryImpl),msg.sender);
         bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberBeacon), msg.sender);
         MultiProxy registry = new MultiProxy(address(registryBeacon), data, msg.sender);
         vm.stopBroadcast();

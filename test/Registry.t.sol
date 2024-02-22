@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import "../lib/forge-std/src/Test.sol";
 
 import { MultiProxy } from "../src/MultiProxy.sol";
-import { Beacon } from "../src/Beacon.sol";
+import { MultiBeacon } from "../src/MultiBeacon.sol";
 import { Chamber } from "../src/Chamber.sol";
 import { Registry } from "../src/Registry.sol";
 
@@ -12,7 +12,7 @@ import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
 import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
 
 import { IMultiProxy } from "../src/interfaces/IMultiProxy.sol";
-import { IBeacon } from "../src/interfaces/IBeacon.sol";
+import { IMultiBeacon } from "../src/interfaces/IMultiBeacon.sol";
 import { IChamber } from "../src/interfaces/IChamber.sol";
 import { IRegistry } from "../src/interfaces/IRegistry.sol";
 import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
@@ -30,8 +30,8 @@ contract RegistryTest is Test {
     IMultiProxy registryProxy;
     IMultiProxy chamberProxy;
 
-    IBeacon registryBeacon;
-    IBeacon chamberBeacon;
+    IMultiBeacon registryBeacon;
+    IMultiBeacon chamberBeacon;
 
     IChamber chamber;
     IRegistry registry;
@@ -50,8 +50,8 @@ contract RegistryTest is Test {
         registryProxy = IMultiProxy(registryProxyAddr);
         chamberProxy = IMultiProxy(chamberProxyAddr);
 
-        registryBeacon = IBeacon(registryProxy.getBeacon());
-        chamberBeacon = IBeacon(chamberProxy.getBeacon());
+        registryBeacon = IMultiBeacon(registryProxy.getBeacon());
+        chamberBeacon = IMultiBeacon(chamberProxy.getBeacon());
 
         chamber = IChamber(chamberProxyAddr);
         registry = IRegistry(registryProxyAddr);
@@ -103,9 +103,9 @@ contract RegistryTest is Test {
 
     function test_Registry_initialize() public {
         Chamber chamberImpl = new Chamber();
-        Beacon chamberImplBeacon = new Beacon(address(chamberImpl), msg.sender);
+        MultiBeacon chamberImplBeacon = new MultiBeacon(address(chamberImpl), msg.sender);
         Registry registryImpl = new Registry();
-        Beacon registryImplBeacon = new Beacon(address(registryImpl), msg.sender);
+        MultiBeacon registryImplBeacon = new MultiBeacon(address(registryImpl), msg.sender);
 
         vm.expectRevert();
         registryImpl.initialize(address(chamberImplBeacon), address(1));
