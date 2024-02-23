@@ -16,24 +16,24 @@ contract Registry is IRegistry, Initializable, Ownable {
     /// @dev serial index -> ChamberData Struct
     mapping(uint256 => ChamberData) public chambers;
 
-    /// @notice chamerVersion is the latest version of the Chamber contract
-    address public chamberVersion;
+    /// @notice chamberBeacon is the beacon address for the Chamber contract
+    address public chamberBeacon;
 
     /// @notice contructor disables initializers
     constructor() { _disableInitializers(); }
 
     /// @inheritdoc IRegistry
-    function initialize(address _chamberVersion, address _owner) external initializer {
+    function initialize(address _chamberBeacon, address _owner) external initializer {
         require(_owner != address(0),"The address is zero");
-        require(_chamberVersion != address(0),"The address is zero");
+        require(_chamberBeacon != address(0),"The address is zero");
         super._transferOwnership(_owner);
-        chamberVersion = _chamberVersion;
+        chamberBeacon = _chamberBeacon;
     }
 
     /// @inheritdoc IRegistry
-    function setChamberVersion(address _chamberVersion) external onlyOwner {
-        require(_chamberVersion != address(0), "The address is zero");
-        chamberVersion = _chamberVersion;
+    function setChamberBeacon(address _chamberBeacon) external onlyOwner {
+        require(_chamberBeacon != address(0), "The address is zero");
+        chamberBeacon = _chamberBeacon;
     }
 
     /// @inheritdoc IRegistry
@@ -50,7 +50,7 @@ contract Registry is IRegistry, Initializable, Ownable {
     function deploy(address _memberToken, address _govToken) external returns (address) {
         
         bytes memory data = abi.encodeWithSelector(IChamber.initialize.selector, _memberToken, _govToken);
-        MultiProxy chamber = new MultiProxy(chamberVersion, data, msg.sender);
+        MultiProxy chamber = new MultiProxy(chamberBeacon, data, msg.sender);
 
         ChamberData memory chamberData = ChamberData({
             chamber: address(chamber),

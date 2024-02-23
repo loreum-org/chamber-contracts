@@ -4,32 +4,19 @@
 pragma solidity 0.8.19;
 
 import { IMultiProxy } from "./interfaces/IMultiProxy.sol";
-import { ERC1967Proxy } from "openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { BeaconProxy} from "openzeppelin-contracts/contracts/proxy/beacon/BeaconProxy.sol";
 
-contract MultiProxy is IMultiProxy, ERC1967Proxy {
+contract MultiProxy is IMultiProxy, BeaconProxy {
 
-    modifier onlyAdmin() {
-        if(msg.sender != super._getAdmin()) revert notAdmin();
-        _;
+    constructor(address _beacon, bytes memory _data, address _admin) BeaconProxy(_beacon, _data) {
+        super._changeAdmin(_admin);
     }
 
-    constructor(address _logic, bytes memory _data, address _admin) ERC1967Proxy(_logic, _data) {
-        super._changeAdmin(_admin);
+    function getBeacon() public view returns (address) {
+        return super._beacon();
     }
 
     function getImplementation() public view returns (address) {
         return super._implementation();
-    }
-
-    function getAdmin() public view returns (address) {
-        return super._getAdmin();
-    }
-
-    function changeAdmin(address newAdmin) public onlyAdmin {
-        super._changeAdmin(newAdmin);
-    }
-
-    function upgradeTo(address newImplementation) public onlyAdmin {
-        super._upgradeTo(newImplementation);
     }
 }
