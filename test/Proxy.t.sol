@@ -119,10 +119,10 @@ contract ProxyUpgradeTest is Test{
 
         chamberBeacon.upgradeImplementaion(address(chamberV2Impl));
         
-       assertEq(address(chamberV2Impl), address(chamberProxy.getImplementation()));
-       assertEq(address(chamberV2Impl), address(chamber2Proxy.getImplementation()));
-       assertEq(address(chamberV2Impl), address(chamber3Proxy.getImplementation()));
-       assertEq(address(chamberV2Impl), address(chamber4Proxy.getImplementation()));
-       assertEq(address(chamberV2Impl), address(chamber5Proxy.getImplementation()));
+        assertEq(address(chamberV2Impl), address(chamberProxy.getImplementation()));
+        assertEq(address(chamberV2Impl), address(chamber2Proxy.getImplementation()));
+        assertEq(address(chamberV2Impl), address(chamber3Proxy.getImplementation()));
+        assertEq(address(chamberV2Impl), address(chamber4Proxy.getImplementation()));
+        assertEq(address(chamberV2Impl), address(chamber5Proxy.getImplementation()));
     }
 }
