@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
-import { IERC165 } from "../common.sol";
+
+import { IERC165 } from "openzeppelin-contracts/contracts/utils/introspection/IERC165.sol";
 import { IChamber } from "./IChamber.sol";
 
 interface IGuard is IERC165 {
