@@ -3,7 +3,7 @@
 
 pragma solidity 0.8.19;
 
-import { IMultiProxy } from "./interfaces/IMultiProxy.sol";
+import { IMultiProxy } from "../interfaces/IMultiProxy.sol";
 import { BeaconProxy} from "openzeppelin-contracts/contracts/proxy/beacon/BeaconProxy.sol";
 
 contract MultiProxy is IMultiProxy, BeaconProxy {

@@ -9,7 +9,7 @@ interface IChamber is IGuardManager{
         State
      **************************************************/
 
-     /// @notice The State of a proposal
+    /// @notice The State of a proposal
     enum State { Null, Initialized, Executed, Canceled }
 
     /// @notice The structue of a proposal

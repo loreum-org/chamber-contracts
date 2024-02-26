@@ -4,10 +4,10 @@
 pragma solidity 0.8.19;
 
 import { IChamber } from "./interfaces/IChamber.sol";
-import "./GuardManager.sol";
-import "./Common.sol";
+import { IGuard } from "./interfaces/IGuard.sol";
+import { Common, IERC721, IERC20, ECDSA, SafeERC20 } from "./Common.sol";
 
-contract Chamber is IChamber, Common, GuardManager {
+contract Chamber is IChamber, Common {
 
     /// @notice memberToken The ERC721 contract used for membership.
     address public memberToken;
@@ -163,7 +163,7 @@ contract Chamber is IChamber, Common, GuardManager {
 
         address guard = getGuard();
         if (guard != address (0)){
-            Guard(guard).checkTransaction(
+            IGuard(guard).checkTransaction(
                 proposals[_proposalId].target,
                 proposals[_proposalId].value,
                 proposals[_proposalId].data,
@@ -182,8 +182,8 @@ contract Chamber is IChamber, Common, GuardManager {
             if(!success) revert executionFailed();
         }
         {
-            if (guard != address(0)){
-                Guard(guard).checkAfterExecution(constructMessageHash(_proposalId, _tokenId), finalSuccess);
+            if (guard != address(0)) {
+                IGuard(guard).checkAfterExecution(constructMessageHash(_proposalId, _tokenId), finalSuccess);
             }
         }
         emit ProposalExecuted(_proposalId);
