@@ -16,8 +16,6 @@ import { ReentrancyGuard } from "openzeppelin-contracts/contracts/security/Reent
 import { GuardManager } from "./guards/GuardManager.sol";
 
 abstract contract Common is Initializable, ReentrancyGuard, Context, ERC721Holder, ERC1155Holder, GuardManager {
-
-      // Importing ECDSA library for bytes32 type
     using ECDSA for bytes32;
     
     /// @notice Flag to indicate contract locking status

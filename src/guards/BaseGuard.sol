@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import { IERC165 } from "openzeppelin-contracts/contracts/utils/introspection/IERC165.sol";
 import { IGuard } from "../interfaces/IGuard.sol";
-import { IERC165 } from "../common.sol";
+
 
 abstract contract BaseGuard is IGuard {
     function supportsInterface(bytes4 interfaceId) external view virtual returns (bool){
