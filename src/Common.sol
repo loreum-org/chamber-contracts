@@ -13,8 +13,9 @@ import { ERC721Holder } from "openzeppelin-contracts/contracts/token/ERC721/util
 import { ERC1155Holder } from "openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import { Initializable } from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 import { ReentrancyGuard } from "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
+import { GuardManager } from "./guards/GuardManager.sol";
 
-abstract contract Common is Initializable, ReentrancyGuard, Context, ERC721Holder, ERC1155Holder {
+abstract contract Common is Initializable, ReentrancyGuard, Context, ERC721Holder, ERC1155Holder, GuardManager {
 
       // Importing ECDSA library for bytes32 type
     using ECDSA for bytes32;

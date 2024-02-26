@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import { MultiProxy } from "./MultiProxy.sol";
+import { MultiProxy } from "./proxy/MultiProxy.sol";
 import { IChamber } from "./interfaces/IChamber.sol";
 import { IRegistry } from "./interfaces/IRegistry.sol";
 import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";

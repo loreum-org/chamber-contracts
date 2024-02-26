@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 import "forge-std/Script.sol";
 import { Registry } from "../src/Registry.sol";
 import { Chamber } from "../src/Chamber.sol";
-import { MultiBeacon } from "../src/MultiBeacon.sol";
-import { MultiProxy } from "../src/MultiProxy.sol";
+import { MultiBeacon } from "../src/proxy/MultiBeacon.sol";
+import { MultiProxy } from "../src/proxy/MultiProxy.sol";
 import "forge-std/console2.sol";
 
 contract DeployMultiProxy is Script {
