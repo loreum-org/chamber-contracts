@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Loreum Chamber v1
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.24;
 
 import { IChamber } from "./interfaces/IChamber.sol";
 import { IGuard } from "./interfaces/IGuard.sol";

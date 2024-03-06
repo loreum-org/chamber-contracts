@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.24;
 
 /// @title IGuardManager - A contract interface managing transaction guards which perform pre and post-checks on transactions.
 interface IGuardManager {
