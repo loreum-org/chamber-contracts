@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Loreum Chamber v1
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.24;
 
 import { IERC20 } from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 import { IERC721 } from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
