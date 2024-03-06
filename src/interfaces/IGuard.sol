@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.24;
 
 import { IERC165 } from "openzeppelin-contracts/contracts/utils/introspection/IERC165.sol";
 import { IChamber } from "./IChamber.sol";

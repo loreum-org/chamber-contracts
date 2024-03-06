@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity 0.8.24;
 
 import { IGuard,IERC165 } from "../interfaces/IGuard.sol";
 
