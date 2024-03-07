@@ -17,7 +17,7 @@ contract DeployERC721 is Script {
             500,
             10000,
             100,
-            address(100)
+            0x345F273fAE2CeC49e944BFBEf4899fA1625803C5
         );
         vm.stopBroadcast();
     }
