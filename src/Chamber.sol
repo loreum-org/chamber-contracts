@@ -128,10 +128,11 @@ contract Chamber is IChamber, Common {
         accountDelegation[_msgSender()][tokenId] -= amount;
         if (totalDelegation[tokenId]== 0){
             _removeFromLeaderboard(tokenId);
-        }else{
+        } else {
             _updateLeaderboard(tokenId);
         }
         
+        SafeERC20.safeDecreaseAllowance(IERC20(govToken), address(this), amount);
         SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), amount);
         emit Demoted(_msgSender(), amount, tokenId);
     }

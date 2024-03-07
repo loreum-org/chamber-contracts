@@ -73,7 +73,7 @@ contract ChamberPerfTest is Test {
     // Test the performance of the promote function with 10000 calls
     function test_Chamber_perf_promote_many(uint256 amount) public {
 
-        vm.assume(amount > 0 && amount < 10000000 ether);
+        vm.assume(amount > 0);
 
         uint256 runs = 50;
         for (uint256 i = 1; i <= runs; i++) {
@@ -81,6 +81,7 @@ contract ChamberPerfTest is Test {
             deal(address(LORE), bones, amount);
             LORE.approve(address(chamber), amount);
             chamber.promote(amount, i);
+            chamber.demote(amount, i);
         }
     }
 
