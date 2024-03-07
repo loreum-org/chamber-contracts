@@ -60,11 +60,11 @@ forge test
 
 | Contract                    | Address                                                                                   |
 |-----------------------------|-------------------------------------------------------------------------------------------|
-| Chamber Implementation      | [`0xDC4C2b5Fef484c47cE1F941B6d7eF06E3f7e5416`](https://sepolia.etherscan.io/address/0xDC4C2b5Fef484c47cE1F941B6d7eF06E3f7e5416) |
-| Chamber MultiBeacon         | [`0x1afFEC10f16e3520E56E1d8d439B767F41E51EB4`](https://sepolia.etherscan.io/address/0x1afFEC10f16e3520E56E1d8d439B767F41E51EB4) |
-| Registry Implementation     | [`0x98a6bAae9b4313Ca4c32deEa1432659901BfcE77`](https://sepolia.etherscan.io/address/0x98a6bAae9b4313Ca4c32deEa1432659901BfcE77) |
-| Registry Beacon             | [`0x18ABbB343352b8AD01BF09264611158F0c622C97`](https://sepolia.etherscan.io/address/0x18ABbB343352b8AD01BF09264611158F0c622C97) |
-| Registry Proxy              | [`0x3447EC33aC8B912B962d542dDB9c0a6688565248`](https://sepolia.etherscan.io/address/0x3447EC33aC8B912B962d542dDB9c0a6688565248) |
+| Chamber Implementation      | [`0x77181d4b22811242dE0d74BFd153de543a12D9dd`](https://sepolia.etherscan.io/address/0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A) |
+| Chamber MultiBeacon         | [`0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A`](https://sepolia.etherscan.io/address/0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A) |
+| Registry Implementation     | [`0x06383c75C03b7669e470A3908557032fDC9bbeef`](https://sepolia.etherscan.io/address/0x06383c75C03b7669e470A3908557032fDC9bbeef) |
+| Registry Beacon             | [`0x3A64b94eA72D79AfAfa72c2B8d56D5bAC5aaaDbA`](https://sepolia.etherscan.io/address/0x3A64b94eA72D79AfAfa72c2B8d56D5bAC5aaaDbA) |
+| Registry Proxy              | [`0x46A49D4391F2F220D3661b2a2BFe4b306EE18845`](https://sepolia.etherscan.io/address/0x46A49D4391F2F220D3661b2a2BFe4b306EE18845) |
 | BLKH NFT                    | [`0xe02A8f23c19280dd828Eb5CA5EC89d64345f06d8`](https://sepolia.etherscan.io/address/0xe02A8f23c19280dd828Eb5CA5EC89d64345f06d8) |
 | LORE Token                  | [`0xd6a10328D8cd00747031daef6a12f811F4eA0A37`](https://sepolia.etherscan.io/address/0xd6a10328D8cd00747031daef6a12f811F4eA0A37) |
 
