@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "forge-std/Script.sol";
-import { LoreumNFT } from "../lib/loreum-nft/src/LoreumNFT.sol";
+import { Script } from "lib/forge-std/src/Script.sol";
+import { LoreumNFT } from "lib/loreum-nft/src/LoreumNFT.sol";
 
 contract DeployERC721 is Script {
 

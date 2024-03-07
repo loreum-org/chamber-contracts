@@ -3,9 +3,9 @@
 
 pragma solidity 0.8.24;
 
-import { IChamber } from "./interfaces/IChamber.sol";
-import { IGuard } from "./interfaces/IGuard.sol";
-import { Common, IERC721, IERC20, ECDSA, SafeERC20 } from "./Common.sol";
+import { IChamber } from "src/interfaces/IChamber.sol";
+import { IGuard } from "src/interfaces/IGuard.sol";
+import { Common, IERC721, IERC20, ECDSA, SafeERC20 } from "src/Common.sol";
 
 contract Chamber is IChamber, Common {
 

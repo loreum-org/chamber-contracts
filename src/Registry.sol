@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import { MultiProxy } from "./proxy/MultiProxy.sol";
-import { IChamber } from "./interfaces/IChamber.sol";
-import { IRegistry } from "./interfaces/IRegistry.sol";
-import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
-import { Initializable } from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import { MultiProxy } from "src/proxy/MultiProxy.sol";
+import { IChamber } from "src/interfaces/IChamber.sol";
+import { IRegistry } from "src/interfaces/IRegistry.sol";
+import { Ownable } from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import { Initializable } from "lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 contract Registry is IRegistry, Initializable, Ownable {
 

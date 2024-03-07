@@ -1,21 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import { Test } from "../../lib/forge-std/src/Test.sol";
-
-import { Registry } from "../../src/Registry.sol";
-import { Chamber } from "../../src/Chamber.sol";
-
-import { IChamber } from "../../src/interfaces/IChamber.sol";
-import { IRegistry } from "../../src/interfaces/IRegistry.sol";
-import { IMultiProxy } from "../../src/interfaces/IMultiProxy.sol";
-
+import { Test } from "lib/forge-std/src/Test.sol";
+import { IChamber } from "src/interfaces/IChamber.sol";
+import { IRegistry } from "src/interfaces/IRegistry.sol";
+import { IMultiProxy } from "src/interfaces/IMultiProxy.sol";
 import { DeployRegistry } from "../utils/DeployRegistry.sol";
-
-import { MockERC20 } from "../../lib/contract-utils/src/MockERC20.sol";
-import { LoreumNFT } from "../../lib/loreum-nft/src/LoreumNFT.sol";
-import { LoreumToken } from "../../lib/loreum-token/src/LoreumToken.sol";
-import { Test } from "../../lib/forge-std/src/Test.sol";
+import { MockERC20 } from "lib/contract-utils/src/MockERC20.sol";
+import { LoreumNFT } from "lib/loreum-nft/src/LoreumNFT.sol";
+import { LoreumToken } from "lib/loreum-token/src/LoreumToken.sol";
+import { Test } from "lib/forge-std/src/Test.sol";
 
 contract ChamberSecTest is Test {
 

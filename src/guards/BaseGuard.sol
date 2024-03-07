@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import { IGuard,IERC165 } from "../interfaces/IGuard.sol";
+import { IGuard,IERC165 } from "src/interfaces/IGuard.sol";
 
 abstract contract BaseGuard is IGuard {
     function supportsInterface(bytes4 interfaceId) external view virtual returns (bool){

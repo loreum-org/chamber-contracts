@@ -69,12 +69,14 @@ forge test
 # You know what to do
 ```
 
-### Deployments
+## Deployments
 
-**Sepolia**
+### Sepolia
 
-Registry: `0x5f4D5Eb931d5e65a1E6A1264bBD9ea3FCeefA693`
-
-LoreToken: `0x831Ae6cd498342A7aCf3F1067f7E46F9E69a0001`
-
-LoreumNFT: `0x69e41faF363A6Be4Cde76268315F48Ef0034C8b8`
+| Contract                    | Address                                      |
+|-----------------------------|----------------------------------------------|
+| Chamber Implementation      | `0x4fD935F3f68b449cD352402894b5C2beBAF32967` |
+| Chamber MultiBeacon         | `0xC7147fCC948145fE22c0daAc515fc84Dcd219976` |
+| Registry Implementation     | `0x194528DbC0b3f0c4Ba061e48Bf7179eC8Aba7902` |
+| Registry Beacon             | `0x9B9B4b89EA624473f951728982Bf9C47d88b94d8` |
+| Registry Proxy              | `0x38ADc3e717Ec759Ed8765F61B2A11dfb561286Ef` |

@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "../lib/forge-std/src/Test.sol";
+import { Test } from "lib/forge-std/src/Test.sol";
 
-import { MultiProxy } from "../src/proxy/MultiProxy.sol";
-import { MultiBeacon } from "../src/proxy/MultiBeacon.sol";
-import { Chamber } from "../src/Chamber.sol";
-import { Registry } from "../src/Registry.sol";
+import { MultiProxy } from "src/proxy/MultiProxy.sol";
+import { MultiBeacon } from "src/proxy/MultiBeacon.sol";
+import { Chamber } from "src/Chamber.sol";
+import { Registry } from "src/Registry.sol";
 
-import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
-import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
+import { MockNFT } from "lib/contract-utils/src/MockNFT.sol";
+import { MockERC20 } from "lib/contract-utils/src/MockERC20.sol";
 
-import { IMultiProxy } from "../src/interfaces/IMultiProxy.sol";
-import { IMultiBeacon } from "../src/interfaces/IMultiBeacon.sol";
-import { IChamber } from "../src/interfaces/IChamber.sol";
-import { IRegistry } from "../src/interfaces/IRegistry.sol";
-import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
+import { IMultiProxy } from "src/interfaces/IMultiProxy.sol";
+import { IMultiBeacon } from "src/interfaces/IMultiBeacon.sol";
+import { IChamber } from "src/interfaces/IChamber.sol";
+import { IRegistry } from "src/interfaces/IRegistry.sol";
+import { DeployRegistry } from "test/utils/DeployRegistry.sol";
 
 contract RegistryTest is Test {
     MockERC20 mERC20;
