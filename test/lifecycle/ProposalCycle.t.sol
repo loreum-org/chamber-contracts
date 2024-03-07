@@ -127,18 +127,18 @@ contract ProposalCycleTest is Test {
         targetArray1[0] = address(chamber);
         valueArray1[0] = 1 ether;
 
-        chamber.createProposal(targetArray1, valueArray1, dataArray1);
+        chamber.create(targetArray1, valueArray1, dataArray1);
         assertEq(chamber.nonce(), 1);
 
         // 2. nft holder without delegation should not be able to approve transaction
         bytes memory signature = getSignature(1,8,1776);
         vm.expectRevert();
-        chamber.approveProposal(1, 8,signature);
+        chamber.approve(1, 8,signature);
 
         // 3. nft holder should not be able to approve transaction using unowned tokenId
         bytes memory signature1 = getSignature(1,5,1776);
         vm.expectRevert();
-        chamber.approveProposal(1, 5,signature1);
+        chamber.approve(1, 5,signature1);
  
         vm.stopPrank();
 
@@ -182,7 +182,7 @@ contract ProposalCycleTest is Test {
         valueArray[6] = 0;
 
         vm.startPrank(bones);
-        chamber.createProposal(targetArray, valueArray, dataArray);
+        chamber.create(targetArray, valueArray, dataArray);
         assertEq(chamber.nonce(), 2);
         (votes, state) = chamber.proposal(2);
         assertEq(votes, 0);
@@ -193,19 +193,19 @@ contract ProposalCycleTest is Test {
         vm.startPrank(blackbeard);
         bytes memory signature2 = getSignature(1,7,7);
         vm.expectRevert();
-        chamber.approveProposal(1, 7,signature2);
+        chamber.approve(1, 7,signature2);
         vm.stopPrank();
         
         // 5. Leaders should be able to approve transaction
         vm.startPrank(danny);
-        chamber.approveProposal(2, 5,getSignature(2,5,5));
+        chamber.approve(2, 5,getSignature(2,5,5));
         vm.stopPrank();
         (votes, state) = chamber.proposal(2);
         assertEq(votes, 1);
         assertTrue(state == IChamber.State.Initialized);
 
         vm.startPrank(bones);
-        chamber.approveProposal(2, 1,getSignature(2,1,1));
+        chamber.approve(2, 1,getSignature(2,1,1));
         vm.stopPrank();
         (votes, state) = chamber.proposal(2);
         assertEq(votes, 2);
@@ -213,24 +213,24 @@ contract ProposalCycleTest is Test {
 
         // Executing the second proposal requires prior execution of the first proposal.       
         vm.startPrank(bones);
-        chamber.approveProposal(1, 1,getSignature(1,1,1));
+        chamber.approve(1, 1,getSignature(1,1,1));
         vm.stopPrank();
         vm.startPrank(coconut);
-        chamber.approveProposal(1, 2,getSignature(1,2,2));
+        chamber.approve(1, 2,getSignature(1,2,2));
         vm.stopPrank();
         vm.startPrank(hurricane);
-        chamber.approveProposal(1, 3,getSignature(1,3,3));
+        chamber.approve(1, 3,getSignature(1,3,3));
         vm.stopPrank();
         vm.startPrank(bones);
-        chamber.executeProposal(1, 1,getSignature(1,1,1));
+        chamber.execute(1, 1,getSignature(1,1,1));
         vm.stopPrank();
         
         // 6. Quorum of leaders should execute proposal
         vm.startPrank(hurricane);
-        chamber.approveProposal(2, 3,getSignature(2,3,3));
+        chamber.approve(2, 3,getSignature(2,3,3));
         
         // Execute Proposal
-        chamber.executeProposal(2,3,getSignature(2,3,3));
+        chamber.execute(2,3,getSignature(2,3,3));
         vm.stopPrank();
 
         (votes, state) = chamber.proposal(2);
