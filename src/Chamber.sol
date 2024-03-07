@@ -132,8 +132,9 @@ contract Chamber is IChamber, Common {
             _updateLeaderboard(tokenId);
         }
         
-        SafeERC20.safeDecreaseAllowance(IERC20(govToken), address(this), amount);
         SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), amount);
+        SafeERC20.safeDecreaseAllowance(IERC20(govToken), address(this), amount);
+
         emit Demoted(_msgSender(), amount, tokenId);
     }
 
