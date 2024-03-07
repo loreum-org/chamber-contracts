@@ -34,5 +34,5 @@ abstract contract Common is Initializable, ReentrancyGuard, Context, ERC721Holde
     bytes32 internal constant DOMAIN_SEPARATOR_TYPEHASH= 0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218;
 
     // Function signature for the cancelProposal function.
-    bytes4 internal constant CANCEL_PROPOSAL_SELECTOR = bytes4(abi.encodeWithSignature("cancelProposal(uint256)"));
+    bytes4 internal constant CANCEL_PROPOSAL_SELECTOR = bytes4(abi.encodeWithSignature("cancel(uint256)"));
 }
