@@ -69,7 +69,41 @@ forge test
 | LORE Token                  | [`0xd6a10328D8cd00747031daef6a12f811F4eA0A37`](https://sepolia.etherscan.io/address/0xd6a10328D8cd00747031daef6a12f811F4eA0A37) |
 
 
-## Chamber.sol
+## Chamber Contract Overview
+
+The Chamber contract, part of the Loreum Chamber v1, is a Multsignature protocol management solution. It is designed to facilitate decentralized governance and liquid democracy within the Ethereum blockchain ecosystem. By leveraging ERC721 (NFTs) for membership and ERC20 tokens for governance (staking), the Chamber contract introduces a unique approach to protocol and treasury management.
+
+### Key Features
+
+**Membership and Governance**: Utilizes ERC721 tokens to represent membership and ERC20 tokens for governance staking, enabling a token-based voting and delegation system.
+
+**Leaderboard Mechanism**: Implements a leaderboard to track the top members based on the total amount of governance tokens delegated to their NFTs. This system is crucial for determining the voting power and influence of each member within the Chamber.
+
+**Proposal Management**: Offers a comprehensive system for creating, approving, and executing proposals. This includes tracking proposal states, counting approvals, and ensuring that only eligible members can vote on proposals.
+
+**Signature Verification**: Incorporates ECDSA signature verification to authenticate actions such as proposal approvals, ensuring that only the rightful NFT owners can participate in the voting process.
+
+**Delegation Tracking**: Maintains detailed records of governance token delegation, both on a per-NFT basis 1 and per-user basis 2, facilitating transparent and fair governance.
+
+**Dynamic Leaderboard Updates**: Features mechanisms to promote or demote members on the leaderboard based on changes in their delegated token balance, ensuring the leaderboard remains current and reflective of the community's consensus.
+
+### Functions
+
+`initialize(address _memberToken, address _govToken)`: Sets up the contract with the specified ERC721 and ERC20 tokens for membership and governance, respectively.
+
+`create(address[] memory _target, uint256[] memory _value, bytes[] memory _data)`: Allows members to create new proposals for community consideration.
+
+`approve(uint256 _proposalId, uint256 _tokenId, bytes memory _signature)`: Enables NFT owners to approve proposals, using their signature for authentication.
+
+`promote(uint256 _amt, uint256 _tokenId) and demote(uint256 _amt, uint256 _tokenId)`: Adjusts a member's position on the leaderboard by increasing or decreasing their delegated token balance.
+
+`execute(uint256 _proposalId, uint256 _tokenId, bytes memory _signature)`: Executes a proposal that has met the required approval threshold, performing the proposed actions.
+
+### Events
+
+`ProposalCreated, ProposalApproved, ProposalExecuted, Promoted, Demoted`: Emit important information about governance activities, providing transparency and traceability of actions within the Chamber.
+
+The Chamber contract is a cornerstone for decentralized governance, enabling a community-driven approach to decision-making and asset management. Its integration of NFTs for membership and ERC20 tokens for governance stakes positions it as a versatile tool for DAOs and other decentralized organizations seeking to implement liquid democracy.
 
 ```mermaid
 sequenceDiagram
@@ -129,7 +163,36 @@ sequenceDiagram
     Chamber-->>User: emit Promoted / Demoted
 ```
 
-## Registry.sol
+## Registry Contract Overview
+The Registry contract serves as a central directory for managing and deploying Chamber contracts within a decentralized platform. Built on Solidity 0.8.24, it leverages the power of smart contracts on the Ethereum blockchain to ensure secure and efficient governance mechanisms. This contract is part of a larger ecosystem aimed at enhancing liquid democracy and governance through tokenized representation.
+
+### Key Features
+
+**Chamber Management:** The Registry contract keeps track of all deployed Chamber contracts, which are specialized multisig wallets designed for decentralized governance. Each Chamber is associated with specific ERC20 governance tokens and ERC721 membership tokens.
+
+**Beacon-Based Deployment**: Utilizes a beacon contract address 1 to standardize the creation of new Chamber contracts. This approach ensures that all Chambers are deployed with consistent logic and can be upgraded collectively through the beacon.
+
+**Ownership and Initialization**: Inherits from OpenZeppelin's Ownable and Initializable contracts, providing a secure ownership model along with a safe initialization pattern. This prevents reinitialization attacks and ensures that only the contract owner can perform critical actions like setting the chamber beacon address.
+
+**Flexible Chamber Retrieval**: Offers a function to retrieve a list of deployed Chambers, with support for pagination through limit and skip parameters. This feature facilitates easy access and management of a potentially large number of Chamber contracts.
+
+**Secure Chamber Deployment**: Allows the deployment of new Chamber contracts by specifying the associated member (ERC721) and governance (ERC20) tokens. The deployment process is secured by ensuring that only the contract owner can initiate it, and by validating the non-zero addresses of the tokens.
+
+### Functions
+
+`initialize(address _chamberBeacon, address _owner)`: Initializes the contract with a beacon address for Chamber contracts and transfers ownership to the specified owner.
+
+`setChamberBeacon(address _chamberBeacon)`: Updates the beacon address used for deploying new Chambers. Restricted to the contract owner.
+
+`getChambers(uint256 limit, uint256 skip)`: Retrieves a list of deployed Chambers, supporting pagination.
+
+`deploy(address _memberToken, address _govToken)`: Deploys a new Chamber contract using the specified member and governance tokens. Returns the address of the newly deployed Chamber.
+
+### Events
+`ChamberDeployed(address chamber, uint256 totalChambers, address indexed sender, address memberToken, address govToken)`: Emitted after a successful deployment of a Chamber contract.
+
+The Registry contract is a a factory deployer for Chambers and allows us to index the data for easier retrivals of data for the interface.
+
 
 ```mermaid
 sequenceDiagram
