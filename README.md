@@ -80,3 +80,5 @@ forge test
 | Registry Implementation     | `0x194528DbC0b3f0c4Ba061e48Bf7179eC8Aba7902` |
 | Registry Beacon             | `0x9B9B4b89EA624473f951728982Bf9C47d88b94d8` |
 | Registry Proxy              | `0x38ADc3e717Ec759Ed8765F61B2A11dfb561286Ef` |
+| BLKH NFT                    | `0xe02A8f23c19280dd828Eb5CA5EC89d64345f06d8` |
+| LORE Token                  | `0xd6a10328D8cd00747031daef6a12f811F4eA0A37` |

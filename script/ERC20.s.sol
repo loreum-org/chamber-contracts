@@ -10,7 +10,7 @@ contract DeployERC20 is Script {
 
         address receiver = msg.sender;
         uint256 premintAmount = 3 ether;
-        uint256 maxSupply = 10_000_000 ether;
+        uint256 maxSupply = 100_000_000 ether;
 
         vm.startBroadcast();
         new LoreumToken(receiver, premintAmount, maxSupply);
