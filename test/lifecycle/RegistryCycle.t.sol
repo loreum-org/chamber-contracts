@@ -1,19 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "../../lib/forge-std/src/Test.sol";
-
-import { MultiProxy } from "../../src/proxy/MultiProxy.sol";
-import { Registry } from "../../src/Registry.sol";
-import { Chamber } from "../../src/Chamber.sol";
-import { IChamber } from "../../src/interfaces/IChamber.sol";
-import { IRegistry } from "../../src/interfaces/IRegistry.sol";
-import { IMultiProxy } from "../../src/interfaces/IMultiProxy.sol";
-
-import { DeployRegistry } from "../utils/DeployRegistry.sol";
-
-import { LoreumNFT } from "../../lib/loreum-nft/src/LoreumNFT.sol";
-import { LoreumToken } from "../../lib/loreum-token/src/LoreumToken.sol";
+import { Test } from "lib/forge-std/src/Test.sol";
+import { IRegistry } from "src/interfaces/IRegistry.sol";
+import { DeployRegistry } from "test/utils/DeployRegistry.sol";
+import { LoreumNFT } from "lib/loreum-nft/src/LoreumNFT.sol";
+import { LoreumToken } from "lib/loreum-token/src/LoreumToken.sol";
 
 contract RegistryCycle is Test {
 

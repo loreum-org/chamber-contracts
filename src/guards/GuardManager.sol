@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import { IGuardManager } from "../interfaces/IGuardManager.sol";
-import { SelfAuthorized } from "../proxy/SelfAuthorized.sol";
-import { IGuard } from "../interfaces/IGuard.sol";
+import { IGuardManager } from "src/interfaces/IGuardManager.sol";
+import { SelfAuthorized } from "src/proxy/SelfAuthorized.sol";
+import { IGuard } from "src/interfaces/IGuard.sol";
 
 /// @title Guard Manager - A contract managing transaction guards which perform pre and post-checks on transactions.
 contract GuardManager is SelfAuthorized, IGuardManager {

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "forge-std/Script.sol";
-import { LoreumToken } from "../lib/loreum-token/src/LoreumToken.sol";
+import { Script } from "lib/forge-std/src/Script.sol";
+import { LoreumToken } from "lib/loreum-token/src/LoreumToken.sol";
 
 contract DeployERC20 is Script {
 

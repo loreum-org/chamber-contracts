@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import { BaseGuard } from "./BaseGuard.sol";
-import { IChamber } from "../interfaces/IChamber.sol";
+import { BaseGuard } from "src/guards/BaseGuard.sol";
+import { IChamber } from "src/interfaces/IChamber.sol";
 
 contract DenyTransactionGuard is BaseGuard {
     fallback() external {}

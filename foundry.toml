@@ -11,4 +11,5 @@ optimizer = true
 optimizer_runs = 888888
 out = 'out'
 src = 'src'
+script = 'script'
 test = 'test'

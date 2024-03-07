@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "forge-std/Script.sol";
-import { Registry } from "../src/Registry.sol";
-import "forge-std/console2.sol";
+import { Script } from "lib/forge-std/src/Script.sol";
+import { Registry } from "src/Registry.sol";
+import { console2 } from "lib/forge-std/src/console2.sol";
+
 
 contract DeployRegistry is Script {
 

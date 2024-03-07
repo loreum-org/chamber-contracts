@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "../lib/forge-std/src/Test.sol";
-import "../lib/forge-std/src/console.sol";
+import { Test } from "lib/forge-std/src/Test.sol";
+import { DeployRegistry } from "test/utils/DeployRegistry.sol";
+import { IRegistry } from "src/interfaces/IRegistry.sol";
+import { IChamber } from "src/interfaces/IChamber.sol";
+import { MockERC20 } from "lib/contract-utils/src/MockERC20.sol";
+import { MockNFT } from "lib/contract-utils/src/MockNFT.sol";
+import { DenyTransactionGuard } from "src/guards/DenyTransactionGuard.sol";
 
-import { Registry } from "../src/Registry.sol";
-import { Chamber } from "../src/Chamber.sol";
-
-import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
-import { IRegistry } from "../src/interfaces/IRegistry.sol";
-import { IChamber } from "../src/interfaces/IChamber.sol";
-import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
-import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
-import { DenyTransactionGuard } from "../src/guards/DenyTransactionGuard.sol";
 
 contract ChamberTest is Test {
 
