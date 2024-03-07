@@ -81,6 +81,7 @@ contract ChamberPerfTest is Test {
             deal(address(LORE), bones, amount);
             LORE.approve(address(chamber), amount);
             chamber.promote(amount, i);
+            chamber.demote(amount, i);
         }
     }
 
