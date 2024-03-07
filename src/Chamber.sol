@@ -65,7 +65,7 @@ contract Chamber is IChamber, Common {
     }
 
     /// @inheritdoc IChamber
-    function createProposal(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
+    function create(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
         if(IERC721(memberToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
         uint256[5] memory topFiveLeader;
         for (uint256 i=0; i<5; i++){
@@ -85,7 +85,7 @@ contract Chamber is IChamber, Common {
     }
 
     /// @inheritdoc IChamber
-    function approveProposal(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) external {
+    function approve(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) external {
         if(_msgSender() != IERC721(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't NFT owner");
         if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
         if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID already voted");
@@ -136,7 +136,7 @@ contract Chamber is IChamber, Common {
     }
 
     /// @inheritdoc IChamber
-    function executeProposal(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) public noReentrancy{
+    function execute(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) public noReentrancy{
 
         // TODO Implement Gas handling and Optimizations
 
@@ -203,7 +203,7 @@ contract Chamber is IChamber, Common {
     }
 
     //// @inheritdoc IChamber
-    function cancelProposal(uint256 _proposalId) external authorized {
+    function cancel(uint256 _proposalId) external authorized {
         require(proposals[_proposalId].state == State.Initialized, "Proposal is not initialized");
         proposals[_proposalId].target = new address[](1);
         proposals[_proposalId].value = new uint256[](1);

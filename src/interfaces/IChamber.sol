@@ -101,27 +101,27 @@ interface IChamber is IGuardManager{
     function getLeaderboard() external view returns (uint256[] memory, uint256[] memory);
 
 
-    /// @notice approve Proposal function
+    /// @notice approve transaction proposal function
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 
     /// @param  signature  The cryptographic signature to be verified
-    function approveProposal(uint256 proposalId, uint256 tokenId,bytes memory signature) external;
+    function approve(uint256 proposalId, uint256 tokenId,bytes memory signature) external;
 
-    /// @notice execute Proposal function
+    /// @notice execute transaction proposal function
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 
     /// @param  signature  The cryptographic signature to be verified
-    function executeProposal(uint256 proposalId, uint256 tokenId, bytes memory signature) external;
+    function execute(uint256 proposalId, uint256 tokenId, bytes memory signature) external;
 
-    /// @notice cancel Proposal function
+    /// @notice cancel transaction proposal function
     /// @param  proposalId The ID of the proposal to cancel
-    function cancelProposal(uint256 proposalId) external;
+    function cancel(uint256 proposalId) external;
 
-    /// @notice create Proposal function
+    /// @notice create transaction proposal function
     /// @param  target The address of contract to send transaction
     /// @param  value  The uint256 amount of ETH to send with transaction
     /// @param  data   The bytes[] of transaction data
-    function createProposal(address[] memory target, uint256[] memory value, bytes[] memory data) external;
+    function create(address[] memory target, uint256[] memory value, bytes[] memory data) external;
 
     /// @notice Promotes an amount of govToken against a provided memberToken Id
     /// @param amount   The amount of govToken for promotion
