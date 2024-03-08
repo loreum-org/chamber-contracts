@@ -31,19 +31,19 @@ interface IChamber is IGuardManager{
     /// @param promoter   The address of the promoter
     /// @param amt        The amount of "govToken" delegated
     /// @param tokenId    The ID of the NFT that tokens will be promoted against
-    event Promoted(address promoter, uint256 amt, uint256 tokenId);
+    event Promotion(address promoter, uint256 amt, uint256 tokenId);
 
     /// @notice Emitted upon demote()
     /// @param demoter   The address of the demoter
     /// @param amt       The amount of "govToken" demoted
     /// @param tokenId   The ID of the NFT that tokens were demoted against
-    event Demoted(address demoter, uint256 amt, uint256 tokenId);
+    event Demotion(address demoter, uint256 amt, uint256 tokenId);
     
     /// @notice Emitted when a proposal is approved
     /// @param proposalId The unique identifier of the approved proposal
     /// @param tokenId    The tokenId that the proposal was associated with
     /// @param approvals  The total number of approvals that the proposal received
-    event ProposalApproved(uint256 proposalId, uint256 tokenId, uint256 approvals);
+    event ApprovedProposal(uint256 proposalId, uint256 tokenId, uint256 approvals);
 
     /// @notice Emitted when a proposal is created
     /// @param proposalId    The unique identifier of the created proposal
@@ -52,15 +52,15 @@ interface IChamber is IGuardManager{
     /// @param data          The array of data payloads associated with each target
     /// @param voters        The array of voters associated with each target
     /// @param nonce         The nonce associated with the created proposal
-    event ProposalCreated(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint256[5] voters, uint256 nonce);
+    event CreatedProposal(uint256 proposalId, address[] target, uint256[] value, bytes[] data, uint256[5] voters, uint256 nonce);
 
     /// @notice Emitted when a proposal is executed
     /// @param proposalId The unique identifier of the executed proposal
-    event ProposalExecuted(uint256 proposalId);
+    event ExecutedProposal(uint256 proposalId);
 
     /// @notice Emitted when a proposal is canceled
     /// @param proposalId The unique identifier of the executed proposal
-    event ProposalCanceled(uint256 proposalId);
+    event CanceledProposal(uint256 proposalId);
 
     /// @notice Emitted when Ether is received
     /// @param sender The address of the sender of the Ether
