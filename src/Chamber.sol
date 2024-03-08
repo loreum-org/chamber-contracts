@@ -81,7 +81,7 @@ contract Chamber is IChamber, Common, GuardManager {
             nonce: nonce,
             state: State.Initialized
         });
-        emit ProposalCreated(nonce, _target, _value, _data, topFiveLeader, nonce);
+        emit CreatedProposal(nonce, _target, _value, _data, topFiveLeader, nonce);
     }
 
     /// @inheritdoc IChamber
@@ -103,7 +103,7 @@ contract Chamber is IChamber, Common, GuardManager {
 
         voted[_proposalId][_tokenId] = true;
         proposals[_proposalId].approvals += 1;
-        emit ProposalApproved(_proposalId, _tokenId, proposals[_proposalId].approvals);
+        emit ApprovedProposal(_proposalId, _tokenId, proposals[_proposalId].approvals);
     }
 
     /// @inheritdoc IChamber
@@ -115,7 +115,7 @@ contract Chamber is IChamber, Common, GuardManager {
         _updateLeaderboard(_tokenId);
         
         SafeERC20.safeTransferFrom(IERC20(govToken), _msgSender(), address(this), _amt);
-        emit Promoted(_msgSender(), _amt, _tokenId);
+        emit Promotion(_msgSender(), _amt, _tokenId);
     }
 
     /// @inheritdoc IChamber
@@ -132,7 +132,7 @@ contract Chamber is IChamber, Common, GuardManager {
         }
         
         SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), _amt);
-        emit Demoted(_msgSender(), _amt, _tokenId);
+        emit Demotion(_msgSender(), _amt, _tokenId);
     }
 
     /// @inheritdoc IChamber
@@ -186,7 +186,7 @@ contract Chamber is IChamber, Common, GuardManager {
                 Guard(guard).checkAfterExecution(constructMessageHash(_proposalId, _tokenId), finalSuccess);
             }
         }
-        emit ProposalExecuted(_proposalId);
+        emit ExecutedProposal(_proposalId);
     }
 
     /// @notice Checks if the proposal corresponds to a cancellation request.
@@ -211,7 +211,7 @@ contract Chamber is IChamber, Common, GuardManager {
 
         proposals[_proposalId].state = State.Canceled;
 
-        emit ProposalCanceled(_proposalId);
+        emit CanceledProposal(_proposalId);
     }
 
 
