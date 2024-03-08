@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.24;
 
-import "forge-std/Script.sol";
-import { Chamber } from "../src/Chamber.sol";
-import "forge-std/console2.sol";
+import { Script } from "lib/forge-std/src/Script.sol";
+import { Chamber } from "src/Chamber.sol";
+import { console2 } from "lib/forge-std/src/console2.sol";
 
 contract DeployChamber is Script {
-
+    
     function run() external {
         vm.startBroadcast();
         Chamber chamberImpl = new Chamber();

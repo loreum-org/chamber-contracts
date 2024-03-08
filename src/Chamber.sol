@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Loreum Chamber v1
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.24;
 
-import { IChamber } from "./interfaces/IChamber.sol";
-import "./GuardManager.sol";
-import "./Common.sol";
+import { IChamber } from "src/interfaces/IChamber.sol";
+import { IGuard } from "src/interfaces/IGuard.sol";
+import { Common, IERC721, IERC20, ECDSA, SafeERC20 } from "src/Common.sol";
 
-contract Chamber is IChamber, Common, GuardManager {
+contract Chamber is IChamber, Common {
 
     /// @notice memberToken The ERC721 contract used for membership.
     address public memberToken;
@@ -65,7 +65,7 @@ contract Chamber is IChamber, Common, GuardManager {
     }
 
     /// @inheritdoc IChamber
-    function createProposal(address[] memory _target, uint256[] memory _value, bytes[] memory _data) external {
+    function create(address[] memory targets, uint256[] memory values, bytes[] memory datas) external {
         if(IERC721(memberToken).balanceOf(_msgSender()) < 1) revert insufficientBalance();
         uint256[5] memory topFiveLeader;
         for (uint256 i=0; i<5; i++){
@@ -73,30 +73,31 @@ contract Chamber is IChamber, Common, GuardManager {
         }
         nonce++;
         proposals[nonce] = Proposal({
-            target: _target,
-            value: _value,
-            data: _data,
+            target: targets,
+            value: values,
+            data: datas,
             voters: topFiveLeader,
             approvals: 0,
             nonce: nonce,
             state: State.Initialized
         });
+        
         emit CreatedProposal(nonce, _target, _value, _data, topFiveLeader, nonce);
     }
 
     /// @inheritdoc IChamber
-    function approveProposal(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) external {
-        if(_msgSender() != IERC721(memberToken).ownerOf(_tokenId)) revert invalidApproval("Sender isn't NFT owner");
-        if(proposals[_proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
-        if(voted[_proposalId][_tokenId]) revert invalidApproval("TokenID already voted");
+    function approve(uint256 proposalId, uint256 tokenId, bytes memory signature) external {
+        if(_msgSender() != IERC721(memberToken).ownerOf(tokenId)) revert invalidApproval("Sender isn't NFT owner");
+        if(proposals[proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
+        if(voted[proposalId][tokenId]) revert invalidApproval("TokenID already voted");
 
-        require(verifySignature(_proposalId, _tokenId, _signature), "Invalid signature");
+        require(verifySignature(proposalId, tokenId, signature), "Invalid signature");
 
-        uint256[5] memory voters = proposals[_proposalId].voters;
+        uint256[5] memory voters = proposals[proposalId].voters;
         bool onVoterList = false;
 
         for (uint i = 0; i < voters.length; i++) {
-            if (_tokenId == voters[i]) onVoterList = true;
+            if (tokenId == voters[i]) onVoterList = true;
         }
 
         if (!onVoterList) revert invalidApproval("TokenId not on voter list");
@@ -104,75 +105,78 @@ contract Chamber is IChamber, Common, GuardManager {
         voted[_proposalId][_tokenId] = true;
         proposals[_proposalId].approvals += 1;
         emit ApprovedProposal(_proposalId, _tokenId, proposals[_proposalId].approvals);
+
     }
 
     /// @inheritdoc IChamber
-    function promote(uint256 _amt, uint256 _tokenId) public nonReentrant {
-        if(_amt == 0 && _tokenId == 0) revert invalidPromotion();
+    function promote(uint256 amount, uint256 tokenId) public nonReentrant {
+        if(amount == 0 && tokenId == 0) revert invalidPromotion();
         
-        totalDelegation[_tokenId] += _amt;
-        accountDelegation[_msgSender()][_tokenId] += _amt;
-        _updateLeaderboard(_tokenId);
+        totalDelegation[tokenId] += amount;
+        accountDelegation[_msgSender()][tokenId] += amount;
+        _updateLeaderboard(tokenId);
         
         SafeERC20.safeTransferFrom(IERC20(govToken), _msgSender(), address(this), _amt);
         emit Promotion(_msgSender(), _amt, _tokenId);
+        
     }
 
     /// @inheritdoc IChamber
-    function demote(uint256 _amt, uint256 _tokenId) public nonReentrant {
-        if(_amt == 0 && _tokenId == 0) revert invalidDemotion();
-        if(accountDelegation[_msgSender()][_tokenId] < _amt) revert invalidDemotion();
+    function demote(uint256 amount, uint256 tokenId) public nonReentrant {
+        if(amount == 0 && tokenId == 0) revert invalidDemotion();
+        if(accountDelegation[_msgSender()][tokenId] < amount) revert invalidDemotion();
         
-        totalDelegation[_tokenId] -= _amt;
-        accountDelegation[_msgSender()][_tokenId] -= _amt;
-        if (totalDelegation[_tokenId]== 0){
-            _removeFromLeaderboard(_tokenId);
-        }else{
-            _updateLeaderboard(_tokenId);
+        totalDelegation[tokenId] -= amount;
+        accountDelegation[_msgSender()][tokenId] -= amount;
+        if (totalDelegation[tokenId]== 0){
+            _removeFromLeaderboard(tokenId);
+        } else {
+            _updateLeaderboard(tokenId);
         }
         
         SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), _amt);
         emit Demotion(_msgSender(), _amt, _tokenId);
+        
     }
 
     /// @inheritdoc IChamber
-    function executeProposal(uint256 _proposalId, uint256 _tokenId, bytes memory _signature) public noReentrancy{
+    function execute(uint256 proposalId, uint256 tokenId, bytes memory signature) public noReentrancy{
 
         // TODO Implement Gas handling and Optimizations
 
-        if( _proposalId > 1 && !(_isCancellationProposal(_proposalId)) ){
-            require((proposals[_proposalId-1].state == State.Executed || proposals[_proposalId-1].state == State.Canceled), "Previous proposal must be resolved.");
+        if( proposalId > 1 && !(_isCancellationProposal(proposalId)) ){
+            require((proposals[proposalId-1].state == State.Executed || proposals[proposalId-1].state == State.Canceled), "Previous proposal must be resolved.");
         }
 
-        require(proposals[_proposalId].approvals >= 3, "Not enough approvals"); // TODO: Make quorum dynamic
+        require(proposals[proposalId].approvals >= 3, "Not enough approvals"); // TODO: Make quorum dynamic
 
-        require(verifySignature(_proposalId, _tokenId, _signature), "Invalid signature");
+        require(verifySignature(proposalId, tokenId, signature), "Invalid signature");
 
         bool validVoter = false;
         for (uint256 i = 0 ; i < 5; i++){
-            if (_tokenId == proposals[_proposalId].voters[i]){
+            if (tokenId == proposals[proposalId].voters[i]){
                 validVoter = true;
             }
         }
         require(validVoter, "Not a voter");
 
-        if(proposals[_proposalId].state != State.Initialized) revert invalidProposalState();
+        if(proposals[proposalId].state != State.Initialized) revert invalidProposalState();
        
-        Proposal memory proposalData = proposals[_proposalId];
-        proposals[_proposalId].state = State.Executed;
+        Proposal memory proposalData = proposals[proposalId];
+        proposals[proposalId].state = State.Executed;
 
         address guard = getGuard();
         if (guard != address (0)){
-            Guard(guard).checkTransaction(
-                proposals[_proposalId].target,
-                proposals[_proposalId].value,
-                proposals[_proposalId].data,
-                proposals[_proposalId].voters,
-                proposals[_proposalId].state,
-                _signature,
+            IGuard(guard).checkTransaction(
+                proposals[proposalId].target,
+                proposals[proposalId].value,
+                proposals[proposalId].data,
+                proposals[proposalId].voters,
+                proposals[proposalId].state,
+                signature,
                 msg.sender,
-                _proposalId,
-                _tokenId
+                proposalId,
+                tokenId
             );
         }
         bool finalSuccess = false;
@@ -182,8 +186,8 @@ contract Chamber is IChamber, Common, GuardManager {
             if(!success) revert executionFailed();
         }
         {
-            if (guard != address(0)){
-                Guard(guard).checkAfterExecution(constructMessageHash(_proposalId, _tokenId), finalSuccess);
+            if (guard != address(0)) {
+                IGuard(guard).checkAfterExecution(constructMessageHash(proposalId, tokenId), finalSuccess);
             }
         }
         emit ExecutedProposal(_proposalId);
@@ -203,15 +207,16 @@ contract Chamber is IChamber, Common, GuardManager {
     }
 
     //// @inheritdoc IChamber
-    function cancelProposal(uint256 _proposalId) external authorized {
-        require(proposals[_proposalId].state == State.Initialized, "Proposal is not initialized");
-        proposals[_proposalId].target = new address[](1);
-        proposals[_proposalId].value = new uint256[](1);
-        proposals[_proposalId].data = new bytes[](1);
+    function cancel(uint256 proposalId) external authorized {
+        require(proposals[proposalId].state == State.Initialized, "Proposal is not initialized");
+        proposals[proposalId].target = new address[](1);
+        proposals[proposalId].value = new uint256[](1);
+        proposals[proposalId].data = new bytes[](1);
 
-        proposals[_proposalId].state = State.Canceled;
+        proposals[proposalId].state = State.Canceled;
 
         emit CanceledProposal(_proposalId);
+        
     }
 
 
@@ -268,13 +273,13 @@ contract Chamber is IChamber, Common, GuardManager {
 
     /// @inheritdoc IChamber
     function verifySignature(
-        uint256 _proposalId,
-        uint256 _tokenId,
-        bytes memory _signature
+        uint256 proposalId,
+        uint256 tokenId,
+        bytes memory signature
     ) public view returns (bool) {
-        bytes32 messageHash = constructMessageHash(_proposalId, _tokenId);
-        address signer = ECDSA.recover(messageHash, _signature);
-        return signer == IERC721(memberToken).ownerOf(_tokenId);
+        bytes32 messageHash = constructMessageHash(proposalId, tokenId);
+        address signer = ECDSA.recover(messageHash, signature);
+        return signer == IERC721(memberToken).ownerOf(tokenId);
     }
 
     /// @inheritdoc IChamber
@@ -287,27 +292,27 @@ contract Chamber is IChamber, Common, GuardManager {
     }
 
     function encodeData(
-        address[] memory _to,
-        uint256[] memory _value,
-        bytes[]   memory _data,
-        uint256[5]  memory _voters,
-        uint256            _approvals,
-        uint256          _nonce,
-        State            _state,
-        uint256          _proposalId,
-        uint256            _tokenId
+        address[]   memory  to,
+        uint256[]   memory  value,
+        bytes[]     memory  data,
+        uint256[5]  memory  voters,
+        uint256             approvals,
+        uint256             _nonce,
+        State               state,
+        uint256             proposalId,
+        uint256             tokenId
     )internal view returns(bytes memory){
         bytes32 txHash  = keccak256(
             abi.encode(
-                _to,
-                _value,
-                _data,
-                _voters,
-                _approvals,
+                to,
+                value,
+                data,
+                voters,
+                approvals,
                 _nonce,
-                _state,
-                _proposalId,
-                _tokenId
+                state,
+                proposalId,
+                tokenId
             )
         );
         return abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), txHash);
@@ -315,20 +320,20 @@ contract Chamber is IChamber, Common, GuardManager {
 
     /// @inheritdoc IChamber
     function constructMessageHash(
-        uint256 _proposalId, 
-        uint256 _tokenId
+        uint256 proposalId, 
+        uint256 tokenId
     ) public view returns (bytes32) {
         return keccak256(
             encodeData(
-                proposals[_proposalId].target,
-                proposals[_proposalId].value,
-                proposals[_proposalId].data,
-                proposals[_proposalId].voters,
-                proposals[_proposalId].approvals,
-                proposals[_proposalId].nonce,
-                proposals[_proposalId].state,
-                _proposalId,
-                _tokenId
+                proposals[proposalId].target,
+                proposals[proposalId].value,
+                proposals[proposalId].data,
+                proposals[proposalId].voters,
+                proposals[proposalId].approvals,
+                proposals[proposalId].nonce,
+                proposals[proposalId].state,
+                proposalId,
+                tokenId
             )
         );
     }

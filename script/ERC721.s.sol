@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.24;
 
-import "forge-std/Script.sol";
-import { LoreumNFT } from "../lib/loreum-nft/src/LoreumNFT.sol";
+import { Script } from "lib/forge-std/src/Script.sol";
+import { LoreumNFT } from "lib/loreum-nft/src/LoreumNFT.sol";
 
 contract DeployERC721 is Script {
 
@@ -17,7 +17,7 @@ contract DeployERC721 is Script {
             500,
             10000,
             100,
-            address(100)
+            0x345F273fAE2CeC49e944BFBEf4899fA1625803C5
         );
         vm.stopBroadcast();
     }

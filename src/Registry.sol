@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.24;
 
-import { MultiProxy } from "./MultiProxy.sol";
-import { IChamber } from "./interfaces/IChamber.sol";
-import { IRegistry } from "./interfaces/IRegistry.sol";
-import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
-import { Initializable } from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import { MultiProxy } from "src/proxy/MultiProxy.sol";
+import { IChamber } from "src/interfaces/IChamber.sol";
+import { IRegistry } from "src/interfaces/IRegistry.sol";
+import { Ownable } from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import { Initializable } from "lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
 contract Registry is IRegistry, Initializable, Ownable {
 
@@ -47,21 +47,21 @@ contract Registry is IRegistry, Initializable, Ownable {
     }
 
     /// @inheritdoc IRegistry
-    function deploy(address _memberToken, address _govToken) external returns (address) {
+    function deploy(address erc721, address erc20) external returns (address) {
         
-        bytes memory data = abi.encodeWithSelector(IChamber.initialize.selector, _memberToken, _govToken);
+        bytes memory data = abi.encodeWithSelector(IChamber.initialize.selector, erc721, erc20);
         MultiProxy chamber = new MultiProxy(chamberBeacon, data, msg.sender);
 
         ChamberData memory chamberData = ChamberData({
             chamber: address(chamber),
-            memberToken: _memberToken,
-            govToken: _govToken
+            memberToken: erc721,
+            govToken: erc20
         });
         
         chambers[totalChambers] = chamberData;
         totalChambers++;
 
-        emit ChamberDeployed(address(chamber), totalChambers, msg.sender, _memberToken, _govToken);
+        emit ChamberDeployed(address(chamber), totalChambers, msg.sender, erc721, erc20);
         return address(chamber);
     }
 }

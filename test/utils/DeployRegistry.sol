@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.24;
 
 
-import { MultiProxy } from "../../src/MultiProxy.sol";    
-import { MultiBeacon } from "../../src/MultiBeacon.sol";
-import { Chamber } from "../../src/Chamber.sol";
-import { Registry } from "../../src/Registry.sol";
-import { IRegistry } from "../../src/interfaces/IRegistry.sol";
+import { MultiProxy } from "src/proxy/MultiProxy.sol";    
+import { MultiBeacon } from "src/proxy/MultiBeacon.sol";
+import { Chamber } from "src/Chamber.sol";
+import { Registry } from "src/Registry.sol";
 
 contract DeployRegistry {
 

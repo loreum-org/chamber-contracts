@@ -1,21 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity 0.8.24;
 
-import "../lib/forge-std/src/Test.sol";
-import "../lib/forge-std/src/console2.sol";
-
-import { Registry } from "../src/Registry.sol";
-import { Chamber } from "../src/Chamber.sol";
-
-import { IRegistry } from "../src/interfaces/IRegistry.sol";
-import { IChamber } from "../src/interfaces/IChamber.sol";
-import { IMultiBeacon } from "../src/interfaces/IMultiBeacon.sol";
-import { IMultiProxy } from "../src/interfaces/IMultiProxy.sol";
-import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
-
-import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
-import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
-import { ERC1967Proxy } from "../lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { Test } from "lib/forge-std/src/Test.sol";
+import { Chamber } from "src/Chamber.sol";
+import { IRegistry } from "src/interfaces/IRegistry.sol";
+import { IChamber } from "src/interfaces/IChamber.sol";
+import { IMultiBeacon } from "src/interfaces/IMultiBeacon.sol";
+import { IMultiProxy } from "src/interfaces/IMultiProxy.sol";
+import { DeployRegistry } from "test/utils/DeployRegistry.sol";
+import { MockERC20 } from "lib/contract-utils/src/MockERC20.sol";
+import { MockNFT } from "lib/contract-utils/src/MockNFT.sol";
 
 contract ProxyUpgradeTest is Test{
 

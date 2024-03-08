@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity 0.8.24;
 
-import "../lib/forge-std/src/Test.sol";
-import "../lib/forge-std/src/console.sol";
+import { Test } from "lib/forge-std/src/Test.sol";
+import { DeployRegistry } from "test/utils/DeployRegistry.sol";
+import { IRegistry } from "src/interfaces/IRegistry.sol";
+import { IChamber } from "src/interfaces/IChamber.sol";
+import { MockERC20 } from "lib/contract-utils/src/MockERC20.sol";
+import { MockNFT } from "lib/contract-utils/src/MockNFT.sol";
+import { DenyTransactionGuard } from "src/guards/DenyTransactionGuard.sol";
 
-import { Registry } from "../src/Registry.sol";
-import { Chamber } from "../src/Chamber.sol";
-
-import { DeployRegistry } from "../test/utils/DeployRegistry.sol";
-import { IRegistry } from "../src/interfaces/IRegistry.sol";
-import { IChamber } from "../src/interfaces/IChamber.sol";
-import { MockERC20 } from "../lib/contract-utils/src/MockERC20.sol";
-import { MockNFT } from "../lib/contract-utils/src/MockNFT.sol";
-import { DenyTransactionGuard } from "../src/guards/DenyTransactionGuard.sol";
 
 contract ChamberTest is Test {
 
@@ -89,14 +85,14 @@ contract ChamberTest is Test {
         targetArray[0] = address(chamber);
         valueArray[0] = 0;
 
-        chamber.createProposal(targetArray, valueArray, dataArray);
+        chamber.create(targetArray, valueArray, dataArray);
 
-        chamber.approveProposal(1, 3,getSignature(1,3,1));
-        chamber.approveProposal(1, 2,getSignature(1,2,1));
-        chamber.approveProposal(1, 1,getSignature(1,1,1));
+        chamber.approve(1, 3,getSignature(1,3,1));
+        chamber.approve(1, 2,getSignature(1,2,1));
+        chamber.approve(1, 1,getSignature(1,1,1));
         
         // Execute Proposal
-        chamber.executeProposal(1, 1,getSignature(1,1,1));
+        chamber.execute(1, 1,getSignature(1,1,1));
 
         /**************************************************
          Create a proposal to send Ether to two addresses, 
@@ -116,15 +112,15 @@ contract ChamberTest is Test {
         valueArray1[0] = 10 ether;
         valueArray1[1] = 5 ether;
 
-        chamber.createProposal(targetArray1, valueArray1, dataArray1);
+        chamber.create(targetArray1, valueArray1, dataArray1);
 
         // Approve Proposal
-        chamber.approveProposal(2, 3,getSignature(2,3,1));
-        chamber.approveProposal(2, 2,getSignature(2,2,1));
-        chamber.approveProposal(2, 1,getSignature(2,1,1));
+        chamber.approve(2, 3,getSignature(2,3,1));
+        chamber.approve(2, 2,getSignature(2,2,1));
+        chamber.approve(2, 1,getSignature(2,1,1));
 
         // Execute Proposal
-        chamber.executeProposal(2, 1,getSignature(2,1,1));
+        chamber.execute(2, 1,getSignature(2,1,1));
 
         vm.stopPrank();
     }
@@ -157,16 +153,16 @@ contract ChamberTest is Test {
         valueArray[2] = 10 ether;
         valueArray[3] = 5 ether;
 
-        chamber.createProposal(targetArray, valueArray, dataArray);
+        chamber.create(targetArray, valueArray, dataArray);
 
         // Approve Proposal
 
-        chamber.approveProposal(1, 3,getSignature(1,3,1));
-        chamber.approveProposal(1, 2,getSignature(1,2,1));
-        chamber.approveProposal(1, 1,getSignature(1,1,1));
+        chamber.approve(1, 3,getSignature(1,3,1));
+        chamber.approve(1, 2,getSignature(1,2,1));
+        chamber.approve(1, 1,getSignature(1,1,1));
 
         // Execute Proposal
-        chamber.executeProposal(1, 1,getSignature(1,1,1));
+        chamber.execute(1, 1,getSignature(1,1,1));
 
         chamber.getLeaderboard();
         vm.stopPrank();
@@ -353,39 +349,39 @@ contract ChamberTest is Test {
         targetArray[0] = address(1);
         valueArray[0] = 1;
 
-        chamber.createProposal(targetArray, valueArray, dataArray);
+        chamber.create(targetArray, valueArray, dataArray);
 
         // Approving the transfer proposal
-        chamber.approveProposal(1, 3, getSignature(1, 3, 1));
-        chamber.approveProposal(1, 2, getSignature(1, 2, 1));
-        chamber.approveProposal(1, 1, getSignature(1, 1, 1));
+        chamber.approve(1, 3, getSignature(1, 3, 1));
+        chamber.approve(1, 2, getSignature(1, 2, 1));
+        chamber.approve(1, 1, getSignature(1, 1, 1));
 
         // Creating a proposal to cancel the previous one
         bytes[] memory dataArray1 = new bytes[](1);
         address[] memory targetArray1 = new address[](1);
         uint256[] memory valueArray1 = new uint256[](1);
 
-        dataArray1[0] = abi.encodeWithSignature("cancelProposal(uint256)", 1);
+        dataArray1[0] = abi.encodeWithSignature("cancel(uint256)", 1);
         targetArray1[0] = address(chamber);
         valueArray1[0] = 0;
 
-        chamber.createProposal(targetArray1, valueArray1, dataArray1);
+        chamber.create(targetArray1, valueArray1, dataArray1);
 
         // Approving the cancellation proposal
-        chamber.approveProposal(2, 3, getSignature(2, 3, 1));
-        chamber.approveProposal(2, 2, getSignature(2, 2, 1));
-        chamber.approveProposal(2, 1, getSignature(2, 1, 1));
+        chamber.approve(2, 3, getSignature(2, 3, 1));
+        chamber.approve(2, 2, getSignature(2, 2, 1));
+        chamber.approve(2, 1, getSignature(2, 1, 1));
 
         // Both proposals have reached the quorum, but we execute the second proposal first,
         // which cancels the first proposal, resulting in the cancellation of the first proposal.
-        chamber.executeProposal(2, 1, getSignature(2, 1, 1));
+        chamber.execute(2, 1, getSignature(2, 1, 1));
 
         // The first proposal state is now 'Canceled'
         (, IChamber.State state) = chamber.proposal(1);
         require(IChamber.State.Canceled == state);
 
         // Executing the first proposal will result returning 'invalidProposalState()'
-        chamber.executeProposal(1, 1, getSignature(1, 1, 1));
+        chamber.execute(1, 1, getSignature(1, 1, 1));
 
         vm.stopPrank();
     }
