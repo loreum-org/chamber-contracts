@@ -81,7 +81,7 @@ contract Chamber is IChamber, Common {
             nonce: nonce,
             state: State.Initialized
         });
-        emit ProposalCreated(nonce, targets, values, datas, topFiveLeader, nonce);
+        emit CreatedProposal(nonce, targets, values, datas, topFiveLeader, nonce);
     }
 
     /// @inheritdoc IChamber
@@ -103,7 +103,7 @@ contract Chamber is IChamber, Common {
 
         voted[proposalId][tokenId] = true;
         proposals[proposalId].approvals += 1;
-        emit ProposalApproved(proposalId, tokenId, proposals[proposalId].approvals);
+        emit ApprovedProposal(proposalId, tokenId, proposals[proposalId].approvals);
     }
 
     /// @inheritdoc IChamber
@@ -116,7 +116,7 @@ contract Chamber is IChamber, Common {
         
         SafeERC20.safeIncreaseAllowance(IERC20(govToken), address(this), amount);
         SafeERC20.safeTransferFrom(IERC20(govToken), _msgSender(), address(this), amount);
-        emit Promoted(_msgSender(), amount, tokenId);
+        emit Promotion(_msgSender(), amount, tokenId);
     }
 
     /// @inheritdoc IChamber
@@ -135,7 +135,7 @@ contract Chamber is IChamber, Common {
         SafeERC20.safeTransfer(IERC20(govToken), _msgSender(), amount);
         SafeERC20.safeDecreaseAllowance(IERC20(govToken), address(this), amount);
 
-        emit Demoted(_msgSender(), amount, tokenId);
+        emit Demotion(_msgSender(), amount, tokenId);
     }
 
     /// @inheritdoc IChamber
@@ -189,7 +189,7 @@ contract Chamber is IChamber, Common {
                 IGuard(guard).checkAfterExecution(constructMessageHash(proposalId, tokenId), finalSuccess);
             }
         }
-        emit ProposalExecuted(proposalId);
+        emit ExecutedProposal(proposalId);
     }
 
     /// @notice Checks if the proposal corresponds to a cancellation request.
@@ -214,7 +214,7 @@ contract Chamber is IChamber, Common {
 
         proposals[proposalId].state = State.Canceled;
 
-        emit ProposalCanceled(proposalId);
+        emit CanceledProposal(proposalId);
     }
 
 
