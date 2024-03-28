@@ -15,7 +15,7 @@ contract Chamber is IChamber, Common {
     /// @notice govToken The ERC20 contract used for staking.
     address public govToken;
 
-    /// @notice leaderboard ff members based on total delegation.
+    /// @notice leaderboard of members based on total delegation.
     /// @dev    Limited to top 5 leaders requiring 3 approvals
     uint256[] public leaderboard;
 
@@ -26,7 +26,7 @@ contract Chamber is IChamber, Common {
     /// @dev    1st element -> NFT tokenID, 2nd element -> amountDelegated.
     mapping(uint256 => uint256) public totalDelegation;
 
-    /// @notice accountDelegation Tracks a given address's delegatation balance of govToken for a given NFT ID.
+    /// @notice accountDelegation Tracks a given address' delegatation balance of govToken for a given NFT ID.
     /// @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountDelegated.
     mapping(address => mapping(uint256 => uint256)) public accountDelegation;
     
@@ -39,7 +39,7 @@ contract Chamber is IChamber, Common {
         return (proposals[proposalId].approvals, proposals[proposalId].state);
     }
 
-    /// @notice vtoed Tracks which tokenIds have voted on proposals
+    /// @notice voted tracks which tokenIds have voted on proposals
     /// @dev    1st element -> proposalId, 2nd element -> tokenId, 3rd element-> voted boolean
     mapping(uint256 => mapping(uint256 => bool)) public voted;
 
@@ -194,7 +194,7 @@ contract Chamber is IChamber, Common {
 
     /// @notice Checks if the proposal corresponds to a cancellation request.
     /// @param _proposalId The ID of the proposal to check.
-    /// @return Whether the proposal is a cancellation request or not.
+    /// @return Whether the proposal is a cancellation request or not
     function _isCancellationProposal(uint256 _proposalId) private view returns (bool) {
         bytes4 data = bytes4(proposals[_proposalId].data[0]);
         for (uint i = 0 ; i < 4; i++){
