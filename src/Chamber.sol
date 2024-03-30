@@ -276,7 +276,8 @@ contract Chamber is IChamber, Common {
         bytes memory signature
     ) public view returns (bool) {
         bytes32 messageHash = constructMessageHash(proposalId, tokenId);
-        address signer = ECDSA.recover(messageHash, signature);
+        bytes32 digest = toEthSignedMessageHash(messageHash);
+        address signer = ECDSA.recover(digest, signature);
         return signer == IERC721(memberToken).ownerOf(tokenId);
     }
 
