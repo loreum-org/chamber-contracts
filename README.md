@@ -60,7 +60,7 @@ forge test
 
 | Contract                    | Address                                                                                   |
 |-----------------------------|-------------------------------------------------------------------------------------------|
-| Chamber Implementation      | [`0x77181d4b22811242dE0d74BFd153de543a12D9dd`](https://sepolia.etherscan.io/address/0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A) |
+| Chamber Implementation      | [`0x7329B03308a1F8A1a7017839267f8B5888b15Aa2`](https://sepolia.etherscan.io/address/0x7329B03308a1F8A1a7017839267f8B5888b15Aa2) |
 | Chamber MultiBeacon         | [`0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A`](https://sepolia.etherscan.io/address/0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A) |
 | Registry Implementation     | [`0x06383c75C03b7669e470A3908557032fDC9bbeef`](https://sepolia.etherscan.io/address/0x06383c75C03b7669e470A3908557032fDC9bbeef) |
 | Registry Beacon             | [`0x3A64b94eA72D79AfAfa72c2B8d56D5bAC5aaaDbA`](https://sepolia.etherscan.io/address/0x3A64b94eA72D79AfAfa72c2B8d56D5bAC5aaaDbA) |
