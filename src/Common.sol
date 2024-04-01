@@ -35,4 +35,14 @@ abstract contract Common is Initializable, ReentrancyGuard, Context, ERC721Holde
 
     // Function signature for the cancelProposal function.
     bytes4 internal constant CANCEL_PROPOSAL_SELECTOR = bytes4(abi.encodeWithSignature("cancel(uint256)"));
+
+    // Function to get the signature of a message hash. (EIP-191)
+    function toEthSignedMessageHash(bytes32 messageHash) internal pure returns (bytes32 digest) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x00, "\x19Ethereum Signed Message:\n32") // 32 is the bytes-length of messageHash
+            mstore(0x1c, messageHash) // 0x1c (28) is the length of the prefix
+            digest := keccak256(0x00, 0x3c) // 0x3c is the length of the prefix (0x1c) + messageHash (0x20)
+        }
+    }
 }

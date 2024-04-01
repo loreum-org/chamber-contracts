@@ -22,9 +22,18 @@ contract ChamberTest is Test {
     address registryProxyAddr;
     address chamberProxyAddr;
 
+    function toEthSignedMessageHash(bytes32 messageHash) internal pure returns (bytes32 digest) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x00, "\x19Ethereum Signed Message:\n32") // 32 is the bytes-length of messageHash
+            mstore(0x1c, messageHash) // 0x1c (28) is the length of the prefix
+            digest := keccak256(0x00, 0x3c) // 0x3c is the length of the prefix (0x1c) + messageHash (0x20)
+        }
+    }
+
     function getSignature(uint256 _proposalId, uint256 _tokenId, uint256 _privateKey)public view returns(bytes memory){
         bytes32 digest = chamber.constructMessageHash(_proposalId,_tokenId);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(_privateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(_privateKey, toEthSignedMessageHash(digest));
         bytes memory signature = abi.encodePacked(r, s, v); 
         return signature;
     }
