@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import { IERC721, IERC20 } from "src/common.sol";
+import { IERC721, IERC20 } from "src/Common.sol";
 import { MultiProxy } from "src/proxy/MultiProxy.sol";
 import { IChamber } from "src/interfaces/IChamber.sol";
 import { IRegistry } from "src/interfaces/IRegistry.sol";
