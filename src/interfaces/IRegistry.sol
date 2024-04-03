@@ -27,6 +27,8 @@ interface IRegistry {
 
     error deployFailed();
 
+    error insufficientBalance();
+
     /**************************************************
         Functions
      **************************************************/

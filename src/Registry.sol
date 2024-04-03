@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
+import { IERC721, IERC20 } from "src/Common.sol";
 import { MultiProxy } from "src/proxy/MultiProxy.sol";
 import { IChamber } from "src/interfaces/IChamber.sol";
 import { IRegistry } from "src/interfaces/IRegistry.sol";
@@ -48,6 +49,9 @@ contract Registry is IRegistry, Initializable, Ownable {
 
     /// @inheritdoc IRegistry
     function deploy(address erc721, address erc20) external returns (address) {
+
+        if(IERC20(erc20).balanceOf(_msgSender()) < 1) revert insufficientBalance();
+        if(IERC721(erc721).balanceOf(_msgSender()) < 1) revert insufficientBalance();
         
         bytes memory data = abi.encodeWithSelector(IChamber.initialize.selector, erc721, erc20);
         MultiProxy chamber = new MultiProxy(chamberBeacon, data, msg.sender);

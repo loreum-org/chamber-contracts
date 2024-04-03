@@ -41,9 +41,13 @@ contract ChamberPerfTest is Test {
             address(100)
         );
 
+        vm.deal(address(100),0.05 ether);
+        vm.prank(address(100));
+        Explorers.publicMint{value:0.05 ether}(1);
 
         DeployRegistry registryDeployer = new DeployRegistry();
         registryProxyAddr = registryDeployer.deploy(address(this));
+        vm.prank(address(100));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(Explorers), address(LORE));
         chamber = IChamber(chamberProxyAddr);
 

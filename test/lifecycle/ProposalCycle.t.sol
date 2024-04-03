@@ -46,8 +46,11 @@ contract ProposalCycleTest is Test {
             vm.addr(100)
         );
 
+        bonesSetup();
+
         DeployRegistry registryDeployer = new DeployRegistry();
         registryProxyAddr = registryDeployer.deploy(address(this));
+        vm.prank(bones);
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(Explorers), address(LORE));
         chamber = IChamber(chamberProxyAddr);
 
@@ -88,12 +91,29 @@ contract ProposalCycleTest is Test {
         return signature;
     }
 
+    function bonesSetup () public {
+        vm.deal(bones, 100 ether);
+        vm.prank(vm.addr(100));
+        LORE.transfer(bones,33333 ether);
+        vm.prank(bones);
+        Explorers.publicMint{ value: 0.05 ether }(1);
+    }
+
+    function bonesSetup2 () public {
+        vm.startPrank(bones);
+        LORE.approve(address(chamber), LORE.balanceOf(bones));
+        chamber.promote(LORE.balanceOf(bones), 1);
+        vm.stopPrank();
+    }
+
     // helper to Mint tokenIds to each Lorian and delegate LORE amounts to Chamber
     function chamberSetup () public {
+
+        bonesSetup2();
         
         // setup the chamber with delegations of 33k
         // from each of the team members above
-        for (uint256 i = 0; i <= lorians.length - 1; i++) {
+        for (uint256 i = 1; i <= lorians.length - 1; i++) {
             vm.deal(lorians[i], 100 ether);
             vm.prank(vm.addr(100));
             LORE.transfer(lorians[i], 33333 ether);
