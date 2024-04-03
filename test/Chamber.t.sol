@@ -47,6 +47,7 @@ contract ChamberTest is Test {
 
         DeployRegistry registryDeployer = new DeployRegistry();
         registryProxyAddr = registryDeployer.deploy(address(this));
+        vm.prank(vm.addr(1));
         chamberProxyAddr = IRegistry(registryProxyAddr).deploy(address(mNFT), address(mERC20));
         chamber = IChamber(chamberProxyAddr);
 
