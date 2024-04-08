@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-interface IMultiProxy {
+interface ILoreumProxy {
 
     /// @dev Retrieves the address of the beacon contract.
     /// @return address of the beacon contract.    

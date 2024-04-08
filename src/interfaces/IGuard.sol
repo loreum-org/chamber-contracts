@@ -12,7 +12,6 @@ interface IGuard is IERC165 {
     /// @param data The transaction data.
     /// @param voters The voters eligible to vote .
     /// @param state The State of a proposal.
-    /// @param signature The signatures of the transaction.
     /// @param executor The address of the message sender.
     /// @param proposalId The unique identifier of the approved proposal
     /// @param tokenId    The ID of the NFT that tokens will be promoted against
@@ -22,7 +21,6 @@ interface IGuard is IERC165 {
         bytes[] memory data,
         uint256[5] memory voters,
         IChamber.State state,
-        bytes memory signature,
         address executor,
         uint256 proposalId,
         uint256 tokenId

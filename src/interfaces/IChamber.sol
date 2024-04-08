@@ -104,14 +104,12 @@ interface IChamber is IGuardManager{
     /// @notice approve transaction proposal function
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 
-    /// @param  signature  The cryptographic signature to be verified
-    function approve(uint256 proposalId, uint256 tokenId,bytes memory signature) external;
+    function approve(uint256 proposalId, uint256 tokenId) external;
 
     /// @notice execute transaction proposal function
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 
-    /// @param  signature  The cryptographic signature to be verified
-    function execute(uint256 proposalId, uint256 tokenId, bytes memory signature) external;
+    function execute(uint256 proposalId, uint256 tokenId) external;
 
     /// @notice cancel transaction proposal function
     /// @param  proposalId The ID of the proposal to cancel
@@ -147,6 +145,13 @@ interface IChamber is IGuardManager{
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 
     function constructMessageHash(uint256 proposalId, uint256 tokenId) external view returns (bytes32);
+
+    /// @notice voted function 
+    /// @param  proposalId The ID of the proposal to approve
+    /// @param  tokenId    The ID of the NFT to vote 
+    /// @return bool       The vote result
+    function voted(uint256 proposalId, uint256 tokenId) external view returns (bool);
+
 
     /**************************************************
         Errors

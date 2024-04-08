@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.24;
 
-interface IMultiBeacon{
+interface ILoreumBeacon{
 
     /// @notice Returns the current implementation address.
     /// @return address of the current implementation.

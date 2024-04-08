@@ -61,7 +61,7 @@ forge test
 | Contract                    | Address                                                                                   |
 |-----------------------------|-------------------------------------------------------------------------------------------|
 | Chamber Implementation      | [`0x77181d4b22811242dE0d74BFd153de543a12D9dd`](https://sepolia.etherscan.io/address/0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A) |
-| Chamber MultiBeacon         | [`0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A`](https://sepolia.etherscan.io/address/0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A) |
+| Chamber LoreumBeacon        | [`0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A`](https://sepolia.etherscan.io/address/0x83800c6F8a3F4c0bC2A2Ed9d1519BF2f47CCaf1A) |
 | Registry Implementation     | [`0x06383c75C03b7669e470A3908557032fDC9bbeef`](https://sepolia.etherscan.io/address/0x06383c75C03b7669e470A3908557032fDC9bbeef) |
 | Registry Beacon             | [`0x3A64b94eA72D79AfAfa72c2B8d56D5bAC5aaaDbA`](https://sepolia.etherscan.io/address/0x3A64b94eA72D79AfAfa72c2B8d56D5bAC5aaaDbA) |
 | Registry Proxy              | [`0x46A49D4391F2F220D3661b2a2BFe4b306EE18845`](https://sepolia.etherscan.io/address/0x46A49D4391F2F220D3661b2a2BFe4b306EE18845) |
@@ -198,7 +198,7 @@ The Registry contract is a a factory deployer for Chambers and allows us to inde
 sequenceDiagram
     participant User
     participant Registry
-    participant MultiProxy
+    participant LoreumProxy
     participant IChamber
 
     Note over User,Registry: Initialization
@@ -226,8 +226,8 @@ sequenceDiagram
     Note over User,Registry: Deploy Chamber
     User->>Registry: deploy(_memberToken, _govToken)
     Registry->>IChamber: encode initialize.selector
-    Registry->>MultiProxy: new MultiProxy(chamberBeacon, data, msg.sender)
-    MultiProxy->>Registry: Return new chamber address
+    Registry->>LoreumProxy: new LoreumProxy(chamberBeacon, data, msg.sender)
+    LoreumProxy->>Registry: Return new chamber address
     Registry->>Registry: Store Chamber Data
     Registry-->>User: emit ChamberDeployed
     Registry-->>User: Return new chamber address
