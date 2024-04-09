@@ -39,8 +39,7 @@ contract Chamber is IChamber, Common {
         return (proposals[proposalId].approvals, proposals[proposalId].state);
     }
 
-    /// @notice vtoed Tracks which tokenIds have voted on proposals
-    /// @dev    1st element -> proposalId, 2nd element -> tokenId, 3rd element-> voted boolean
+    /// @inheritdoc IChamber
     mapping(uint256 => mapping(uint256 => bool)) public voted;
 
     /// @notice contrcutor disables initialize function on deployment of base implementation.
@@ -85,12 +84,10 @@ contract Chamber is IChamber, Common {
     }
 
     /// @inheritdoc IChamber
-    function approve(uint256 proposalId, uint256 tokenId, bytes memory signature) external {
+    function approve(uint256 proposalId, uint256 tokenId) external {
         if(_msgSender() != IERC721(memberToken).ownerOf(tokenId)) revert invalidApproval("Sender isn't NFT owner");
         if(proposals[proposalId].state != State.Initialized) revert invalidApproval("Proposal isn't Initialized");
         if(voted[proposalId][tokenId]) revert invalidApproval("TokenID already voted");
-
-        require(verifySignature(proposalId, tokenId, signature), "Invalid signature");
 
         uint256[5] memory voters = proposals[proposalId].voters;
         bool onVoterList = false;
@@ -139,7 +136,7 @@ contract Chamber is IChamber, Common {
     }
 
     /// @inheritdoc IChamber
-    function execute(uint256 proposalId, uint256 tokenId, bytes memory signature) public noReentrancy{
+    function execute(uint256 proposalId, uint256 tokenId) public noReentrancy{
 
         // TODO Implement Gas handling and Optimizations
 
@@ -148,8 +145,6 @@ contract Chamber is IChamber, Common {
         }
 
         require(proposals[proposalId].approvals >= 3, "Not enough approvals"); // TODO: Make quorum dynamic
-
-        require(verifySignature(proposalId, tokenId, signature), "Invalid signature");
 
         bool validVoter = false;
         for (uint256 i = 0 ; i < 5; i++){
@@ -172,7 +167,6 @@ contract Chamber is IChamber, Common {
                 proposals[proposalId].data,
                 proposals[proposalId].voters,
                 proposals[proposalId].state,
-                signature,
                 msg.sender,
                 proposalId,
                 tokenId

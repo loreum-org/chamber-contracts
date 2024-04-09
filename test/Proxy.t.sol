@@ -5,8 +5,8 @@ import { Test } from "lib/forge-std/src/Test.sol";
 import { Chamber } from "src/Chamber.sol";
 import { IRegistry } from "src/interfaces/IRegistry.sol";
 import { IChamber } from "src/interfaces/IChamber.sol";
-import { IMultiBeacon } from "src/interfaces/IMultiBeacon.sol";
-import { IMultiProxy } from "src/interfaces/IMultiProxy.sol";
+import { ILoreumBeacon } from "src/interfaces/ILoreumBeacon.sol";
+import { ILoreumProxy } from "src/interfaces/ILoreumProxy.sol";
 import { DeployRegistry } from "test/utils/DeployRegistry.sol";
 import { MockERC20 } from "lib/contract-utils/src/MockERC20.sol";
 import { MockNFT } from "lib/contract-utils/src/MockNFT.sol";
@@ -19,11 +19,11 @@ contract ProxyUpgradeTest is Test{
     IRegistry registry;
     IChamber chamber;
 
-    IMultiBeacon chamberBeacon;
-    IMultiBeacon registryBeacon;
+    ILoreumBeacon chamberBeacon;
+    ILoreumBeacon registryBeacon;
 
-    IMultiProxy registryProxy;
-    IMultiProxy chamberProxy;
+    ILoreumProxy registryProxy;
+    ILoreumProxy chamberProxy;
 
     address chamberProxyAddr;
     address registryProxyAddr;
@@ -42,11 +42,11 @@ contract ProxyUpgradeTest is Test{
 
         (chamberV1Impl, registryV1Impl) = registryDeployer.getImplementations();
         
-        chamberProxy = IMultiProxy(chamberProxyAddr);
-        registryProxy = IMultiProxy(registryProxyAddr);
+        chamberProxy = ILoreumProxy(chamberProxyAddr);
+        registryProxy = ILoreumProxy(registryProxyAddr);
 
-        registryBeacon = IMultiBeacon(registryProxy.getBeacon());
-        chamberBeacon = IMultiBeacon(chamberProxy.getBeacon());
+        registryBeacon = ILoreumBeacon(registryProxy.getBeacon());
+        chamberBeacon = ILoreumBeacon(chamberProxy.getBeacon());
 
         chamber = IChamber(chamberProxyAddr);
         registry = IRegistry(registryProxyAddr);
@@ -98,10 +98,10 @@ contract ProxyUpgradeTest is Test{
         address chamber4ProxyAddr = IRegistry(registryProxyAddr).deploy(address(mERC721), address(mERC20));
         address chamber5ProxyAddr = IRegistry(registryProxyAddr).deploy(address(mERC721), address(mERC20));
 
-        IMultiProxy chamber2Proxy = IMultiProxy(chamber2ProxyAddr);
-        IMultiProxy chamber3Proxy = IMultiProxy(chamber3ProxyAddr);
-        IMultiProxy chamber4Proxy = IMultiProxy(chamber4ProxyAddr);
-        IMultiProxy chamber5Proxy = IMultiProxy(chamber5ProxyAddr);
+        ILoreumProxy chamber2Proxy = ILoreumProxy(chamber2ProxyAddr);
+        ILoreumProxy chamber3Proxy = ILoreumProxy(chamber3ProxyAddr);
+        ILoreumProxy chamber4Proxy = ILoreumProxy(chamber4ProxyAddr);
+        ILoreumProxy chamber5Proxy = ILoreumProxy(chamber5ProxyAddr);
 
         assertEq(chamberV1Impl, address(chamberProxy.getImplementation()));
         assertEq(chamberV1Impl, address(chamber2Proxy.getImplementation()));

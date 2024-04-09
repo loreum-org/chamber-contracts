@@ -31,13 +31,6 @@ contract ChamberTest is Test {
         }
     }
 
-    function getSignature(uint256 _proposalId, uint256 _tokenId, uint256 _privateKey)public view returns(bytes memory){
-        bytes32 digest = chamber.constructMessageHash(_proposalId,_tokenId);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(_privateKey, toEthSignedMessageHash(digest));
-        bytes memory signature = abi.encodePacked(r, s, v); 
-        return signature;
-    }
-
     function setUp() public {
         
         mERC20 = new MockERC20("MockERC20", "mERC20", vm.addr(1));
@@ -97,12 +90,12 @@ contract ChamberTest is Test {
 
         chamber.create(targetArray, valueArray, dataArray);
 
-        chamber.approve(1, 3,getSignature(1,3,1));
-        chamber.approve(1, 2,getSignature(1,2,1));
-        chamber.approve(1, 1,getSignature(1,1,1));
+        chamber.approve(1, 3);
+        chamber.approve(1, 2);
+        chamber.approve(1, 1);
         
         // Execute Proposal
-        chamber.execute(1, 1,getSignature(1,1,1));
+        chamber.execute(1, 1);
 
         /**************************************************
          Create a proposal to send Ether to two addresses, 
@@ -125,12 +118,12 @@ contract ChamberTest is Test {
         chamber.create(targetArray1, valueArray1, dataArray1);
 
         // Approve Proposal
-        chamber.approve(2, 3,getSignature(2,3,1));
-        chamber.approve(2, 2,getSignature(2,2,1));
-        chamber.approve(2, 1,getSignature(2,1,1));
+        chamber.approve(2, 3);
+        chamber.approve(2, 2);
+        chamber.approve(2, 1);
 
         // Execute Proposal
-        chamber.execute(2, 1,getSignature(2,1,1));
+        chamber.execute(2, 1);
 
         vm.stopPrank();
     }
@@ -167,12 +160,12 @@ contract ChamberTest is Test {
 
         // Approve Proposal
 
-        chamber.approve(1, 3,getSignature(1,3,1));
-        chamber.approve(1, 2,getSignature(1,2,1));
-        chamber.approve(1, 1,getSignature(1,1,1));
+        chamber.approve(1, 3);
+        chamber.approve(1, 2);
+        chamber.approve(1, 1);
 
         // Execute Proposal
-        chamber.execute(1, 1,getSignature(1,1,1));
+        chamber.execute(1, 1);
 
         chamber.getLeaderboard();
         vm.stopPrank();
@@ -362,9 +355,9 @@ contract ChamberTest is Test {
         chamber.create(targetArray, valueArray, dataArray);
 
         // Approving the transfer proposal
-        chamber.approve(1, 3, getSignature(1, 3, 1));
-        chamber.approve(1, 2, getSignature(1, 2, 1));
-        chamber.approve(1, 1, getSignature(1, 1, 1));
+        chamber.approve(1, 3);
+        chamber.approve(1, 2);
+        chamber.approve(1, 1);
 
         // Creating a proposal to cancel the previous one
         bytes[] memory dataArray1 = new bytes[](1);
@@ -378,20 +371,20 @@ contract ChamberTest is Test {
         chamber.create(targetArray1, valueArray1, dataArray1);
 
         // Approving the cancellation proposal
-        chamber.approve(2, 3, getSignature(2, 3, 1));
-        chamber.approve(2, 2, getSignature(2, 2, 1));
-        chamber.approve(2, 1, getSignature(2, 1, 1));
+        chamber.approve(2, 3);
+        chamber.approve(2, 2);
+        chamber.approve(2, 1);
 
         // Both proposals have reached the quorum, but we execute the second proposal first,
         // which cancels the first proposal, resulting in the cancellation of the first proposal.
-        chamber.execute(2, 1, getSignature(2, 1, 1));
+        chamber.execute(2, 1);
 
         // The first proposal state is now 'Canceled'
         (, IChamber.State state) = chamber.proposal(1);
         require(IChamber.State.Canceled == state);
 
         // Executing the first proposal will result returning 'invalidProposalState()'
-        chamber.execute(1, 1, getSignature(1, 1, 1));
+        chamber.execute(1, 1);
 
         vm.stopPrank();
     }

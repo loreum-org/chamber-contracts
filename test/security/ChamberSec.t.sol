@@ -4,7 +4,7 @@ pragma solidity 0.8.24;
 import { Test } from "lib/forge-std/src/Test.sol";
 import { IChamber } from "src/interfaces/IChamber.sol";
 import { IRegistry } from "src/interfaces/IRegistry.sol";
-import { IMultiProxy } from "src/interfaces/IMultiProxy.sol";
+import { ILoreumProxy } from "src/interfaces/ILoreumProxy.sol";
 import { DeployRegistry } from "../utils/DeployRegistry.sol";
 import { MockERC20 } from "lib/contract-utils/src/MockERC20.sol";
 import { LoreumNFT } from "lib/loreum-nft/src/LoreumNFT.sol";
@@ -69,7 +69,7 @@ contract ChamberSecTest is Test {
     // by promoteing another leader and demote victim leader
     function test_Chamber_sec_demotionTheft() public {
 
-        IMultiProxy(registryProxyAddr).getImplementation();
+        ILoreumProxy(registryProxyAddr).getImplementation();
 
         vm.startPrank(bones);
         deal(address(LORE), bones, 1_000_000);

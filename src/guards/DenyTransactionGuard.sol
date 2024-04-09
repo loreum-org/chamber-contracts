@@ -46,7 +46,6 @@ contract DenyTransactionGuard is BaseGuard {
         bytes[] memory,
         uint256[5] memory ,
         IChamber.State,
-        bytes memory ,
         address,
         uint256,
         uint256

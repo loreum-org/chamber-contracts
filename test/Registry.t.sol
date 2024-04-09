@@ -3,16 +3,16 @@ pragma solidity 0.8.24;
 
 import { Test } from "lib/forge-std/src/Test.sol";
 
-import { MultiProxy } from "src/proxy/MultiProxy.sol";
-import { MultiBeacon } from "src/proxy/MultiBeacon.sol";
+import { LoreumProxy } from "src/proxy/LoreumProxy.sol";
+import { LoreumBeacon } from "src/proxy/LoreumBeacon.sol";
 import { Chamber } from "src/Chamber.sol";
 import { Registry } from "src/Registry.sol";
 
 import { MockNFT } from "lib/contract-utils/src/MockNFT.sol";
 import { MockERC20 } from "lib/contract-utils/src/MockERC20.sol";
 
-import { IMultiProxy } from "src/interfaces/IMultiProxy.sol";
-import { IMultiBeacon } from "src/interfaces/IMultiBeacon.sol";
+import { ILoreumProxy } from "src/interfaces/ILoreumProxy.sol";
+import { ILoreumBeacon } from "src/interfaces/ILoreumBeacon.sol";
 import { IChamber } from "src/interfaces/IChamber.sol";
 import { IRegistry } from "src/interfaces/IRegistry.sol";
 import { DeployRegistry } from "test/utils/DeployRegistry.sol";
@@ -27,11 +27,11 @@ contract RegistryTest is Test {
     address chamberV1Impl;
     address registryV1Impl;
 
-    IMultiProxy registryProxy;
-    IMultiProxy chamberProxy;
+    ILoreumProxy registryProxy;
+    ILoreumProxy chamberProxy;
 
-    IMultiBeacon registryBeacon;
-    IMultiBeacon chamberBeacon;
+    ILoreumBeacon registryBeacon;
+    ILoreumBeacon chamberBeacon;
 
     IChamber chamber;
     IRegistry registry;
@@ -47,11 +47,11 @@ contract RegistryTest is Test {
 
         (chamberV1Impl, registryV1Impl) = registryDeployer.getImplementations();
 
-        registryProxy = IMultiProxy(registryProxyAddr);
-        chamberProxy = IMultiProxy(chamberProxyAddr);
+        registryProxy = ILoreumProxy(registryProxyAddr);
+        chamberProxy = ILoreumProxy(chamberProxyAddr);
 
-        registryBeacon = IMultiBeacon(registryProxy.getBeacon());
-        chamberBeacon = IMultiBeacon(chamberProxy.getBeacon());
+        registryBeacon = ILoreumBeacon(registryProxy.getBeacon());
+        chamberBeacon = ILoreumBeacon(chamberProxy.getBeacon());
 
         chamber = IChamber(chamberProxyAddr);
         registry = IRegistry(registryProxyAddr);
@@ -103,16 +103,16 @@ contract RegistryTest is Test {
 
     function test_Registry_initialize() public {
         Chamber chamberImpl = new Chamber();
-        MultiBeacon chamberImplBeacon = new MultiBeacon(address(chamberImpl), msg.sender);
+        LoreumBeacon chamberImplBeacon = new LoreumBeacon(address(chamberImpl), msg.sender);
         Registry registryImpl = new Registry();
-        MultiBeacon registryImplBeacon = new MultiBeacon(address(registryImpl), msg.sender);
+        LoreumBeacon registryImplBeacon = new LoreumBeacon(address(registryImpl), msg.sender);
 
         vm.expectRevert();
         registryImpl.initialize(address(chamberImplBeacon), address(1));
 
         address _owner = address(1);
         bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberImplBeacon), _owner);
-        registryProxy = new MultiProxy(address(registryImplBeacon), data, _owner);
+        registryProxy = new LoreumProxy(address(registryImplBeacon), data, _owner);
         assertEq(registryProxy.getImplementation(), address(registryImpl));
     }
 }

@@ -2,28 +2,28 @@
 pragma solidity 0.8.24;
 
 
-import { MultiProxy } from "src/proxy/MultiProxy.sol";    
-import { MultiBeacon } from "src/proxy/MultiBeacon.sol";
+import { LoreumProxy } from "src/proxy/LoreumProxy.sol";    
+import { LoreumBeacon } from "src/proxy/LoreumBeacon.sol";
 import { Chamber } from "src/Chamber.sol";
 import { Registry } from "src/Registry.sol";
 
 contract DeployRegistry {
 
     Chamber chamberImpl;
-    MultiBeacon chamberBeacon;
+    LoreumBeacon chamberBeacon;
     Registry registryImpl;
-    MultiBeacon registryBeacon;
-    MultiProxy multiProxy;
+    LoreumBeacon registryBeacon;
+    LoreumProxy loreumProxy;
 
     function deploy(address _owner) public returns (address) {
         chamberImpl = new Chamber();
-        chamberBeacon = new MultiBeacon(address(chamberImpl), _owner);
+        chamberBeacon = new LoreumBeacon(address(chamberImpl), _owner);
 
         registryImpl = new Registry();
-        registryBeacon = new MultiBeacon(address(registryImpl), _owner);
+        registryBeacon = new LoreumBeacon(address(registryImpl), _owner);
 
         bytes memory data = abi.encodeWithSelector(Registry.initialize.selector, address(chamberBeacon), _owner);
-        MultiProxy registry = new MultiProxy(address(registryBeacon), data, _owner);
+        LoreumProxy registry = new LoreumProxy(address(registryBeacon), data, _owner);
 
         return address(registry);
     }
