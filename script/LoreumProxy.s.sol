@@ -8,7 +8,7 @@ import { LoreumBeacon } from "src/proxy/LoreumBeacon.sol";
 import { LoreumProxy } from "src/proxy/LoreumProxy.sol";
 import { console2 } from "lib/forge-std/src/console2.sol";
 
-contract DeployaLoreumProxy is Script {
+contract DeployLoreumProxy is Script {
 
     function run() external {
 
