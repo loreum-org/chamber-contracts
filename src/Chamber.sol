@@ -24,15 +24,15 @@ contract Chamber is IChamber, Common {
 
     /// @notice totalDelegation Tracks the amount of govToken delegated to a given NFT ID.
     /// @dev    1st element -> NFT tokenID, 2nd element -> amountDelegated.
-    mapping(uint256 => uint256) public totalDelegation;
+    mapping(uint256 tokenID => uint256 amountDelegated) public totalDelegation;
 
     /// @notice accountDelegation Tracks a given address's delegatation balance of govToken for a given NFT ID.
     /// @dev    1st element -> user address, 2nd element -> NFT tokenID, 3rd element -> amountDelegated.
-    mapping(address => mapping(uint256 => uint256)) public accountDelegation;
+    mapping(address userAddress => mapping(uint256 tokenID => uint256 amountDelegated)) public accountDelegation;
     
     /// @notice proposals Mapping of the Proposals.
     /// @dev    1st element -> index, 2nd element -> Proposal struct
-    mapping(uint256 => Proposal) private proposals;
+    mapping(uint256 index => Proposal) private proposals;
 
     /// @inheritdoc IChamber
     function proposal(uint256 proposalId) public view returns(uint256 approvals, State state){
@@ -40,7 +40,7 @@ contract Chamber is IChamber, Common {
     }
 
     /// @inheritdoc IChamber
-    mapping(uint256 => mapping(uint256 => bool)) public voted;
+    mapping(uint256 proposalId => mapping(uint256 tokenId=> bool)) public voted;
 
     /// @notice contrcutor disables initialize function on deployment of base implementation.
     constructor() { _disableInitializers(); }
@@ -54,7 +54,7 @@ contract Chamber is IChamber, Common {
     }
     
     /// @inheritdoc IChamber
-    function getLeaderboard() external view returns (uint256[] memory, uint256[] memory) {
+    function getLeaderboard() external view returns (uint256[] memory leaders, uint256[] memory delegation) {
         uint256[] memory _leaderboard = leaderboard;
         uint256[] memory _delegations = new uint256[](_leaderboard.length);
         for (uint256 i = 0; i < _leaderboard.length; i++) {

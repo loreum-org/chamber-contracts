@@ -97,6 +97,12 @@ interface IChamber is IGuardManager{
     /// @param proposalId The ID of the proposal to query
     function proposal(uint256 proposalId) external view returns (uint256 approvals, State state);
 
+    /// @notice voted function 
+    /// @param  proposalId The ID of the proposal to approve
+    /// @param  tokenId    The ID of the NFT to vote 
+    /// @return bool       The vote result
+    function voted(uint256 proposalId, uint256 tokenId) external view returns (bool);
+
     /// @notice Returns two arrays, the leaders and their delegations
     function getLeaderboard() external view returns (uint256[] memory, uint256[] memory);
 
@@ -145,13 +151,6 @@ interface IChamber is IGuardManager{
     /// @param  proposalId The ID of the proposal to approve
     /// @param  tokenId    The ID of the NFT to vote 
     function constructMessageHash(uint256 proposalId, uint256 tokenId) external view returns (bytes32);
-
-    /// @notice voted function 
-    /// @param  proposalId The ID of the proposal to approve
-    /// @param  tokenId    The ID of the NFT to vote 
-    /// @return bool       The vote result
-    function voted(uint256 proposalId, uint256 tokenId) external view returns (bool);
-
 
     /**************************************************
         Errors
