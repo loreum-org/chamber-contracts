@@ -2,13 +2,13 @@
 
 cache = true
 cache_path = 'cache'
-evm_version = 'paris'
+evm_version = 'cancun'
 
 libs = ['lib']
 names = false
 offline = false
 optimizer = true
-optimizer_runs = 888888
+optimizer_runs = 200
 out = 'out'
 src = 'src'
 script = 'script'
