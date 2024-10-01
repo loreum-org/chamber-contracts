@@ -14,6 +14,7 @@ import { IERC721 } from "lib/openzeppelin-contracts/contracts/interfaces/IERC721
 import { Initializable } from "lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 import { ReentrancyGuard } from "lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 import { SafeERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import { TransparentUpgradeableProxy } from "lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 abstract contract Common is Initializable, ReentrancyGuard, Context, ERC721Holder, ERC1155Holder, GuardManager {
     using ECDSA for bytes32;

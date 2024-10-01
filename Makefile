@@ -15,7 +15,7 @@ deploy-anvil :; forge script script/${contract}.s.sol:Deploy${contract} \
 deploy :; forge script script/${contract}.s.sol:Deploy${contract} \
 	--chain-id ${chain} \
 	--rpc-url ${rpc}  \
-	--private-key ${private} \
+	--account ${account} \
 	--broadcast \
 	--verify
 
