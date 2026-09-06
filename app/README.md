@@ -99,7 +99,7 @@ cd app
 npm run test:e2e:sepolia
 ```
 
-The key is read from the environment only. Do not put it in the repo, commit messages, or Playwright artifacts.
+You may put the key in `app/.env` (gitignored); the runner loads it without overriding already-set environment variables. Do not put it in the repo, commit messages, or Playwright artifacts.
 
 ## Project Structure
 
