@@ -122,3 +122,7 @@ MIT License
 
 `make loreum-fund-wallet WALLET=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
 
+### Mainnet fork rehearsal (M1 LORE Ownable)
+
+Dry-run Factory deploy + Chamber create + Safe `transferOwnership` of LORE on an Ethereum **fork** (no live broadcast). Requires `MAINNET_RPC_URL` or `ETH_RPC_URL`. Without an RPC, `forge test` skips the fork case. Commands and success checks: [`contracts/docs/mainnet-lore-handoff-rehearsal.md`](./contracts/docs/mainnet-lore-handoff-rehearsal.md).
+
