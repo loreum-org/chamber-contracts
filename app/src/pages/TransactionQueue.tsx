@@ -329,16 +329,25 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
   const userTokenId = directorGate.tokenId
 
   const upgradeProposalIntent = searchParams.get('proposal') === 'upgrade'
-  const registryUpgradeDraft =
-    upgradeProposalIntent &&
-    implSync.implMismatch &&
-    implSync.registryImplementation
-      ? ({
-          newImplementation: implSync.registryImplementation,
-          chamberVersionLabel: implSync.chamberVersionLabel,
-          registryVersionLabel: implSync.registryImplementationVersionLabel,
-        } as const)
-      : undefined
+  const registryUpgradeDraft = useMemo(
+    () =>
+      upgradeProposalIntent &&
+      implSync.implMismatch &&
+      implSync.registryImplementation
+        ? ({
+            newImplementation: implSync.registryImplementation,
+            chamberVersionLabel: implSync.chamberVersionLabel,
+            registryVersionLabel: implSync.registryImplementationVersionLabel,
+          } as const)
+        : undefined,
+    [
+      upgradeProposalIntent,
+      implSync.implMismatch,
+      implSync.registryImplementation,
+      implSync.chamberVersionLabel,
+      implSync.registryImplementationVersionLabel,
+    ],
+  )
 
   const upgradeProposalHandledRef = useRef(false)
   useEffect(() => {
@@ -2102,13 +2111,12 @@ function NewTransactionForm({
       const hasAllParams = parsedFunction.params.every((_, index) => paramValues[`param${index}`]?.trim())
       
       if (hasAllParams || parsedFunction.params.length === 0) {
-        // parseAbi returns a fully validated ABI; cast needed for dynamic function names
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // parseAbi is valid; functionName is dynamic from the user-entered signature.
         const encoded = encodeFunctionData({
-          abi: abi as any,
+          abi,
           functionName: parsedFunction.name,
           args,
-        })
+        } as Parameters<typeof encodeFunctionData>[0])
         setEncodedData(encoded)
         setData(encoded)
       } else {
