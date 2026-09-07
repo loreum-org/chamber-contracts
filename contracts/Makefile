@@ -29,6 +29,21 @@ LOREUM_WALLET_GOV_HODLER ?= $(LOREUM_LOCAL_GOV_HODLER)
 
 ci-test :; forge test
 
+# Fork-only M1 rehearsal: Factory + Chamber on an Ethereum mainnet fork, then
+# impersonate the team Safe and transferOwnership(LORE) to the Chamber proxy.
+# Never broadcast. Requires MAINNET_RPC_URL or ETH_RPC_URL.
+# See docs/mainnet-lore-handoff-rehearsal.md
+rehearse-mainnet-lore-handoff :
+	@rpc="$(or $(MAINNET_RPC_URL),$(ETH_RPC_URL))"; \
+	test -n "$$rpc" || { echo 'Set MAINNET_RPC_URL or ETH_RPC_URL (Ethereum archive/full node)'; exit 1; }; \
+	forge test --match-path test/fork/MainnetLoreOwnableHandoff.t.sol -vvv
+
+rehearse-mainnet-lore-handoff-script :
+	@rpc="$(or $(MAINNET_RPC_URL),$(ETH_RPC_URL))"; \
+	test -n "$$rpc" || { echo 'Set MAINNET_RPC_URL or ETH_RPC_URL (Ethereum archive/full node)'; exit 1; }; \
+	forge script script/RehearseMainnetLoreHandoff.s.sol:RehearseMainnetLoreHandoff --fork-url $$rpc -vvv
+
+
 # Symbolic verification with Halmos (requires: pip install -r fv-requirements.txt)
 # Halmos 0.3.3 has --match-contract, not --no-match-contract. Chamber/Registry/Vault
 # setUp deploys TransparentUpgradeableProxy (vm.deployCode), which Halmos cannot run.
