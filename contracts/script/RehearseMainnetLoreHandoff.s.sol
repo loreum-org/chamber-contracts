@@ -16,7 +16,8 @@ import {ILoreOwnable, MainnetLoreHandoff} from "test/utils/MainnetLoreHandoff.so
  *   forge script script/RehearseMainnetLoreHandoff.s.sol:RehearseMainnetLoreHandoff \
  *     --fork-url $MAINNET_RPC_URL -vvv
  *
- * Success: logs Factory / impl / Chamber, and `LORE.owner() == chamber`.
+ * Success: logs BoardLib / WalletLib / Factory / impl / Chamber, and `LORE.owner() == chamber`.
+ * Dry-run uses `deployFactoryAndChamberLinked` because `new Chamber()` is unlinked here.
  * See `docs/mainnet-lore-handoff-rehearsal.md`.
  */
 contract RehearseMainnetLoreHandoff is Script {
@@ -42,7 +43,7 @@ contract RehearseMainnetLoreHandoff is Script {
         if (lore.owner() != MainnetLoreHandoff.TEAM_SAFE) revert("unexpected LORE owner");
 
         MainnetLoreHandoff.Deployment memory d =
-            MainnetLoreHandoff.deployFactoryAndChamber(MainnetLoreHandoff.TEAM_SAFE);
+            MainnetLoreHandoff.deployFactoryAndChamberLinked(MainnetLoreHandoff.TEAM_SAFE);
 
         vm.deal(MainnetLoreHandoff.TEAM_SAFE, 1 ether);
         vm.prank(MainnetLoreHandoff.TEAM_SAFE);
@@ -53,6 +54,8 @@ contract RehearseMainnetLoreHandoff is Script {
         console.log("========================================");
         console.log("RehearseMainnetLoreHandoff");
         console.log("========================================");
+        console.log("BoardLib               ", d.boardLib);
+        console.log("WalletLib              ", d.walletLib);
         console.log("Factory                ", address(d.factory));
         console.log("Chamber implementation ", d.chamberImplementation);
         console.log("Chamber (LORE owner)   ", d.chamber);

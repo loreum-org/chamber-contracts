@@ -9,7 +9,7 @@ This proves the **mechanics**. It does **not** decide CCA vs Ownable production 
 ## What it does
 
 1. Forks Ethereum (`vm.createSelectFork` / `forge script --fork-url`).
-2. Deploys `Chamber` implementation. Foundry auto-links `BoardLib` + `WalletLib` (same as `script/DeployFactory.s.sol` / Sepolia Factory path).
+2. Deploys a `Chamber` implementation. `forge test` uses `new Chamber()` (Foundry auto-links `BoardLib` + `WalletLib`, same as `DeployFactory.s.sol`). `forge script` dry-run cannot — it deploys the two libs and links the Chamber artifact (the pairing Etherscan verify needs).
 3. Deploys `Factory(implementation, team Safe)` — Factory Ownable admin matches Sepolia (`0x5d45A213B2B6259F0b3c116a8907B56AB5E22095`).
 4. Calls `Factory.createChamber`:
    - `erc20Token`: LORE `0x7756D245527F5f8925A537be509BF54feb2FdC99`
@@ -68,7 +68,7 @@ The test also checks vault asset / NFT / seats, empty board, and `ProxyAdmin.own
 
 | Topic | Finding |
 | --- | --- |
-| **Lib linking** | `new Chamber()` deploys + links `BoardLib` and `WalletLib` automatically. Production verify still needs those two lib addresses from the broadcast artifact (see `deployments/sepolia.txt` / `make verify-sepolia-factory`). |
+| **Lib linking** | Chamber is over EIP-170 without `BoardLib` + `WalletLib`. This rehearsal deploys both libs and links the Chamber artifact (placeholders `__$562d…$__` / `__$a345…$__`). Production `forge script --broadcast` (`DeployFactory.s.sol`) auto-deploys libs; verify still needs the two lib addresses (see `deployments/sepolia.txt` / `make verify-sepolia-factory`). |
 | **CREATE vs CREATE2** | `Factory.createChamber` uses `new TransparentUpgradeableProxy` (CREATE). Chamber address = next Factory nonce. No salt; you cannot pre-commit the address until Factory exists. |
 | **Safe path** | Fork uses `vm.prank(Safe)`. Production is a real Safe `execTransaction` / UI call to `LORE.transferOwnership(chamber)` — same `msg.sender`, different signing UX. |
 | **Board seating** | Create leaves an empty board. `seats = 5` → quorum 3. Seating needs membership NFT holders + LORE deposits + `SEATING_DELAY`. Not required to prove Ownable handoff. |

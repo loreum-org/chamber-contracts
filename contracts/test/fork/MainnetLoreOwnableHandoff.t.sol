@@ -88,6 +88,7 @@ contract MainnetLoreOwnableHandoffTest is Test {
         console.log("Chamber implementation ", d.chamberImplementation);
         console.log("Chamber (LORE owner)   ", d.chamber);
         console.log("LORE.owner()           ", lore.owner());
+        console.log("BoardLib/WalletLib     auto-linked by forge test (see script for explicit addrs)");
         console.log("========================================");
     }
 
