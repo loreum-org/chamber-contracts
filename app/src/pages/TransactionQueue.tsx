@@ -62,6 +62,8 @@ import {
   UNPAUSE_SELECTOR,
   SEAT_UPDATE_TIMELOCK_SEC,
   SEAT_UPDATE_EXPIRY_SEC,
+  DEFAULT_TRANSACTION_MAX_AGE_SEC,
+  isProposalDeadlineUrgent,
   isAllowedChamberSelfCall,
   isChamberSelfCall,
   isUnpauseCall,
@@ -1197,6 +1199,12 @@ function TransactionCard({
     if (calldataTouched || !resolvedCalldata) return
     setExecuteCalldata(resolvedCalldata.calldata)
   }, [resolvedCalldata, calldataTouched])
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000))
+  useEffect(() => {
+    if (transaction.executed) return
+    const id = window.setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 15_000)
+    return () => window.clearInterval(id)
+  }, [transaction.executed])
   const { isConfirmed: userHasConfirmed } = useTransactionConfirmation(
     chamberAddress,
     leftoverTokenId ?? userTokenId,
@@ -1324,6 +1332,11 @@ function TransactionCard({
   const isExpired = transaction.status === 'expired' || transaction.expired === true
   const liveConfirmations = transaction.liveConfirmations ?? transaction.confirmations
   const requiredConfirmations = transaction.requiredConfirmations || quorum
+  const deadlineLabel = formatProposalDeadlineLabel({
+    deadline: transaction.deadline,
+    expired: isExpired,
+    nowSec,
+  })
   const executeBlockedByPause =
     !!paused &&
     !isUnpauseCall(
@@ -1434,6 +1447,21 @@ function TransactionCard({
               <FiCheck className="w-3 h-3" />
               {liveConfirmations} / {requiredConfirmations}
             </span>
+            {!transaction.executed && (
+              <span
+                className={`flex items-center gap-1 ${
+                  isExpired
+                    ? 'text-red-400'
+                    : deadlineLabel.urgent
+                      ? 'text-amber-400'
+                      : ''
+                }`}
+                title={deadlineLabel.title}
+              >
+                <FiClock className="w-3 h-3" />
+                {deadlineLabel.text}
+              </span>
+            )}
             {!isCancelled && !transaction.executed && (transaction.cancelConfirmations ?? 0) > 0 && (
               <span className="flex items-center gap-1 text-amber-400/80">
                 <FiX className="w-3 h-3" />
@@ -1628,6 +1656,31 @@ function formatDurationSeconds(total: number): string {
   if (d > 0) return `${d}d ${h}h`
   if (h > 0) return `${h}h ${m}m`
   return `${Math.max(1, m)}m`
+}
+
+function formatProposalDeadlineLabel(args: {
+  deadline?: bigint
+  expired?: boolean
+  nowSec: number
+}): { text: string; urgent: boolean; title: string } {
+  const deadlineSec = args.deadline !== undefined && args.deadline > 0n ? Number(args.deadline) : 0
+  if (deadlineSec <= 0) {
+    return {
+      text: 'No expiry',
+      urgent: false,
+      title: 'No execution deadline is stored (pre-upgrade or unset)',
+    }
+  }
+  const remaining = deadlineSec - args.nowSec
+  const absolute = new Date(deadlineSec * 1000).toLocaleString()
+  if (args.expired || remaining <= 0) {
+    return { text: 'Expired', urgent: false, title: `Deadline ${absolute}` }
+  }
+  return {
+    text: `~${formatDurationSeconds(remaining)} left`,
+    urgent: isProposalDeadlineUrgent(remaining),
+    title: `Expires ${absolute}`,
+  }
 }
 
 function BoardProposalCard({
@@ -2648,6 +2701,15 @@ function NewTransactionForm({
               </p>
               <p className="text-[11px] text-slate-500 mt-2">
                 Proposal title, description, and risk summary will be committed onchain as metadata for auditability.
+              </p>
+              {/* Deadline input is out of scope: useSubmitTransaction calls the no-deadline
+                  overloads, which apply WalletTypes.DEFAULT_TRANSACTION_MAX_AGE (30 days). */}
+              <p className="text-[11px] text-slate-500 mt-2 flex items-start gap-1.5">
+                <FiClock className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>
+                  Expires {DEFAULT_TRANSACTION_MAX_AGE_SEC / 86400} days after submit (Chamber default).
+                  Confirm, revoke, and execute revert after the deadline.
+                </span>
               </p>
             </div>
           </div>
