@@ -19,6 +19,7 @@ import {
   FiHash,
   FiUsers,
   FiX,
+  FiChevronDown,
 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import {
@@ -77,6 +78,8 @@ import {
   setProposalMetadata,
 } from '@/lib/proposalMetadata'
 import {
+  decodeProposalAction,
+  normalizeCalldataHex,
   proposalCalldataMatchesHash,
   setStoredProposalCalldata,
 } from '@/lib/proposalCalldata'
@@ -1188,6 +1191,7 @@ function TransactionCard({
           : undefined
   const [executeCalldata, setExecuteCalldata] = useState('0x')
   const [calldataTouched, setCalldataTouched] = useState(false)
+  const [advancedCalldataOpen, setAdvancedCalldataOpen] = useState(false)
   const onchainMeta = parseProposalMetadataURI(transaction.metadataURI)
   const proposalMeta = onchainMeta || getProposalMetadata(chamberAddress, transaction.id)
   const metadataCalldata =
@@ -1216,12 +1220,40 @@ function TransactionCard({
   useEffect(() => {
     setExecuteCalldata('0x')
     setCalldataTouched(false)
+    setAdvancedCalldataOpen(false)
   }, [transaction.id])
 
   useEffect(() => {
     if (calldataTouched || !resolvedCalldata) return
     setExecuteCalldata(resolvedCalldata.calldata)
   }, [resolvedCalldata, calldataTouched])
+
+  const calldataNotArchived =
+    !isResolvingCalldata && !resolvedCalldata && !hasOnchainPreimage
+
+  useEffect(() => {
+    if (calldataNotArchived) setAdvancedCalldataOpen(true)
+  }, [calldataNotArchived])
+
+  const previewCalldata = useMemo(() => {
+    const fromInput = normalizeCalldataHex(executeCalldata)
+    if (fromInput) return fromInput
+    if (resolvedCalldata?.calldata) return resolvedCalldata.calldata
+    if (typeof onchainStoredCalldata === 'string') {
+      return normalizeCalldataHex(onchainStoredCalldata)
+    }
+    return null
+  }, [executeCalldata, resolvedCalldata, onchainStoredCalldata])
+
+  const calldataMatchesCommitment = !!(
+    previewCalldata &&
+    proposalCalldataMatchesHash(previewCalldata, transaction.dataHash)
+  )
+
+  const decodedAction = useMemo(
+    () => decodeProposalAction(previewCalldata ?? undefined, { functionName: proposalMeta?.functionName }),
+    [previewCalldata, proposalMeta?.functionName],
+  )
   const { isConfirmed: userHasConfirmed } = useTransactionConfirmation(
     chamberAddress,
     leftoverTokenId ?? userTokenId,
@@ -1468,49 +1500,82 @@ function TransactionCard({
           </div>
 
           {!transaction.executed && !isCancelled && transaction.status === 'ready' && hasData && (
-            <div className="mt-3 space-y-1.5">
-              <label className="block text-slate-500 text-xs font-medium">
-                Execution calldata (hex)
-              </label>
-              {isResolvingCalldata && !calldataTouched && (
+            <div className="mt-3 space-y-2">
+              {isResolvingCalldata && !calldataTouched && !resolvedCalldata && (
                 <p className="text-slate-500 text-xs flex items-center gap-1.5">
                   <FiLoader className="w-3 h-3 animate-spin" />
                   Loading calldata from submission event…
                 </p>
               )}
-              {resolvedCalldata && !calldataTouched && (
-                <p className="text-emerald-400/90 text-xs">
-                  Calldata loaded from{' '}
-                  {resolvedCalldata.source === 'onchain'
-                    ? 'on-chain calldata store'
-                    : resolvedCalldata.source === 'event'
-                      ? 'onchain submit event'
-                      : resolvedCalldata.source === 'metadata'
-                        ? 'proposal metadata'
-                        : 'this browser'}
-                  — review before executing.
-                </p>
+              {decodedAction && calldataMatchesCommitment && (
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                  <p className="text-sm text-slate-100 font-medium">{decodedAction.summary}</p>
+                  <p className="text-emerald-400/90 text-xs mt-1">
+                    Calldata matches the on-chain commitment
+                    {resolvedCalldata && !calldataTouched && (
+                      <>
+                        {' '}
+                        · loaded from{' '}
+                        {resolvedCalldata.source === 'onchain'
+                          ? 'on-chain calldata store'
+                          : resolvedCalldata.source === 'event'
+                            ? 'onchain submit event'
+                            : resolvedCalldata.source === 'metadata'
+                              ? 'proposal metadata'
+                              : 'this browser'}
+                      </>
+                    )}
+                    {!resolvedCalldata && hasOnchainPreimage && (executeCalldata.trim() === '0x' || executeCalldata.trim() === '') && (
+                      <> · stored on-chain; execute may pass empty data</>
+                    )}
+                  </p>
+                </div>
               )}
-              {!isResolvingCalldata && !resolvedCalldata && executeCalldata === '0x' && hasOnchainPreimage && (
+              {decodedAction && !calldataMatchesCommitment && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
+                  <p className="text-sm text-slate-100 font-medium">{decodedAction.summary}</p>
+                  <p className="text-red-400/90 text-xs mt-1">
+                    Decoded from pasted hex — does not match the on-chain commitment.
+                  </p>
+                </div>
+              )}
+              {!decodedAction && !isResolvingCalldata && !resolvedCalldata && executeCalldata === '0x' && hasOnchainPreimage && (
                 <p className="text-emerald-400/90 text-xs">
                   Calldata is stored on-chain. Execute may pass empty data.
                 </p>
               )}
-              {!isResolvingCalldata && !resolvedCalldata && executeCalldata === '0x' && !hasOnchainPreimage && (
+              {calldataNotArchived && executeCalldata === '0x' && (
                 <p className="text-amber-400/90 text-xs">
                   Calldata not archived here. Ask the proposer for the hex, or paste from your records.
                 </p>
               )}
-              <textarea
-                className="input font-mono text-xs min-h-[4rem] resize-y w-full"
-                placeholder="0x… (must match onchain hash)"
-                value={executeCalldata}
-                onChange={(e) => {
-                  setCalldataTouched(true)
-                  setExecuteCalldata(e.target.value)
-                }}
-                spellCheck={false}
-              />
+              <details
+                className="rounded-lg border border-slate-700/50 bg-slate-900/40"
+                open={advancedCalldataOpen}
+                onToggle={(e) => setAdvancedCalldataOpen(e.currentTarget.open)}
+              >
+                <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-slate-500 list-none flex items-center gap-1.5">
+                  <FiChevronDown
+                    className={`w-3.5 h-3.5 shrink-0 transition-transform ${advancedCalldataOpen ? '' : '-rotate-90'}`}
+                  />
+                  Advanced — raw calldata
+                </summary>
+                <div className="px-3 pb-3 space-y-1.5">
+                  <label className="block text-slate-500 text-xs font-medium">
+                    Execution calldata (hex)
+                  </label>
+                  <textarea
+                    className="input font-mono text-xs min-h-[4rem] resize-y w-full"
+                    placeholder="0x… (must match onchain hash)"
+                    value={executeCalldata}
+                    onChange={(e) => {
+                      setCalldataTouched(true)
+                      setExecuteCalldata(e.target.value)
+                    }}
+                    spellCheck={false}
+                  />
+                </div>
+              </details>
               <p className="pt-1">
                 <Link
                   to="/docs/protocol/multisig"
