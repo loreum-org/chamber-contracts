@@ -33,6 +33,14 @@ contract MockWallet is Wallet {
         _revokeConfirmation(tokenId, transactionId);
     }
 
+    function recordCancelVote(uint256 tokenId, uint256 nonce) public {
+        _recordCancelVote(tokenId, nonce);
+    }
+
+    function cancelTransaction(uint256 nonce) public {
+        _cancelTransaction(nonce);
+    }
+
     /// @dev Test hook: simulate a pre-upgrade pending nonce whose deadline mapping is unset (`0`).
     function forceTransactionDeadline(uint256 nonce, uint256 deadline) public {
         _getWalletStorage().transactionDeadline[nonce] = deadline;
