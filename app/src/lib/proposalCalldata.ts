@@ -10,6 +10,7 @@ import {
   erc20Abi,
   formatUnits,
   keccak256,
+  parseAbi,
   parseAbiItem,
   type Hex,
   type PublicClient,
@@ -104,6 +105,24 @@ export async function fetchProposalCalldataFromEvents(
   return null
 }
 
+const KNOWN_ACTION_ABI = parseAbi([
+  'function transfer(address to, uint256 amount)',
+  'function approve(address spender, uint256 amount)',
+  'function transferFrom(address from, address to, uint256 amount)',
+  'function mint(address to, uint256 amount)',
+  'function mint(uint256 amount)',
+  'function burn(uint256 amount)',
+  'function pause()',
+  'function unpause()',
+  'function upgradeImplementation(address newImplementation, bytes data)',
+  'function deposit()',
+  'function deposit(uint256 assets, address receiver)',
+  'function withdraw(uint256 amount)',
+  'function withdraw(uint256 assets, address receiver, address owner)',
+  'function claim()',
+  'function claim(uint256 id)',
+])
+
 export function normalizeCalldataHex(raw: string): `0x${string}` | null {
   const trimmed = raw.trim()
   if (!trimmed || trimmed === '0x') return null
@@ -116,6 +135,7 @@ function shortHexAddress(value: string): string {
 }
 
 function formatUintAmount(value: bigint): string {
+  if (value === 0n) return '0'
   const formatted = formatUnits(value, 18)
   const [whole, frac = ''] = formatted.split('.')
   if (whole !== '0') {
@@ -124,7 +144,8 @@ function formatUintAmount(value: bigint): string {
   }
   const leadingZeros = frac.match(/^0*/)?.[0].length ?? 0
   if (leadingZeros >= 6) return value.toString()
-  return `0.${frac.replace(/0+$/, '')}`
+  const trimmedFrac = frac.replace(/0+$/, '')
+  return trimmedFrac ? `0.${trimmedFrac}` : '0'
 }
 
 function formatDecodedArg(value: unknown): string {
@@ -183,7 +204,7 @@ export function decodeProposalAction(
   const hex = calldata ? normalizeCalldataHex(calldata) : null
   if (!hex) return null
 
-  for (const abi of [chamberAbi, erc20Abi] as const) {
+  for (const abi of [KNOWN_ACTION_ABI, erc20Abi, chamberAbi] as const) {
     try {
       const decoded = decodeFunctionData({ abi, data: hex })
       const args = (decoded.args as readonly unknown[] | undefined) ?? []
