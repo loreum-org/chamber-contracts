@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useAccount, useChainId, useWriteContract } from 'wagmi'
 import { sepolia } from 'wagmi/chains'
@@ -6,13 +6,13 @@ import { simulateContract } from 'wagmi/actions'
 import { zeroAddress } from 'viem'
 import { FiArrowRight, FiCheck, FiLoader, FiUsers } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import { useBoardMembers, useChamberBalance, useUserNFTs } from '@/hooks'
+import { useBoardMembers, useChamberBalance, useDelegations, useUserNFTs } from '@/hooks'
 import { config, getContractAddresses, LOCAL_CHAIN_ID } from '@/lib/wagmi'
 import { formatLocalTestMintToast, formatWalletSendError } from '@/lib/utils'
 import { SEATING_DELAY_BLOCKS } from '@/lib/chamberGovernance'
 import { erc721Abi } from '@/contracts'
 
-type NextAction = 'mint' | 'receive' | 'deposit' | 'delegate'
+export type SeatTheBoardAction = 'mint' | 'receive' | 'deposit' | 'delegate'
 
 function canMintMembershipNft(
   nftToken: `0x${string}` | undefined,
@@ -26,6 +26,92 @@ function canMintMembershipNft(
   return !!mockNft && mockNft !== zeroAddress && mockNft.toLowerCase() === nftToken.toLowerCase()
 }
 
+export function seatTheBoardHref(
+  chamberAddress: `0x${string}`,
+  action: SeatTheBoardAction,
+  tokenId?: bigint,
+): string {
+  if (action === 'deposit') return `/chamber/${chamberAddress}/staking`
+  if (action === 'mint') return `/chamber/${chamberAddress}`
+  const q = tokenId !== undefined ? `?tokenId=${tokenId.toString()}` : ''
+  return `/chamber/${chamberAddress}/delegation${q}`
+}
+
+/** Next seating step: mint | receive | deposit | delegate. Shared by all seat-the-board CTAs. */
+export function useSeatTheBoard(
+  chamberAddress: `0x${string}`,
+  nftToken?: `0x${string}`,
+) {
+  const { address: userAddress } = useAccount()
+  const chainId = useChainId()
+  const nft = nftToken && nftToken !== zeroAddress ? nftToken : undefined
+
+  const { members, isPending, isFetched, refetch: refetchBoard } = useBoardMembers(chamberAddress, 1)
+  const { tokenIds, balance: nftBalance, isLoading: nftsLoading, refetch: refetchNfts } = useUserNFTs(
+    nft,
+    userAddress,
+    { chamberAddress },
+  )
+  const { balance: shareBalance, refetch: refetchShares } = useChamberBalance(chamberAddress, userAddress)
+  const { delegations, refetch: refetchDelegations } = useDelegations(chamberAddress, userAddress)
+
+  const boardKnownEmpty = isFetched && !isPending && members.length === 0
+  const boardHasDirectors = members.length > 0
+  const holdsNft = tokenIds.length > 0 || (nftBalance !== undefined && nftBalance > 0n)
+  const hasShares = shareBalance !== undefined && shareBalance > 0n
+  const hasDelegated = delegations.some((d) => d.amount > 0n)
+  const mintAvailable = canMintMembershipNft(nft, chainId)
+  const firstTokenId = tokenIds[0]
+
+  const nextAction: SeatTheBoardAction = !holdsNft
+    ? mintAvailable
+      ? 'mint'
+      : 'receive'
+    : !hasShares
+      ? 'deposit'
+      : 'delegate'
+
+  return {
+    nextAction,
+    href: seatTheBoardHref(chamberAddress, nextAction, firstTokenId),
+    holdsNft,
+    hasShares,
+    hasDelegated,
+    mintAvailable,
+    firstTokenId,
+    nftsLoading,
+    userAddress,
+    chainId,
+    nft,
+    boardKnownEmpty,
+    boardHasDirectors,
+    refetchNfts,
+    refetchBoard,
+    refetchShares,
+    refetchDelegations,
+  }
+}
+
+/** Routes a seat-the-board CTA to the derived next step (not a blind /delegation link). */
+export function SeatTheBoardLink({
+  chamberAddress,
+  nftToken,
+  className,
+  children,
+}: {
+  chamberAddress: `0x${string}`
+  nftToken?: `0x${string}`
+  className?: string
+  children: ReactNode
+}) {
+  const { href } = useSeatTheBoard(chamberAddress, nftToken)
+  return (
+    <Link to={href} className={className}>
+      {children}
+    </Link>
+  )
+}
+
 export default function SeatTheBoard({
   chamberAddress,
   nftToken,
@@ -36,47 +122,34 @@ export default function SeatTheBoard({
   /** Deploy-success: treat as empty until `getTop` returns members. */
   assumeEmpty?: boolean
 }) {
-  const { address: userAddress } = useAccount()
-  const chainId = useChainId()
   const { writeContractAsync } = useWriteContract()
   const [minting, setMinting] = useState(false)
-
-  const { members, isPending, isFetched, refetch: refetchBoard } = useBoardMembers(chamberAddress, 1)
-  const { tokenIds, balance: nftBalance, isLoading: nftsLoading, refetch: refetchNfts } = useUserNFTs(
-    nftToken,
+  const {
+    nextAction,
+    href,
+    holdsNft,
+    hasShares,
+    hasDelegated,
+    nftsLoading,
     userAddress,
-    { chamberAddress },
-  )
-  const { balance: shareBalance, refetch: refetchShares } = useChamberBalance(chamberAddress, userAddress)
+    chainId,
+    nft,
+    boardKnownEmpty,
+    boardHasDirectors,
+    refetchNfts,
+    refetchBoard,
+    refetchShares,
+    refetchDelegations,
+  } = useSeatTheBoard(chamberAddress, nftToken)
 
-  const boardKnownEmpty = isFetched && !isPending && members.length === 0
-  const boardHasDirectors = members.length > 0
   const showPanel = assumeEmpty ? !boardHasDirectors : boardKnownEmpty
 
-  const holdsNft = tokenIds.length > 0 || (nftBalance !== undefined && nftBalance > 0n)
-  const hasShares = shareBalance !== undefined && shareBalance > 0n
-  const mintAvailable = canMintMembershipNft(nftToken, chainId)
-  const firstTokenId = tokenIds[0]
-
-  const nextAction: NextAction = !holdsNft
-    ? mintAvailable
-      ? 'mint'
-      : 'receive'
-    : !hasShares
-      ? 'deposit'
-      : 'delegate'
-
-  const delegationHref = firstTokenId
-    ? `/chamber/${chamberAddress}/delegation?tokenId=${firstTokenId.toString()}`
-    : `/chamber/${chamberAddress}/delegation`
-  const stakingHref = `/chamber/${chamberAddress}/staking`
-
   const handleMintFounderNft = async () => {
-    if (!userAddress || !nftToken || nftToken === zeroAddress) return
+    if (!userAddress || !nft || nft === zeroAddress) return
     setMinting(true)
     try {
       const { request } = await simulateContract(config, {
-        address: nftToken,
+        address: nft,
         abi: erc721Abi,
         functionName: 'mint',
         args: [userAddress],
@@ -88,6 +161,7 @@ export default function SeatTheBoard({
       void refetchNfts()
       void refetchBoard()
       void refetchShares()
+      void refetchDelegations()
     } catch (e: unknown) {
       toast.error(
         chainId === LOCAL_CHAIN_ID
@@ -101,7 +175,7 @@ export default function SeatTheBoard({
 
   if (!showPanel) return null
 
-  const nextCopy: Record<NextAction, { detail: string; cta: string }> = {
+  const nextCopy: Record<SeatTheBoardAction, { detail: string; cta: string }> = {
     mint: {
       detail: 'Mint a founder membership NFT on this test collection, then deposit and delegate to it.',
       cta: 'Mint founder NFT',
@@ -122,8 +196,6 @@ export default function SeatTheBoard({
   }
 
   const copy = nextCopy[nextAction]
-  const primaryHref =
-    nextAction === 'deposit' ? stakingHref : nextAction === 'delegate' || nextAction === 'receive' ? delegationHref : undefined
 
   return (
     <div className="panel p-6 sm:p-8 space-y-5 border-accent-500/25 bg-accent-500/[0.04]">
@@ -149,7 +221,7 @@ export default function SeatTheBoard({
       <ol className="space-y-2 text-sm">
         <Step done={holdsNft} loading={!!userAddress && nftsLoading && !holdsNft} label="Hold a membership NFT" />
         <Step done={hasShares} label="Deposit shares" />
-        <Step done={false} label={`Delegate, then wait ${SEATING_DELAY_BLOCKS.toString()} block`} />
+        <Step done={hasDelegated} label={`Delegate, then wait ${SEATING_DELAY_BLOCKS.toString()} block`} />
       </ol>
 
       <p className="text-slate-400 text-sm leading-relaxed">{copy.detail}</p>
@@ -163,21 +235,18 @@ export default function SeatTheBoard({
             className="btn btn-primary"
           >
             {minting ? <FiLoader className="w-4 h-4 animate-spin" /> : <FiUsers className="w-4 h-4" />}
-            {minting ? 'Minting…' : 'Seat the board'}
+            {minting ? 'Minting…' : copy.cta}
           </button>
         ) : (
-          <Link to={primaryHref ?? `/chamber/${chamberAddress}`} className="btn btn-primary">
-            Seat the board
+          <Link to={href} className="btn btn-primary">
+            {copy.cta}
             <FiArrowRight className="w-4 h-4" />
           </Link>
         )}
         {nextAction === 'mint' && (
-          <Link to={delegationHref} className="btn btn-secondary">
+          <Link to={seatTheBoardHref(chamberAddress, 'receive')} className="btn btn-secondary">
             I already hold a token
           </Link>
-        )}
-        {nextAction !== 'mint' && nextAction !== 'receive' && (
-          <span className="self-center text-slate-500 text-xs">{copy.cta}</span>
         )}
       </div>
     </div>

@@ -56,6 +56,7 @@ import {
   shortenAddress,
 } from '@/lib/utils'
 import { DirectorCallerStatus } from '@/components/DirectorCallerStatus'
+import { SeatTheBoardLink } from '@/components/SeatTheBoard'
 import {
   UPGRADE_SELECTOR,
   PAUSE_SELECTOR,
@@ -741,12 +742,13 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
             <p className="text-slate-400 mt-1">
               Submit, confirm, and execute stay locked until you seat the board. Hold a membership NFT and delegate shares to it.
             </p>
-            <Link
-              to={`/chamber/${chamberAddress}/delegation`}
+            <SeatTheBoardLink
+              chamberAddress={chamberAddress}
+              nftToken={chamberInfo.nftToken}
               className="text-accent-400 text-sm hover:underline mt-2 inline-block"
             >
               Seat the board →
-            </Link>
+            </SeatTheBoardLink>
             <Link
               to="/docs/introduction/getting-started"
               className="text-accent-400 text-sm hover:underline mt-2 ml-4 inline-block"
@@ -962,12 +964,13 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                     <p className="text-slate-500 mb-6 max-w-sm mx-auto">
                       There are no directors, so the queue cannot submit, confirm, or execute. Hold a membership NFT and delegate shares to it.
                     </p>
-                    <Link
-                      to={`/chamber/${chamberAddress}/delegation`}
+                    <SeatTheBoardLink
+                      chamberAddress={chamberAddress}
+                      nftToken={chamberInfo.nftToken}
                       className="btn btn-primary inline-flex"
                     >
                       Seat the board
-                    </Link>
+                    </SeatTheBoardLink>
                     <p className="mt-4">
                       <Link
                         to="/docs/introduction/getting-started"
