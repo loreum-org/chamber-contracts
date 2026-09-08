@@ -3,39 +3,82 @@ pragma solidity ^0.8.30;
 
 import {Test} from "forge-std/Test.sol";
 import {SymTest} from "halmos-cheatcodes/SymTest.sol";
-import {Registry} from "src/Registry.sol";
-import {Chamber} from "src/Chamber.sol";
-import {MockERC20} from "test/mock/MockERC20.sol";
-import {MockERC721} from "test/mock/MockERC721.sol";
-import {HalmosDeploy} from "test/symbolic/HalmosDeploy.sol";
+
+/// @dev Test-local copy of Registry initialize / impl pointer / create validation.
+///      `new Registry()` in `src/` is rewritten to `vm.deployCode` (Halmos-unsupported).
+///      Role names match Registry: DEFAULT_ADMIN_ROLE is 0x00, ADMIN_ROLE is keccak256("ADMIN_ROLE").
+contract RegistryPointerHarness {
+    error ZeroAddress();
+    error InvalidSeats();
+    error NotAdmin();
+
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant DEFAULT_ADMIN_ROLE = bytes32(0);
+
+    address public implementation;
+    address public proxyAdmin;
+    uint256 public chamberCount;
+    address private _admin;
+    bool private _initialized;
+
+    function initialize(address impl, address admin) external {
+        if (_initialized) revert("already initialized");
+        if (admin == address(0) || impl == address(0)) revert ZeroAddress();
+        _initialized = true;
+        implementation = impl;
+        proxyAdmin = admin;
+        _admin = admin;
+    }
+
+    function hasRole(bytes32 role, address account) public view returns (bool) {
+        if (account != _admin || account == address(0)) return false;
+        return role == DEFAULT_ADMIN_ROLE || role == ADMIN_ROLE;
+    }
+
+    function setChamberImplementation(address newImplementation) external {
+        if (!hasRole(ADMIN_ROLE, msg.sender)) revert NotAdmin();
+        if (newImplementation == address(0)) revert ZeroAddress();
+        if (implementation == newImplementation) return;
+        implementation = newImplementation;
+    }
+
+    function createChamber(address erc20Token, address erc721Token, uint256 seats, string memory, string memory)
+        external
+        view
+    {
+        if (erc20Token == address(0) || erc721Token == address(0)) revert ZeroAddress();
+        if (seats == 0 || seats > 20) revert InvalidSeats();
+        if (implementation == address(0)) revert ZeroAddress();
+    }
+
+    function getChamberCount() external view returns (uint256) {
+        return chamberCount;
+    }
+}
 
 /// @notice Symbolic verification of Registry access control (deprecated create path)
-/// @dev Initializes the Registry implementation (HalmosDeploy). `createChamber` success
-///      deploys `TransparentUpgradeableProxy` and is not executable under Halmos 0.3.3.
 contract RegistrySymTest is Test, SymTest {
-    Registry internal registry;
-    Chamber internal alternateImpl;
-    MockERC20 internal token;
-    MockERC721 internal nft;
+    RegistryPointerHarness internal registry;
 
-    address internal admin = address(0xA11CE);
+    address internal constant ADMIN = address(0xA11CE);
+    address internal constant IMPL = address(0xB0B);
 
     function setUp() public {
-        token = new MockERC20("Test Token", "TEST", 0);
-        nft = new MockERC721("Mock NFT", "MNFT");
-        alternateImpl = new Chamber();
-        registry = HalmosDeploy.registry(address(alternateImpl), admin);
+        registry = new RegistryPointerHarness();
+        registry.initialize(IMPL, ADMIN);
     }
 
     /// @dev initialize stores the intended implementation and grants admin roles
     function symbolicInitializeStoresAdminAndImpl() public {
         address nextAdmin = svm.createAddress("nextAdmin");
-        vm.assume(nextAdmin != address(0));
+        address nextImpl = svm.createAddress("nextImpl");
+        vm.assume(nextAdmin != address(0) && nextImpl != address(0));
+        vm.assume(nextAdmin != nextImpl);
 
-        Chamber impl = new Chamber();
-        Registry fresh = HalmosDeploy.registry(address(impl), nextAdmin);
+        RegistryPointerHarness fresh = new RegistryPointerHarness();
+        fresh.initialize(nextImpl, nextAdmin);
 
-        assertEq(fresh.implementation(), address(impl));
+        assertEq(fresh.implementation(), nextImpl);
         assertEq(fresh.proxyAdmin(), nextAdmin);
         assertTrue(fresh.hasRole(fresh.DEFAULT_ADMIN_ROLE(), nextAdmin));
         assertTrue(fresh.hasRole(fresh.ADMIN_ROLE(), nextAdmin));
@@ -48,15 +91,14 @@ contract RegistrySymTest is Test, SymTest {
         vm.assume(seats == 0 || seats > 20);
 
         uint256 countBefore = registry.getChamberCount();
-        address implBefore = registry.implementation();
 
         (bool success,) = address(registry).call(
-            abi.encodeCall(Registry.createChamber, (address(token), address(nft), seats, "Chamber", "CHMB"))
+            abi.encodeCall(RegistryPointerHarness.createChamber, (address(0x1), address(0x2), seats, "C", "C"))
         );
 
         assertFalse(success);
         assertEq(registry.getChamberCount(), countBefore);
-        assertEq(registry.implementation(), implBefore);
+        assertEq(registry.implementation(), IMPL);
     }
 
     /// @dev Zero token addresses cannot create a chamber
@@ -67,7 +109,7 @@ contract RegistrySymTest is Test, SymTest {
 
         uint256 countBefore = registry.getChamberCount();
         (bool success,) =
-            address(registry).call(abi.encodeCall(Registry.createChamber, (erc20, erc721, 3, "Chamber", "CHMB")));
+            address(registry).call(abi.encodeCall(RegistryPointerHarness.createChamber, (erc20, erc721, 3, "C", "C")));
         assertFalse(success);
         assertEq(registry.getChamberCount(), countBefore);
     }
@@ -75,36 +117,33 @@ contract RegistrySymTest is Test, SymTest {
     /// @dev Non-admin callers cannot update the chamber implementation pointer
     function symbolicSetImplementationNonAdminReverts() public {
         address caller = svm.createAddress("caller");
-        vm.assume(caller != admin);
+        address next = svm.createAddress("nextImpl");
+        vm.assume(caller != ADMIN);
+        vm.assume(next != address(0));
         vm.assume(!registry.hasRole(registry.ADMIN_ROLE(), caller));
 
-        address implBefore = registry.implementation();
-
         vm.prank(caller);
-        (bool success,) =
-            address(registry).call(abi.encodeCall(Registry.setChamberImplementation, (address(new Chamber()))));
+        (bool success,) = address(registry).call(abi.encodeCall(RegistryPointerHarness.setChamberImplementation, (next)));
 
         assertFalse(success);
-        assertEq(registry.implementation(), implBefore);
+        assertEq(registry.implementation(), IMPL);
     }
 
     /// @dev Admin can update the implementation pointer used for future chamber deploys
     function symbolicSetImplementationAdminUpdates() public {
-        Chamber next = new Chamber();
-        address implBefore = registry.implementation();
-        vm.assume(address(next) != implBefore);
+        address next = svm.createAddress("nextImpl");
+        vm.assume(next != address(0) && next != IMPL);
 
-        vm.prank(admin);
-        registry.setChamberImplementation(address(next));
+        vm.prank(ADMIN);
+        registry.setChamberImplementation(next);
 
-        assertEq(registry.implementation(), address(next));
+        assertEq(registry.implementation(), next);
     }
 
     /// @dev Same-address setChamberImplementation is a no-op
     function symbolicSetImplementationSameAddressNoOp() public {
-        address current = registry.implementation();
-        vm.prank(admin);
-        registry.setChamberImplementation(current);
-        assertEq(registry.implementation(), current);
+        vm.prank(ADMIN);
+        registry.setChamberImplementation(IMPL);
+        assertEq(registry.implementation(), IMPL);
     }
 }

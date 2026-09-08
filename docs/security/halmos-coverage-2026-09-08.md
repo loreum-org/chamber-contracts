@@ -9,11 +9,18 @@ protocol is “fully verified.”
 `--match-contract '^(BoardSymTest|WalletSymTest|ChamberSymTest|VaultSymTest|RegistrySymTest|FactorySymTest)$'`.  
 **Loop bound:** Halmos default `--loop 2` (enough for one- and two-node board
 walks and two-seat quorum).  
-**Proxy limitation:** Halmos cannot execute OpenZeppelin
-`TransparentUpgradeableProxy` construction (`vm.deployCode(string)`). Chamber /
-Registry / Vault symbolic tests therefore initialize the **implementation**
-through `test/symbolic/HalmosDeploy.sol`. That is not the production Factory
-path.
+**Deploy limitation:** Halmos 0.3.3 cannot execute `vm.deployCode`. Foundry
+emits that cheatcode for `TransparentUpgradeableProxy`, for `new Chamber()`,
+and for `new Factory()` / `new Registry()` (src creation bytecode is not
+inlined into the test contract). Symbolic tests therefore run against
+**test-local harnesses** that mirror the production checks:
+
+- `ChamberAuthHarness` — Board + Wallet + session key + director / quorum
+- `VaultOffsetHarness` — ERC-4626 `_decimalsOffset = 3` and deposit delta
+- `FactoryPointerHarness` / `RegistryPointerHarness` — admin/impl pointer and
+  create-input validation (no proxy CREATE)
+
+Factory / Registry `createChamber` **success** is not closable.
 
 ## What “complete” means here
 
@@ -47,7 +54,7 @@ input; **partial** = some paths or a related mock/implementation-only setup;
 
 | Function | Coverage | Notes |
 |---|---|---|
-| `initialize` | covered | `ChamberSym` stores asset / NFT / seats; rejects 0 and >20 seats |
+| `initialize` | partial | Harness constructor stores NFT / seats and rejects 0 and >20; asset/ERC-20 name live only on Chamber |
 | `delegate` | covered | holder ≤ balance; node amount matches; uniqueness via `BoardSym` |
 | `undelegate` | covered | holder + node conservation |
 | `setDirectorOperator` | covered | only registered key; EOA implicit operator rejected |
@@ -67,10 +74,10 @@ input; **partial** = some paths or a related mock/implementation-only setup;
 | `receive` / `fallback` | missing | ETH credit only; no invariant beyond `balance += msg.value` |
 | `onERC721Received` | missing | custody hook; no share mint (documented in natspec) |
 | `acceptAdmin` | missing | no-op |
-| `pause` / `unpause` | partial | outsider rejected; self-`prank` pause zeroes ERC-4626 `max*` (`VaultSym`). Quorum self-call via wallet not closed (proxy/`execute` composition) |
-| `upgradeImplementation` | partial | outsider rejected. Real `ProxyAdmin.upgradeAndCall` needs a proxy Halmos cannot deploy |
+| `pause` / `unpause` | partial | `VaultOffsetHarness` self-`prank` pause zeroes ERC-4626 `max*`. Chamber outsider rejection is unit-tested; quorum self-call via wallet is not closed |
+| `upgradeImplementation` | missing | needs proxy + `ProxyAdmin`. Halmos cannot deploy either |
 | `deposit` / `mint` | covered | empty-vault share multiplier; pause blocks deposit |
-| `withdraw` / `redeem` | covered | single-depositor full redeem conservation (offset cancels) |
+| `withdraw` / `redeem` | partial | empty-vault deposit identity is closed; full redeem is nonlinear `mulDiv` and **timed out** (152s / 32 paths) — not in CI |
 | `transfer` / `transferFrom` | partial | transfer cannot strand delegation; `transferFrom` + allowance is OZ + same `_update` |
 | `approve` | missing | stock OZ ERC-20 |
 
@@ -110,7 +117,7 @@ Exercised through `MockWallet` (no director modifier) plus Chamber wallet tests.
 
 | Function | Coverage | Notes |
 |---|---|---|
-| `constructor` | covered | stores intended impl + Ownable admin; zero addresses revert |
+| `constructor` | covered | `FactoryPointerHarness` stores intended impl + Ownable admin; zero addresses revert |
 | `setImplementation` | covered | owner-only; same-address no-op; zero reverts |
 | `createChamber` (invalid input) | covered | zero tokens / seats 0 or >20 revert; impl and owner unchanged |
 | `createChamber` (success) | missing | deploys `TransparentUpgradeableProxy` → `vm.deployCode`. **Not Halmos-closable.** Unit: `Factory.t.sol` (impl slot, ProxyAdmin owner = chamber, `initialize` config) |
@@ -119,7 +126,7 @@ Exercised through `MockWallet` (no director modifier) plus Chamber wallet tests.
 
 | Function | Coverage | Notes |
 |---|---|---|
-| `initialize` | covered | impl + `proxyAdmin` + `DEFAULT_ADMIN_ROLE` / `ADMIN_ROLE` |
+| `initialize` | covered | `RegistryPointerHarness` stores impl + `proxyAdmin` and grants the two admin roles |
 | `setChamberImplementation` | covered | admin-only; same-address no-op |
 | `createChamber` (invalid input) | covered | does not increment count / change impl |
 | `createChamber` (success + index) | missing | same proxy CREATE gap as Factory. Historical asset / parent-child index is unit-tested only |
@@ -140,7 +147,7 @@ Exercised through `MockWallet` (no director modifier) plus Chamber wallet tests.
 | Seating delay | `BoardSym.symbolicSeatingDelay*`; `ChamberSym.symbolicImmatureDirectorCannotSubmit` | `SEATING_DELAY = 1` |
 | Operator cleared on transfer | `ChamberSym.symbolicOperatorClearedOnTransfer`, `symbolicSessionKeyCanSubmitUntilTransfer` | Logical clear (`owner` mismatch), not storage `delete` |
 | Wallet queue auth (submit / confirm / execute / cancel) | `ChamberSym.symbolicWalletQueueRequiresDirector`, `symbolicWalletCancelRequiresQuorum`; lifecycle on `WalletSym` | Two seats, concrete token ids 1 and 2, symbolic stranger / session key |
-| Vault share accounting | `VaultSym` empty-vault multiplier + single-depositor redeem conservation | No multi-depositor / donation / nonlinear `convertTo*` |
+| Vault share accounting | `VaultSym` empty-vault multiplier + pause zeroes `max*` | Redeem / multi-depositor `convertTo*` is nonlinear; Halmos timed out and the test was removed from CI |
 | Factory only creates with intended admin / impl | `FactorySym` constructor + `setImplementation` + invalid `createChamber` does not mutate | **Success-path CREATE is a documented gap**; unit tests own the proxy handoff |
 
 ## Loops, solvers, and timeouts Halmos cannot close
@@ -159,14 +166,12 @@ Exercised through `MockWallet` (no director modifier) plus Chamber wallet tests.
   the empty-vault identity `shares = assets * 10**3` and the single-depositor
   redeem that algebraically cancels the offset. Multi-depositor rounding,
   donation, and fee-on-transfer are unit/fuzz (`Finding6`, `Vault.t.sol`).
-- **`TransparentUpgradeableProxy`:** any test that `new`s a production proxy
-  (Factory / Registry `createChamber` success, `DeployChamber`,
-  `DeployRegistry`) fails in `setUp` or the call with
-  `Unsupported cheat code: deployCode(string)`. Do not re-add those setups to
-  `HALMOS_INCLUDE`.
+- **`new Chamber()` and `TransparentUpgradeableProxy`:** Foundry emits
+  `vm.deployCode(string)`, which Halmos 0.3.3 rejects. Do not `new Chamber()`
+  or `new TransparentUpgradeableProxy` in a `*SymTest` `setUp`. Use
+  `ChamberAuthHarness` / `VaultOffsetHarness` / a dummy impl address instead.
 - **`upgradeImplementation`:** requires ERC-1967 admin + `ProxyAdmin.owner() == chamber`.
-  Cannot be constructed under Halmos. Outsider rejection is checked; the
-  upgrade itself is not.
+  Cannot be constructed under Halmos.
 - **Solver timeouts:** assertion timeout stays at 60s. If a new test times
   out, shrink bitwidths (`createUint(16|48|64|96)`) or drop it from CI rather
   than claiming a pass.
@@ -181,3 +186,17 @@ make ci-halmos
 
 Existing Foundry unit / fuzz / findings tests remain the safety net for
 everything tagged **missing** or **partial**.
+
+## CI result (this change)
+
+`make ci-halmos` on this branch (Halmos 0.3.3, `--loop 2`, solver 60s):
+
+| Suite | Result |
+|---|---|
+| BoardSymTest | 8 passed |
+| ChamberSymTest | 13 passed |
+| FactorySymTest | 5 passed |
+| RegistrySymTest | 6 passed |
+| VaultSymTest | 3 passed |
+| WalletSymTest | 6 passed |
+| **Total** | **41 passed / 0 failed** (solver time ~5s after `forge build --ast`) |

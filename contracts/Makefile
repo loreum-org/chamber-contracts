@@ -45,14 +45,15 @@ rehearse-mainnet-lore-handoff-script :
 
 
 # Symbolic verification with Halmos (requires: pip install -r fv-requirements.txt)
-# Halmos 0.3.3 cannot construct TransparentUpgradeableProxy (vm.deployCode).
-# Chamber/Registry/Vault symbolic tests initialize implementations via HalmosDeploy.
-# Factory/Registry createChamber *success* is still unclosable (proxy CREATE); see
-# docs/security/halmos-coverage-2026-09-08.md. Default --loop 2 matches 1–2 node walks.
+# Halmos 0.3.3 cannot execute vm.deployCode (proxy CREATE, new Chamber/Factory/Registry).
+# CI suites use test-local harnesses; see docs/security/halmos-coverage-2026-09-08.md.
+# Default --loop 2 matches 1–2 node board walks.
 HALMOS_INCLUDE := ^(BoardSymTest|WalletSymTest|ChamberSymTest|VaultSymTest|RegistrySymTest|FactorySymTest)$
-halmos :; halmos --match-test '^symbolic' --match-contract '$(HALMOS_INCLUDE)' -vv
+# `--ast` is required: a prior `forge build` without AST leaves artifacts Halmos 0.3.3
+# cannot parse (KeyError: 'ast'), and then `--match-contract` finds zero tests.
+halmos :; forge build --ast && halmos --match-test '^symbolic' --match-contract '$(HALMOS_INCLUDE)' -vv
 
-ci-halmos :; halmos --match-test '^symbolic' --match-contract '$(HALMOS_INCLUDE)' -vv
+ci-halmos :; forge build --ast && halmos --match-test '^symbolic' --match-contract '$(HALMOS_INCLUDE)' -vv
 
 dev-test :; forge test --verbosity -vvv --watch
 
