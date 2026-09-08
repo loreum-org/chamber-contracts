@@ -75,7 +75,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
      *      (length word + data word) and incurs an SLOAD on every read. A bytes32 constant is
      *      inlined at compile time: zero runtime gas, zero storage slots.
      */
-    bytes32 public constant VERSION = "1.1.6";
+    bytes32 public constant VERSION = "1.1.7";
 
     /// @notice Function selector for upgradeImplementation(address,bytes)
     bytes4 private constant UPGRADE_SELECTOR = 0xc89311b6;
@@ -290,6 +290,27 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     }
 
     /**
+     * @dev Sum of `holderDelegation` over the per-holder enumerable set.
+     *      When this equals `totalHolderDelegations`, the set is complete and callers
+     *      must not walk the live board or the unbounded eviction index.
+     */
+    function _trackedDelegationTotal(address holder)
+        private
+        view
+        returns (uint256 trackedTotal, uint256[] memory setIds)
+    {
+        ChamberStorage storage $c = _getChamberStorage();
+        setIds = $c.holderDelegatedTokenIds[holder].values();
+        uint256 setLen = setIds.length;
+        for (uint256 i = 0; i < setLen;) {
+            trackedTotal += $c.holderDelegation[holder][setIds[i]];
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /**
      * @dev Union of the holder set with leftover board/evicted amounts. When the set already
      *      accounts for `totalHolderDelegations`, extras are skipped so insertion order is kept.
      */
@@ -300,16 +321,8 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     {
         ChamberStorage storage $c = _getChamberStorage();
         EnumerableSet.UintSet storage tracked = $c.holderDelegatedTokenIds[holder];
-        uint256[] memory setIds = tracked.values();
+        (uint256 trackedTotal, uint256[] memory setIds) = _trackedDelegationTotal(holder);
         uint256 setLen = setIds.length;
-
-        uint256 trackedTotal;
-        for (uint256 i = 0; i < setLen;) {
-            trackedTotal += $c.holderDelegation[holder][setIds[i]];
-            unchecked {
-                ++i;
-            }
-        }
 
         if (trackedTotal == $c.totalHolderDelegations[holder]) {
             tokenIds = setIds;
@@ -387,9 +400,17 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     /**
      * @dev Lazy-backfill the holder set from leftover board/evicted amounts after an upgrade.
      *      Does not require an off-chain holder list; only the caller is synced.
+     *      Fresh holders already maintain the set on `delegate`/`undelegate`. Skip the
+     *      board and eviction walks when the set already accounts for `totalHolderDelegations`
+     *      so those paths stay O(holder set) instead of O(evictedTokenIds).
      */
     function _syncTrackedDelegations(address holder) private {
         ChamberStorage storage $c = _getChamberStorage();
+        (uint256 trackedTotal,) = _trackedDelegationTotal(holder);
+        if (trackedTotal == $c.totalHolderDelegations[holder]) {
+            return;
+        }
+
         BoardTypes.BoardStorage storage $b = _getBoardStorage();
         EnumerableSet.UintSet storage tracked = $c.holderDelegatedTokenIds[holder];
 
