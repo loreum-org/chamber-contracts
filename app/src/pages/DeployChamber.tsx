@@ -576,7 +576,7 @@ export default function DeployChamber() {
               <h4 className="font-heading font-semibold text-slate-100 mb-2">What is a Chamber?</h4>
               <p className="text-slate-400 text-sm leading-relaxed">
                 A Chamber is a smart vault that combines ERC4626 tokenized treasury with board-based governance.
-                Members can receive delegations to compete for board seats and control transactions.
+                Members can receive delegations to compete for board seats and control proposals.
               </p>
             </div>
             <div className="card">
