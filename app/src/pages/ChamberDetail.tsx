@@ -253,6 +253,12 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
               <p className="text-red-100/80 leading-relaxed">
                 Deposits, withdrawals, and wallet execute are halted. Directors can still submit and confirm an unpause proposal.
               </p>
+              <Link
+                to="/docs/protocol/governance"
+                className="text-accent-400 hover:text-accent-300 font-medium mt-1.5 inline-block"
+              >
+                How governance works →
+              </Link>
             </div>
           </div>
         </motion.div>
@@ -280,6 +286,14 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
                 </span>
                 . Directors can
                 upgrade this proxy via the Chamber’s upgrade flow so it aligns with the Registry.
+              </p>
+              <p className="mt-1.5">
+                <Link
+                  to="/docs/protocol/architecture"
+                  className="inline-flex items-center gap-1 text-accent-400 hover:text-accent-300 font-medium"
+                >
+                  How Chamber upgrades work →
+                </Link>
               </p>
               {implSync.registryAddress && chainId !== 31337 && (
                 <a
@@ -828,6 +842,12 @@ function OverviewTab({ chamberAddress, chamberInfo, members, totalDelegated, use
               <p className="text-slate-500 text-xs max-w-sm mx-auto leading-relaxed">
                 Hold a membership NFT, deposit shares, and delegate to that token. Director actions unlock after one block.
               </p>
+              <Link
+                to="/docs/introduction/getting-started"
+                className="text-accent-400 text-xs hover:underline inline-block"
+              >
+                Getting started →
+              </Link>
               <button
                 type="button"
                 onClick={() => setActiveTab('delegation')}

@@ -714,7 +714,10 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
 
         {chamberInfo.paused && (
           <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-200">
-            This chamber is paused. Deposits, withdrawals, and execute are halted. Directors can still submit and confirm an unpause proposal.
+            This chamber is paused. Deposits, withdrawals, and execute are halted. Directors can still submit and confirm an unpause proposal.{' '}
+            <Link to="/docs/protocol/governance" className="text-accent-400 hover:underline">
+              How governance works →
+            </Link>
           </div>
         )}
         <DirectorCallerStatus
@@ -743,6 +746,12 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
               className="text-accent-400 text-sm hover:underline mt-2 inline-block"
             >
               Seat the board →
+            </Link>
+            <Link
+              to="/docs/introduction/getting-started"
+              className="text-accent-400 text-sm hover:underline mt-2 ml-4 inline-block"
+            >
+              Getting started →
             </Link>
           </div>
         )}
@@ -959,6 +968,14 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                     >
                       Seat the board
                     </Link>
+                    <p className="mt-4">
+                      <Link
+                        to="/docs/introduction/getting-started"
+                        className="text-accent-400 text-sm hover:underline"
+                      >
+                        Getting started →
+                      </Link>
+                    </p>
                   </>
                 ) : (
                   <>
@@ -1071,6 +1088,14 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                       . Ask a director to open this link (with{' '}
                       <span className="font-mono">?proposal=upgrade</span>
                       ), review the prefilled multisig proposal, then submit.
+                    </p>
+                    <p className="mb-3">
+                      <Link
+                        to="/docs/protocol/architecture"
+                        className="text-accent-400 hover:text-accent-300 font-medium"
+                      >
+                        How Chamber upgrades work →
+                      </Link>
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {chainId !== 31337 && (
@@ -1486,6 +1511,14 @@ function TransactionCard({
                 }}
                 spellCheck={false}
               />
+              <p className="pt-1">
+                <Link
+                  to="/docs/protocol/multisig"
+                  className="text-accent-400 text-xs hover:underline"
+                >
+                  How calldata and execute work →
+                </Link>
+              </p>
             </div>
           )}
 
@@ -1600,6 +1633,14 @@ function TransactionCard({
             {hasOnchainPreimage
               ? 'Self-call calldata is stored on-chain. Execute may pass empty data, or re-supply the original bytes.'
               : 'Only the hash is stored onchain. To execute, directors must supply the exact calldata bytes (or use 0x for plain ETH with no call data).'}
+          </p>
+          <p className="mt-2">
+            <Link
+              to="/docs/protocol/multisig"
+              className="text-accent-400 text-xs hover:underline"
+            >
+              How calldata and execute work →
+            </Link>
           </p>
         </div>
       ) : null}
@@ -2408,6 +2449,14 @@ function NewTransactionForm({
                     ? ` (VERSION ${registryUpgradeDraft.registryVersionLabel})`
                     : ''}
                   . Other directors still need to confirm until quorum before execution.
+                </p>
+                <p className="mt-2">
+                  <Link
+                    to="/docs/protocol/architecture"
+                    className="text-accent-400 hover:text-accent-300"
+                  >
+                    How Chamber upgrades work →
+                  </Link>
                 </p>
               </div>
             )}

@@ -137,6 +137,12 @@ export default function SeatTheBoard({
             This chamber has no directors. Submit, confirm, and execute stay locked until a membership NFT
             receives delegation and seating matures.
           </p>
+          <Link
+            to="/docs/introduction/getting-started"
+            className="text-accent-400 text-sm hover:underline mt-2 inline-block"
+          >
+            Getting started →
+          </Link>
         </div>
       </div>
 

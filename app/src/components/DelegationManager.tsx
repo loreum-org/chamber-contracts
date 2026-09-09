@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAccount } from 'wagmi'
 import { formatUnits, parseUnits, zeroAddress } from 'viem'
@@ -267,6 +267,12 @@ export default function DelegationManager({
           <p className="text-slate-400 text-xs mt-1 leading-relaxed">
             The board is empty. Delegate shares to a membership NFT you hold. Director rights unlock one block later.
           </p>
+          <Link
+            to="/docs/introduction/getting-started"
+            className="text-accent-400 text-xs hover:underline mt-2 inline-block"
+          >
+            Getting started →
+          </Link>
         </div>
       )}
       {/* Balance Overview */}
