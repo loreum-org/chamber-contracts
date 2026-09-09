@@ -51,6 +51,9 @@ forge script script/RehearseMainnetLoreHandoff.s.sol:RehearseMainnetLoreHandoff 
 
 The script reverts if you pass `--broadcast` / `--resume`.
 
+Human-run verified deploy (print / verify / gated broadcast scripts, TBD address file):
+[`mainnet-verified-deploy.md`](./mainnet-verified-deploy.md). **Deploy remains blocked** on [PMN-H01 (#208)](https://github.com/loreum-org/chamber/issues/208) until accepted or fixed. Mediums [#209](https://github.com/loreum-org/chamber/issues/209)–[#212](https://github.com/loreum-org/chamber/issues/212) are open. Safe `transferOwnership` is human-only.
+
 ## Success
 
 Logs look like:
@@ -74,3 +77,7 @@ The test also checks vault asset / NFT / seats, empty board, and `ProxyAdmin.own
 | **Board seating** | Create leaves an empty board. `seats = 5` → quorum 3. Seating needs membership NFT holders + LORE deposits + `SEATING_DELAY`. Not required to prove Ownable handoff. |
 | **Ownable vs 2-step** | Mainnet LORE ABI is single-step Ownable (`owner` / `transferOwnership` / `renounceOwnership`; no `pendingOwner`). Chamber does not need `acceptOwnership`. |
 | **CCA sequencing** | Still undecided. This fork does not claim a production order vs CCA. |
+| **PMN-H01 (#208)** | **Blocks live broadcast** until formally accepted or fixed. This rehearsal does not fix it. |
+| **#209–#212** | Open mediums (quorum, inert seats, Factory/Registry, session keys). Do not claim deploy is unblocked. |
+| **#213 / #206** | Open PRs (1.1.7 eviction fix; Halmos harness). Unmerged. |
+| **Verified package** | `make print-mainnet-factory-deploy` / `make verify-mainnet-factory`. Paste addresses into `deployments/mainnet.txt` only from a chain-id-1 receipt. |

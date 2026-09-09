@@ -66,6 +66,10 @@ npm install
 4. Sepolia Factory / Registry / demo ERC-20 / membership ERC-721 come from
    `contracts/deployments/sepolia.txt` (parsed by `getContractAddresses(11155111)`).
    Env vars (`VITE_SEPOLIA_*`) still override. Other networks: set `VITE_*` in `.env`.
+   Ethereum mainnet (`getContractAddresses(1)`) reads `VITE_MAINNET_*` then
+   `contracts/deployments/mainnet.txt`. The committed file is TBD — chain id 1
+   stays unset and never uses Sepolia addresses. Paste Factory / impl / Chamber
+   only after a verified chain-id-1 deploy.
 
 ### Development
 

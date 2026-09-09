@@ -16,7 +16,11 @@ test = 'test'
 libs = ['lib']
 
 # Allow scripts to write deployment artifacts under this crate (e.g. deployments.json)
-fs_permissions = [{ access = "read-write", path = "." }]
+# Read the app copy of mainnet.txt so the package test can keep the two templates in sync.
+fs_permissions = [
+    { access = "read-write", path = "." },
+    { access = "read", path = "../app/contracts/deployments/mainnet.txt" },
+]
 
 [profile.sepolia]
 test = "test/sepolia"

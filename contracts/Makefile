@@ -43,6 +43,16 @@ rehearse-mainnet-lore-handoff-script :
 	test -n "$$rpc" || { echo 'Set MAINNET_RPC_URL or ETH_RPC_URL (Ethereum archive/full node)'; exit 1; }; \
 	forge script script/RehearseMainnetLoreHandoff.s.sol:RehearseMainnetLoreHandoff --fork-url $$rpc -vvv
 
+# Human-run Ethereum mainnet Factory + createChamber package (print / verify only).
+# Never broadcasts. Deploy remains blocked on #208 until accepted or fixed.
+# See docs/mainnet-verified-deploy.md and deployments/mainnet.txt (TBD until receipt).
+print-mainnet-factory-deploy :; bash script/print-mainnet-factory-deploy.sh
+
+# Addresses must be pasted into deployments/mainnet.txt from a chain-id-1 receipt.
+# Usage: make verify-mainnet-factory
+# Print only: PRINT_ONLY=1 make verify-mainnet-factory
+verify-mainnet-factory :; bash script/etherscan-verify-mainnet-factory.sh
+
 
 # Symbolic verification with Halmos (requires: pip install -r fv-requirements.txt)
 # Halmos 0.3.3 has --match-contract, not --no-match-contract. Chamber/Registry/Vault

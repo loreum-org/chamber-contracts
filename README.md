@@ -76,6 +76,7 @@ These demo tokens are recorded in `contracts/deployments/sepolia.txt` and are wh
 ## Ethereum
 - Governance Token: `0x7756d245527f5f8925a537be509bf54feb2fdc99`
 - Membership Token: `0xB99DEdbDe082B8Be86f06449f2fC7b9FED044E15`
+- Factory / Chamber implementation / Chamber proxy: **not deployed**. TBD in [`contracts/deployments/mainnet.txt`](./contracts/deployments/mainnet.txt). Do not copy Sepolia Factory `0x43aA92c8A26392f21F63cdA88B6BaB5031C40550` onto chain id 1. `getContractAddresses(1)` stays empty until a verified receipt is pasted. Package: [`contracts/docs/mainnet-verified-deploy.md`](./contracts/docs/mainnet-verified-deploy.md). Deploy remains blocked on [#208](https://github.com/loreum-org/chamber/issues/208).
 
 ## Documentation
 
@@ -124,5 +125,5 @@ MIT License
 
 ### Mainnet fork rehearsal (M1 LORE Ownable)
 
-Dry-run Factory deploy + Chamber create + Safe `transferOwnership` of LORE on an Ethereum **fork** (no live broadcast). Requires `MAINNET_RPC_URL` or `ETH_RPC_URL`. Without an RPC, `forge test` skips the fork case. Commands and success checks: [`contracts/docs/mainnet-lore-handoff-rehearsal.md`](./contracts/docs/mainnet-lore-handoff-rehearsal.md).
+Dry-run Factory deploy + Chamber create + Safe `transferOwnership` of LORE on an Ethereum **fork** (no live broadcast). Requires `MAINNET_RPC_URL` or `ETH_RPC_URL`. Without an RPC, `forge test` skips the fork case. Commands and success checks: [`contracts/docs/mainnet-lore-handoff-rehearsal.md`](./contracts/docs/mainnet-lore-handoff-rehearsal.md). Verified deploy package (print/verify only; still blocked on #208): [`contracts/docs/mainnet-verified-deploy.md`](./contracts/docs/mainnet-verified-deploy.md).
 

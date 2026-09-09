@@ -5,6 +5,7 @@ import localDeployments from '@/contracts/deployments.json'
 import { alchemySupportsChain, getAlchemyApiKeyFromEnv, getAlchemyV2RpcUrl } from '@/lib/alchemy'
 import { ZERO_ADDRESS, isNonZeroAddress } from '@/lib/address'
 import { sepoliaDeploymentAddresses } from '@/lib/sepoliaDeployments'
+import { mainnetDeploymentAddresses } from '@/lib/mainnetDeployments'
 
 export { isNonZeroAddress, ZERO_ADDRESS }
 
@@ -18,11 +19,18 @@ function isConfiguredAddress(raw: string): boolean {
   return raw !== '' && raw.toLowerCase() !== ZERO_ADDRESS
 }
 
-/** Mainnet is offered when `VITE_MAINNET_FACTORY` or `VITE_MAINNET_REGISTRY` is set. */
+/**
+ * Mainnet is offered when a Factory/Registry is set via env **or** a verified
+ * address pasted into `deployments/mainnet.txt`. TBD / empty stays unset.
+ * Chain id 1 never falls back to Sepolia Factory `0x43aA…40550`.
+ */
 const mainnetFactoryRaw = envAddress(import.meta.env.VITE_MAINNET_FACTORY)
 const mainnetRegistryRaw = envAddress(import.meta.env.VITE_MAINNET_REGISTRY)
 export const isMainnetConfigured =
-  isConfiguredAddress(mainnetFactoryRaw) || isConfiguredAddress(mainnetRegistryRaw)
+  isConfiguredAddress(mainnetFactoryRaw) ||
+  isConfiguredAddress(mainnetRegistryRaw) ||
+  isConfiguredAddress(mainnetDeploymentAddresses.factory) ||
+  isConfiguredAddress(mainnetDeploymentAddresses.registry)
 
 // Use the chain ID from deployments.json so that localhost accurately matches Anvil forks (dev only)
 export const LOCAL_CHAIN_ID = localDeployments.chainId || 31337
@@ -167,10 +175,15 @@ export const CONTRACT_ADDRESSES = {
     mockERC20: addressFromEnv(import.meta.env.VITE_SEPOLIA_MOCK_ERC20, sepoliaDeploymentAddresses.mockERC20),
     mockERC721: addressFromEnv(import.meta.env.VITE_SEPOLIA_MOCK_ERC721, sepoliaDeploymentAddresses.mockERC721),
   },
+  // Ethereum — env overrides, then mainnet.txt. TBD parses to zero (unset).
+  // Do not invent Factory/Chamber addresses; do not copy Sepolia onto chain 1.
   mainnet: {
-    registry: addressFromEnv(import.meta.env.VITE_MAINNET_REGISTRY),
-    factory: addressFromEnv(import.meta.env.VITE_MAINNET_FACTORY),
-    chamberImplementation: addressFromEnv(import.meta.env.VITE_MAINNET_CHAMBER_IMPL),
+    registry: addressFromEnv(import.meta.env.VITE_MAINNET_REGISTRY, mainnetDeploymentAddresses.registry),
+    factory: addressFromEnv(import.meta.env.VITE_MAINNET_FACTORY, mainnetDeploymentAddresses.factory),
+    chamberImplementation: addressFromEnv(
+      import.meta.env.VITE_MAINNET_CHAMBER_IMPL,
+      mainnetDeploymentAddresses.chamberImplementation,
+    ),
     mockERC20: ZERO_ADDRESS as `0x${string}`,
     mockERC721: ZERO_ADDRESS as `0x${string}`,
   },
@@ -220,6 +233,7 @@ export function getContractAddresses(chainId: number) {
 
   switch (chainId) {
     case 1:
+      // Unset / TBD → zero addresses. Never Sepolia. See deployments/mainnet.txt.
       return CONTRACT_ADDRESSES.mainnet
     case 11155111:
       return CONTRACT_ADDRESSES.sepolia
