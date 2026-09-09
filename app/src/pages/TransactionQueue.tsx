@@ -99,6 +99,33 @@ type QueueWriteReporters = {
 
 const MAX_BOARD_SEATS = 20
 
+function tokenHasLiveConfirmation(
+  txId: number,
+  tokenId: bigint | undefined,
+  directorTokenIds: readonly bigint[],
+  rows: readonly { status: string; result?: unknown }[] | undefined,
+): boolean {
+  if (tokenId === undefined || !rows || directorTokenIds.length === 0) return false
+  const directorIndex = directorTokenIds.findIndex((id) => id === tokenId)
+  if (directorIndex < 0) return false
+  const row = rows[txId * directorTokenIds.length + directorIndex]
+  return row?.status === 'success' && row.result === true
+}
+
+function queueHeaderCta(needsYourConfirmation: number, readyToExecute: number): string {
+  if (needsYourConfirmation > 0) {
+    return needsYourConfirmation === 1
+      ? '1 proposal needs your confirmation.'
+      : `${needsYourConfirmation} proposals need your confirmation.`
+  }
+  if (readyToExecute > 0) {
+    return readyToExecute === 1
+      ? '1 proposal is ready to execute.'
+      : `${readyToExecute} proposals are ready to execute.`
+  }
+  return 'Nothing needs you right now.'
+}
+
 function PendingTxBanner({
   kind,
   hash,
@@ -668,6 +695,26 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
     : false
   const boardProposalCount = hasSeatProposal ? 1 : 0
   const queueCount = pendingTransactions.length + readyTransactions.length + expiredTransactions.length + boardProposalCount
+  const historyCount = cancelledTransactions.length + executedTransactions.length
+  const seatNeedsYourConfirmation = Boolean(
+    hasSeatProposal &&
+    !seatProposalReady &&
+    canAct &&
+    userTokenId !== undefined &&
+    seatUpdate &&
+    !seatUpdate.supporters.some((id) => id === userTokenId),
+  )
+  const pendingNeedingYou = canAct
+    ? pendingTransactions.filter((tx) =>
+        tx.leftoverTokenId === undefined &&
+        !tokenHasLiveConfirmation(tx.id, userTokenId, directorTokenIds, liveConfirmData),
+      ).length
+    : 0
+  const needsYourConfirmation = pendingNeedingYou + (seatNeedsYourConfirmation ? 1 : 0)
+  const readyToExecute = readyTransactions.length + (seatProposalReady ? 1 : 0)
+  const seatInEverythingElse = hasSeatProposal && !seatProposalReady && !seatNeedsYourConfirmation ? 1 : 0
+  const everythingElse =
+    pendingTransactions.length - pendingNeedingYou + expiredTransactions.length + seatInEverythingElse
 
   const actionTokenId = canAct ? userTokenId : undefined
 
@@ -679,7 +726,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
         animate={{ opacity: 1, y: 0 }}
         className="panel p-6"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <Link
               to={`/chamber/${chamberAddress}`}
@@ -747,44 +794,52 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
           </div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-6 gap-4 mt-6 pt-6 border-t border-slate-700/30">
-          <div className="stat-card text-center">
-            <div className="font-heading text-xl font-bold text-amber-400">
-              {pendingTransactions.length + (hasSeatProposal && !seatProposalReady ? 1 : 0)}
+        {/* Actionable header — Cancelled / Executed live under History */}
+        <div className="mt-6 pt-6 border-t border-slate-700/30 space-y-4">
+          <p className="text-slate-300 text-sm">
+            {queueHeaderCta(needsYourConfirmation, readyToExecute)}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="stat-card text-center">
+              <div className="font-heading text-xl font-bold text-amber-400">
+                {needsYourConfirmation}
+              </div>
+              <div className="text-slate-500 text-xs mt-1">Needs your confirmation</div>
             </div>
-            <div className="text-slate-500 text-xs mt-1">Pending</div>
-          </div>
-          <div className="stat-card text-center">
-            <div className="font-heading text-xl font-bold text-emerald-400">
-              {readyTransactions.length + (seatProposalReady ? 1 : 0)}
+            <div className="stat-card text-center">
+              <div className="font-heading text-xl font-bold text-emerald-400">
+                {readyToExecute}
+              </div>
+              <div className="text-slate-500 text-xs mt-1">Ready to execute</div>
             </div>
-            <div className="text-slate-500 text-xs mt-1">Ready</div>
-          </div>
-          <div className="stat-card text-center">
-            <div className="font-heading text-xl font-bold text-red-400/80">
-              {expiredTransactions.length}
+            <div className="stat-card text-center">
+              <div className="font-heading text-xl font-bold text-slate-300">
+                {everythingElse}
+              </div>
+              <div className="text-slate-500 text-xs mt-1">Everything else</div>
             </div>
-            <div className="text-slate-500 text-xs mt-1">Expired</div>
           </div>
-          <div className="stat-card text-center">
-            <div className="font-heading text-xl font-bold text-slate-500">
-              {cancelledTransactions.length}
+          <details className="text-sm text-slate-500">
+            <summary className="cursor-pointer select-none hover:text-slate-300">
+              History
+              {historyCount > 0 && (
+                <span>
+                  {' '}· {cancelledTransactions.length} cancelled · {executedTransactions.length} executed
+                </span>
+              )}
+            </summary>
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+              <span>Cancelled {cancelledTransactions.length}</span>
+              <span>Executed {executedTransactions.length}</span>
+              <button
+                type="button"
+                onClick={() => setActiveTab('history')}
+                className="text-accent-400 hover:underline"
+              >
+                View history
+              </button>
             </div>
-            <div className="text-slate-500 text-xs mt-1">Cancelled</div>
-          </div>
-          <div className="stat-card text-center">
-            <div className="font-heading text-xl font-bold text-slate-300">
-              {executedTransactions.length}
-            </div>
-            <div className="text-slate-500 text-xs mt-1">Executed</div>
-          </div>
-          <div className="stat-card text-center">
-            <div className="font-heading text-xl font-bold gradient-text">
-              {transactions.length + boardProposalCount}
-            </div>
-            <div className="text-slate-500 text-xs mt-1">Total</div>
-          </div>
+          </details>
         </div>
       </motion.div>
 
@@ -792,7 +847,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
       <div className="flex gap-1 p-1 bg-slate-900/80 rounded-xl border border-slate-700/50">
         {[
           { id: 'queue', label: 'Queue', count: queueCount },
-          { id: 'history', label: 'History', count: executedTransactions.length },
+          { id: 'history', label: 'History', count: historyCount },
           { id: 'new', label: 'New Proposal', count: 0 },
         ].map((tab) => (
           <button
@@ -919,30 +974,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
               </div>
             )}
 
-            {/* Cancelled */}
-            {cancelledTransactions.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-heading font-semibold text-slate-500 flex items-center gap-2">
-                  <FiX className="w-4 h-4" />
-                  Cancelled
-                </h3>
-                {cancelledTransactions.map((tx) => (
-                  <TransactionCard
-                    key={tx.id}
-                    transaction={tx}
-                    chamberAddress={chamberAddress}
-                    quorum={tx.requiredConfirmations}
-                    userTokenId={actionTokenId}
-                    leftoverTokenId={tx.leftoverTokenId}
-                    paused={chamberInfo.paused}
-                    chainId={chainId}
-                    {...writeReporters}
-                  />
-                ))}
-              </div>
-            )}
-
-            {pendingTransactions.length === 0 && readyTransactions.length === 0 && expiredTransactions.length === 0 && cancelledTransactions.length === 0 && !hasSeatProposal && (
+            {pendingTransactions.length === 0 && readyTransactions.length === 0 && expiredTransactions.length === 0 && !hasSeatProposal && (
               <div className="panel p-12 text-center">
                 <FiShield className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                 {boardEmpty ? (
@@ -981,7 +1013,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
             )}
 
             {/* Non-director banner when there are pending txs */}
-            {!canAct && (pendingTransactions.length > 0 || readyTransactions.length > 0 || expiredTransactions.length > 0 || cancelledTransactions.length > 0) && (
+            {!canAct && (pendingTransactions.length > 0 || readyTransactions.length > 0 || expiredTransactions.length > 0) && (
               <div className="panel p-4 border-amber-500/30 bg-amber-500/5">
                 <p className="text-amber-400 text-sm">
                   You&apos;re not a director. Delegate shares to a member to participate in governance.
@@ -1003,30 +1035,62 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="space-y-3"
+            className="space-y-4"
           >
-            {executedTransactions.length > 0 ? (
-              executedTransactions.map((tx) => (
-                <TransactionCard
-                  key={tx.id}
-                  transaction={tx}
-                  chamberAddress={chamberAddress}
-                  quorum={tx.requiredConfirmations}
-                  userTokenId={actionTokenId}
-                  leftoverTokenId={tx.leftoverTokenId}
-                  paused={chamberInfo.paused}
-                  chainId={chainId}
-                  {...writeReporters}
-                />
-              ))
-            ) : (
+            {cancelledTransactions.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="font-heading font-semibold text-slate-500 flex items-center gap-2">
+                  <FiX className="w-4 h-4" />
+                  Cancelled
+                </h3>
+                {cancelledTransactions.map((tx) => (
+                  <TransactionCard
+                    key={tx.id}
+                    transaction={tx}
+                    chamberAddress={chamberAddress}
+                    quorum={tx.requiredConfirmations}
+                    userTokenId={actionTokenId}
+                    leftoverTokenId={tx.leftoverTokenId}
+                    paused={chamberInfo.paused}
+                    chainId={chainId}
+                    {...writeReporters}
+                  />
+                ))}
+              </div>
+            )}
+
+            {executedTransactions.length > 0 && (
+              <div className="space-y-3">
+                {cancelledTransactions.length > 0 && (
+                  <h3 className="font-heading font-semibold text-slate-300 flex items-center gap-2">
+                    <FiCheck className="w-4 h-4" />
+                    Executed
+                  </h3>
+                )}
+                {executedTransactions.map((tx) => (
+                  <TransactionCard
+                    key={tx.id}
+                    transaction={tx}
+                    chamberAddress={chamberAddress}
+                    quorum={tx.requiredConfirmations}
+                    userTokenId={actionTokenId}
+                    leftoverTokenId={tx.leftoverTokenId}
+                    paused={chamberInfo.paused}
+                    chainId={chainId}
+                    {...writeReporters}
+                  />
+                ))}
+              </div>
+            )}
+
+            {historyCount === 0 && (
               <div className="panel p-12 text-center">
                 <FiCheck className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                 <h3 className="font-heading text-xl font-semibold text-slate-300 mb-2">
                   No Transaction History
                 </h3>
                 <p className="text-slate-500">
-                  Executed transactions will appear here
+                  Cancelled and executed transactions will appear here
                 </p>
               </div>
             )}
