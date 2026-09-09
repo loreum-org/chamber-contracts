@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAccount, useReadContract } from 'wagmi'
 import { formatUnits, parseUnits, maxUint256 } from 'viem'
@@ -233,7 +234,10 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
     <div className="space-y-6">
       {vaultPaused && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-200">
-          This chamber is paused. Deposits and withdrawals are halted until the board unpauses.
+          This chamber is paused. Deposits and withdrawals are halted until the board unpauses.{' '}
+          <Link to="/docs/protocol/governance" className="text-accent-400 hover:underline">
+            How governance works →
+          </Link>
         </div>
       )}
       {/* Treasury Stats */}
