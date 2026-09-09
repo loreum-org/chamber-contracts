@@ -130,7 +130,7 @@ export default function BoardVisualization({
             Board of Directors
           </h3>
           <p className="text-slate-400 text-sm">
-            {seats} seats • {filledSeatCount} filled • Directors are members with the most delegated voting weight
+            {seats} seats • {filledSeatCount} filled • Directors are the top {seats} members by delegated shares. Ranking changes the moment delegation changes.
           </p>
         </div>
 
@@ -463,7 +463,7 @@ function MemberRow({
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-slate-100">Member Id #{member.tokenId.toString()}</span>
+          <span className="font-mono text-slate-100">Member #{member.tokenId.toString()}</span>
           {isDirector && (
             <span className="badge badge-primary text-[10px]">
               <FiStar className="w-3 h-3 mr-1" />

@@ -171,7 +171,7 @@ function classifyTransactionRisk(chamberAddress: `0x${string}`, target: `0x${str
     return {
       level: 'high' as RiskLevel,
       label: 'Invalid: Chamber self-call',
-      summary: 'The wallet queue rejects Chamber self-calls except upgrades. Use the Board seats panel for seat changes.',
+      summary: 'Proposals reject Chamber self-calls except upgrades. Use Board changes for seat changes.',
     }
   }
 
@@ -216,7 +216,7 @@ function classifyTransactionRiskFromDataHash(
       level: 'high' as RiskLevel,
       label: 'Invalid: Chamber self-call',
       summary:
-        'The wallet queue rejects Chamber self-calls except upgrades. Use the Board seats panel for seat changes.',
+        'Proposals reject Chamber self-calls except upgrades. Use Board changes for seat changes.',
     }
   }
 
@@ -225,7 +225,7 @@ function classifyTransactionRiskFromDataHash(
       level: 'high' as RiskLevel,
       label: 'High risk: Chamber self-call',
       summary:
-        'Calls this Chamber from the treasury queue. Verify calldata matches the intended action (e.g. upgrade) before approving.',
+        'Calls this Chamber from Treasury proposals. Verify calldata matches the intended action (e.g. upgrade) before approving.',
     }
   }
 
@@ -689,10 +689,10 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
             </Link>
             <div>
               <h1 className="font-heading text-2xl font-bold text-slate-100 tracking-tight">
-                Proposals & Queue
+                Proposals
               </h1>
               <p className="text-slate-500 text-sm">
-                {chamberInfo.name} • {chamberInfo.quorum} of {chamberInfo.seats} confirmations required
+                {chamberInfo.name} • {chamberInfo.quorum} of {chamberInfo.seats} directors must confirm
               </p>
             </div>
           </div>
@@ -736,7 +736,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
           <div className="mt-4 rounded-xl border border-accent-500/30 bg-accent-500/5 px-4 py-3 text-sm text-slate-200">
             <p className="font-medium">No directors seated</p>
             <p className="text-slate-400 mt-1">
-              Submit, confirm, and execute stay locked until you seat the board. Hold a membership NFT and delegate shares to it.
+              Submit, confirm, and execute stay locked until you seat the board. Hold a membership token and delegate shares to it.
             </p>
             <Link
               to={`/chamber/${chamberAddress}/delegation`}
@@ -791,7 +791,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-slate-900/80 rounded-xl border border-slate-700/50">
         {[
-          { id: 'queue', label: 'Queue', count: queueCount },
+          { id: 'queue', label: 'Proposals', count: queueCount },
           { id: 'history', label: 'History', count: executedTransactions.length },
           { id: 'new', label: 'New Proposal', count: 0 },
         ].map((tab) => (
@@ -839,7 +839,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                   seatProposalReady ? 'text-emerald-400' : 'text-amber-400'
                 }`}>
                   {seatProposalReady ? <FiPlay className="w-4 h-4" /> : <FiClock className="w-4 h-4" />}
-                  Board Proposal
+                  Board changes
                 </h3>
                 <BoardProposalCard
                   chamberAddress={chamberAddress}
@@ -951,7 +951,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                       Seat the board first
                     </h3>
                     <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-                      There are no directors, so the queue cannot submit, confirm, or execute. Hold a membership NFT and delegate shares to it.
+                      There are no directors, so Proposals cannot submit, confirm, or execute. Hold a membership token and delegate shares to it.
                     </p>
                     <Link
                       to={`/chamber/${chamberAddress}/delegation`}
@@ -966,7 +966,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                       No Pending Proposals
                     </h3>
                     <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-                      Create a proposal with a title and description. Directors can confirm and execute once quorum is reached.
+                      Create a proposal with a title and description. {chamberInfo.quorum} of {chamberInfo.seats} directors must confirm before execution.
                     </p>
                     <button
                       onClick={() => setActiveTab('new')}
@@ -1047,6 +1047,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                 userTokenId={userTokenId}
                 nextTransactionId={transactionCount}
                 currentSeats={chamberInfo.seats ?? 5}
+                quorum={chamberInfo.quorum ?? 1}
                 hasSeatProposal={hasSeatProposal}
                 registryUpgradeDraft={registryUpgradeDraft}
                 {...writeReporters}
@@ -1513,7 +1514,7 @@ function TransactionCard({
                 onClick={handleCancel}
                 disabled={isCancelling || hasVotedToCancel}
                 className="btn btn-secondary py-2 px-3 border-slate-600 hover:border-slate-500 text-slate-400 hover:text-slate-200"
-                title={hasVotedToCancel ? 'You have voted to cancel' : 'Vote to cancel (requires quorum)'}
+                title={hasVotedToCancel ? 'You have voted to cancel' : `Vote to cancel (${requiredConfirmations} directors must confirm)`}
               >
                 {isCancelling ? (
                   <FiLoader className="w-4 h-4 animate-spin" />
@@ -1759,8 +1760,8 @@ function BoardProposalCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="font-semibold text-slate-100">Board seat change</span>
-            <span className="badge bg-accent-500/10 text-accent-400 border-accent-500/30">Board Proposal</span>
+            <span className="font-semibold text-slate-100">Board changes</span>
+            <span className="badge bg-accent-500/10 text-accent-400 border-accent-500/30">Board changes</span>
             <span className={ready ? 'badge badge-success' : 'badge bg-amber-500/10 text-amber-400 border-amber-500/30'}>
               {ready ? 'Ready' : 'Pending'}
             </span>
@@ -1880,6 +1881,7 @@ interface NewTransactionFormProps extends QueueWriteReporters {
   userTokenId?: bigint
   nextTransactionId: number
   currentSeats: number
+  quorum: number
   hasSeatProposal: boolean
   registryUpgradeDraft?: {
     newImplementation: `0x${string}`
@@ -1969,6 +1971,7 @@ function NewTransactionForm({
   userTokenId,
   nextTransactionId,
   currentSeats,
+  quorum,
   hasSeatProposal,
   registryUpgradeDraft,
   onWriteStart,
@@ -2124,13 +2127,13 @@ function NewTransactionForm({
     e.preventDefault()
 
     if (!userTokenId) {
-      toast.error('You must be a director to submit transactions')
+      toast.error('You must be a director to submit proposals')
       return
     }
 
     if (proposalType === 'seats') {
       if (hasSeatProposal) {
-        toast.error('A board seat proposal is already active. Support or execute it from the queue.')
+        toast.error('A board change is already active. Support or execute it from Proposals.')
         return
       }
       const n = Number(seatDraft)
@@ -2155,7 +2158,7 @@ function NewTransactionForm({
       } catch (err) {
         console.error(err)
         onWriteClear()
-        toast.error(formatWalletSendError(err, 'Board proposal failed'))
+        toast.error(formatWalletSendError(err, 'Board change failed'))
       }
       return
     }
@@ -2196,7 +2199,7 @@ function NewTransactionForm({
           args: [target as `0x${string}`, parsedTokenAmount],
         })
         if (!isAllowedChamberSelfCall(chamberAddress, tokenAddress, txData)) {
-          toast.error('Chamber self-calls are only allowed for upgrades. Use the Board seats panel for seat changes.')
+          toast.error('Chamber self-calls are only allowed for upgrades. Use Board changes for seat changes.')
           return
         }
         // Target becomes token address
@@ -2231,7 +2234,7 @@ function NewTransactionForm({
       }
 
       if (!isAllowedChamberSelfCall(chamberAddress, target, txData)) {
-        toast.error('Chamber self-calls are only allowed for upgrades. Use the Board seats panel for seat changes.')
+        toast.error('Chamber self-calls are only allowed for upgrades. Use Board changes for seat changes.')
         return
       }
 
@@ -2277,7 +2280,7 @@ function NewTransactionForm({
           Director Access Required
         </h3>
         <p className="text-slate-400 mb-4">
-          You must be a board director to submit transactions.
+          You must be a board director to submit proposals.
           Delegate shares to your member token to become a director.
         </p>
         <div className="text-left bg-slate-800/50 rounded-lg p-4 mt-4 text-xs">
@@ -2298,7 +2301,7 @@ function NewTransactionForm({
         </div>
         <div>
           <h3 className="font-heading font-semibold text-slate-100">New Proposal</h3>
-          <p className="text-slate-500 text-xs">Create a treasury, contract, or board proposal</p>
+          <p className="text-slate-500 text-xs">Create a treasury proposal or board change</p>
         </div>
       </div>
 
@@ -2307,13 +2310,13 @@ function NewTransactionForm({
           {
             id: 'transaction',
             icon: FiDollarSign,
-            title: 'Treasury / contract proposal',
+            title: 'Treasury proposals',
             description: 'Submit a wallet transaction for director confirmation.',
           },
           {
             id: 'seats',
             icon: FiUsers,
-            title: 'Board seat change',
+            title: 'Board changes',
             description: 'Use the Chamber native seat proposal and timelock flow.',
           },
         ].map((type) => {
@@ -2350,9 +2353,9 @@ function NewTransactionForm({
               <div className="flex items-start gap-3">
                 <FiUsers className="w-5 h-5 text-accent-400 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-slate-100 text-sm">Board Proposal</h4>
+                  <h4 className="font-medium text-slate-100 text-sm">Board changes</h4>
                   <p className="text-slate-400 text-xs mt-1">
-                    Directors propose and support seat changes directly. Once quorum is reached, execution unlocks after the 7-day timelock. The proposer can cancel anytime; any current director can cancel after 14 days.
+                    Directors propose and support seat changes directly. {quorum} of {currentSeats} directors must confirm. Execution then unlocks after the 7-day timelock. The proposer can cancel anytime; any current director can cancel after 14 days.
                   </p>
                 </div>
               </div>
@@ -2360,7 +2363,7 @@ function NewTransactionForm({
 
             {hasSeatProposal && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-300">
-                A board seat proposal is already active. Return to the queue to support or execute it.
+                A board change is already active. Return to Proposals to support or execute it.
               </div>
             )}
 
@@ -2407,7 +2410,7 @@ function NewTransactionForm({
                   {registryUpgradeDraft.registryVersionLabel
                     ? ` (VERSION ${registryUpgradeDraft.registryVersionLabel})`
                     : ''}
-                  . Other directors still need to confirm until quorum before execution.
+                  . Other directors still need to confirm — {quorum} of {currentSeats} directors must confirm — before execution.
                 </p>
               </div>
             )}
@@ -2682,7 +2685,7 @@ function NewTransactionForm({
           ) : (
             <>
               <FiSend className="w-4 h-4" />
-              {proposalType === 'seats' ? 'Create Board Proposal' : 'Submit Transaction'}
+              {proposalType === 'seats' ? 'Create board change' : 'Submit proposal'}
             </>
           )}
         </button>

@@ -219,7 +219,7 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
   const tabs = [
     { id: 'overview', label: 'Overview', icon: FiActivity },
     { id: 'board', label: 'Board', icon: FiUsers },
-    { id: 'staking', label: 'Staking', icon: FiLayers },
+    { id: 'staking', label: 'Treasury', icon: FiLayers },
     { id: 'delegation', label: 'Delegation', icon: FiSend },
   ] as const
 
@@ -360,7 +360,7 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
               className="btn btn-secondary relative"
             >
               <FiShield className="w-4 h-4" />
-              Transactions
+              Proposals
               {queuedTransactionCount > 0 && (
                 <span className="absolute -right-2 -top-2 min-w-5 h-5 px-1 rounded-full bg-accent-500 text-white text-[11px] font-bold leading-5 text-center shadow-lg shadow-accent-500/20">
                   {queuedTransactionCount > 99 ? '99+' : queuedTransactionCount}
@@ -409,7 +409,7 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
               Quorum
             </div>
             <div className="font-heading text-xl font-bold text-slate-100">
-              {chamberInfo.quorum} signatures
+              {chamberInfo.quorum} of {chamberInfo.seats} directors must confirm
             </div>
           </div>
           
@@ -826,7 +826,7 @@ function OverviewTab({ chamberAddress, chamberInfo, members, totalDelegated, use
             <div className="p-8 text-center space-y-3">
               <p className="text-slate-300 text-sm font-medium">No directors seated</p>
               <p className="text-slate-500 text-xs max-w-sm mx-auto leading-relaxed">
-                Hold a membership NFT, deposit shares, and delegate to that token. Director actions unlock after one block.
+                Hold a membership token, deposit shares, and delegate to that token. Director actions unlock after one block.
               </p>
               <button
                 type="button"
@@ -878,7 +878,7 @@ function OverviewTab({ chamberAddress, chamberInfo, members, totalDelegated, use
                     className="btn btn-secondary w-full justify-start"
                   >
                     <FiShield className="w-4 h-4" />
-                    View Transaction Queue
+                    View Proposals
                     <FiArrowLeft className="w-4 h-4 rotate-180 ml-auto" />
                   </Link>
 
@@ -928,7 +928,7 @@ function OverviewTab({ chamberAddress, chamberInfo, members, totalDelegated, use
             <div className="p-4 grid md:grid-cols-2 gap-4">
               <AddressRow label="Chamber Address" address={chamberAddress} chainId={chainId} />
               <AddressRow label="Asset Token (ERC20)" address={chamberInfo.assetToken} chainId={chainId} />
-              <AddressRow label="Member Contract (ERC721)" address={chamberInfo.nftToken} chainId={chainId} />
+              <AddressRow label="Membership collection (ERC-721)" address={chamberInfo.nftToken} chainId={chainId} />
               <div className="stat-card">
                 <div className="text-slate-500 text-xs mb-1.5">Total Supply (Shares)</div>
                 <div className="font-mono text-slate-100 text-sm">
@@ -1027,8 +1027,8 @@ function TransactionActivityPanel({
     <div className="panel xl:sticky xl:top-6 xl:self-start">
       <div className="p-4 border-b border-slate-700/30 flex items-center justify-between gap-4">
         <div>
-          <h3 className="font-heading font-semibold text-slate-100">Transaction Activity</h3>
-          <p className="text-slate-500 text-xs mt-0.5">Wallet proposals and active board-seat changes</p>
+          <h3 className="font-heading font-semibold text-slate-100">Recent proposals</h3>
+          <p className="text-slate-500 text-xs mt-0.5">Treasury proposals and board changes</p>
         </div>
         <Link
           to={`/chamber/${chamberAddress}/transactions`}
@@ -1055,7 +1055,7 @@ function TransactionActivityPanel({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-slate-200 text-sm font-medium">Board seat change</span>
+                      <span className="text-slate-200 text-sm font-medium">Board changes</span>
                       <span
                         className={`badge text-[10px] ${
                           boardProposalStatus(activeBoardProposal) === 'Ready'
@@ -1123,7 +1123,7 @@ function TransactionActivityPanel({
             <FiActivity className="w-8 h-8 text-slate-600 mx-auto mb-3" />
             <div className="text-slate-300 text-sm font-medium">No recent activity</div>
             <p className="text-slate-500 text-xs mt-1">
-              Wallet proposals and any active board-seat change appear here.
+              Treasury proposals and board changes appear here.
             </p>
           </div>
         )}

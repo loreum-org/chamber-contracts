@@ -207,7 +207,7 @@ export default function DeployChamber() {
           <div>
             <h2 className="font-heading text-2xl font-bold text-slate-100 mb-2">Chamber Deployed</h2>
             <p className="text-slate-400">
-              Your chamber is live. The board is empty until you hold a membership NFT and delegate to it.
+              Your chamber is live. The board is empty until you hold a membership token and delegate to it.
             </p>
           </div>
           {(deployedTxHash || hash) && (
@@ -298,7 +298,7 @@ export default function DeployChamber() {
                 <p className="text-slate-500 text-xs mt-6 max-w-md mx-auto leading-relaxed">
                   On Sepolia the form pre-fills demo ERC-20 {shortenAddress(sepoliaAddrs.mockERC20)} and membership
                   ERC-721 {shortenAddress(sepoliaAddrs.mockERC721)}. After connecting, mint from the header so your
-                  wallet holds the membership NFT.
+                  wallet holds the membership token.
                 </p>
               )}
             </div>
@@ -380,7 +380,7 @@ export default function DeployChamber() {
 
                   {/* ERC721 Token */}
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Member Contract (ERC721) *</label>
+                    <label className="block text-slate-300 text-sm font-medium mb-2">Membership collection (ERC-721) *</label>
                     <input
                       type="text"
                       placeholder="0x..."
@@ -412,7 +412,7 @@ export default function DeployChamber() {
                         <p className="text-slate-500 text-xs mt-2">
                           Sepolia demo tokens are pre-filled. Use <span className="text-accent-400">Mint Test NFT</span> and{' '}
                           <span className="text-accent-400">Mint Test ERC20</span> in the header so your wallet holds the
-                          membership NFT and demo asset.
+                          membership token and demo asset.
                         </p>
                       )}
                     </div>
@@ -435,7 +435,7 @@ export default function DeployChamber() {
                       </div>
                     </div>
                     <p className="text-slate-500 text-xs mt-1.5">
-                      Number of board seats. Quorum: {quorum} of {seats} director confirmations required.
+                      Number of board seats. {quorum} of {seats} directors must confirm.
                     </p>
                   </div>
 
@@ -474,12 +474,12 @@ export default function DeployChamber() {
                         sub: formData.erc20Token,
                       },
                       {
-                        label: 'Member Contract (ERC721)',
+                        label: 'Membership collection (ERC-721)',
                         value: `${erc721Name}${erc721Symbol ? ` (${erc721Symbol})` : ''}`,
                         sub: formData.erc721Token,
                       },
                       { label: 'Board Seats', value: seats.toString() },
-                      { label: 'Required Quorum', value: `${quorum} of ${seats} directors` },
+                      { label: 'Required Quorum', value: `${quorum} of ${seats} directors must confirm` },
                     ].map(({ label, value, sub }) => (
                       <div key={label} className="stat-card flex items-start justify-between gap-4">
                         <span className="text-slate-500 text-sm shrink-0">{label}</span>
@@ -582,8 +582,8 @@ export default function DeployChamber() {
             <div className="card">
               <h4 className="font-heading font-semibold text-slate-100 mb-2">How does voting work?</h4>
               <p className="text-slate-400 text-sm leading-relaxed">
-                Share holders delegate voting power to member IDs. The top delegated members become board directors
-                and can submit, confirm, and execute transactions once quorum is reached.
+                Share holders delegate voting power to members. The top delegated members become board directors
+                and can submit, confirm, and execute. {quorum} of {seats} directors must confirm.
               </p>
             </div>
           </div>

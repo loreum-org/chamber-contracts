@@ -146,7 +146,7 @@ export default function Dashboard() {
                 Governance
               </p>
               <h1 className="font-heading text-xl sm:text-2xl font-bold text-slate-100 tracking-tight leading-tight">
-                Loreum Chambers
+                Chamber
               </h1>
               <p className="text-slate-500 text-xs sm:text-sm mt-0.5 leading-snug">
                 Your chambers, not a global directory.
@@ -377,7 +377,7 @@ function OrganizationGroup({ nftToken, chambers, index }: { nftToken: `0x${strin
             {nftSymbol && <span className="text-slate-500 text-sm font-normal">({nftSymbol})</span>}
           </h3>
           <p className="text-slate-500 text-xs font-mono">
-            Member Token: {shortNft}
+            Membership collection: {shortNft}
           </p>
         </div>
       </div>
