@@ -536,7 +536,7 @@ export default function DeployChamber() {
                   </button>
                   {!canProceedToReview && membershipPath === 'need-collection' && (
                     <p className="text-slate-500 text-xs text-center -mt-2">
-                      A live membership collection is required. See getting started, or choose “Use existing collection”.
+                      A live membership collection is required. See getting started, or choose "Use existing collection".
                     </p>
                   )}
                   {!canProceedToReview && membershipPath === 'existing' && (formData.erc20Token || formData.erc721Token) && (
