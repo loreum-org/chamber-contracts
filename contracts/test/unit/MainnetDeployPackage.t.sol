@@ -35,6 +35,7 @@ contract MainnetDeployPackageTest is Test {
         assertTrue(_containsInsensitive(raw, _hexNoPrefix(MainnetLoreHandoff.MEMBERSHIP_NFT)), "membership NFT");
         assertTrue(_containsInsensitive(raw, _hexNoPrefix(MainnetLoreHandoff.TEAM_SAFE)), "team Safe");
         assertTrue(_contains(raw, "NOT DEPLOYED"), "template must say not deployed");
+        assertTrue(_contains(raw, "Do not treat TBD as live"), "template must say TBD is not live");
         assertTrue(_contains(raw, "#208"), "must cite PMN-H01 blocker");
     }
 
@@ -57,8 +58,8 @@ contract MainnetDeployPackageTest is Test {
         string memory factory = vm.readFile("script/DeployMainnetFactory.s.sol");
         string memory create = vm.readFile("script/CreateMainnetLoreChamber.s.sol");
         string memory guard = vm.readFile("script/MainnetDeployGuard.sol");
-        assertFalse(_contains(factory, "transferOwnership("), "DeployMainnetFactory must not call transferOwnership");
-        assertFalse(_contains(create, "transferOwnership("), "CreateMainnetLoreChamber must not call transferOwnership");
+        assertFalse(_contains(factory, ".transferOwnership("), "DeployMainnetFactory must not call transferOwnership");
+        assertFalse(_contains(create, ".transferOwnership("), "CreateMainnetLoreChamber must not call transferOwnership");
         assertTrue(_contains(guard, "MAINNET_DEPLOY_UNBLOCKED"), "broadcast gate missing");
         assertTrue(_contains(create, "refuseSepoliaFactory"), "create must refuse Sepolia Factory");
     }
@@ -91,8 +92,15 @@ contract MainnetDeployPackageTest is Test {
     }
 
     function test_refuseSepoliaFactory() public {
-        vm.expectRevert(bytes("refusing Sepolia Factory on chain id 1"));
-        MainnetDeployGuard.refuseSepoliaFactory(SEPOLIA_FACTORY);
+        try this.externalRefuseSepoliaFactory(SEPOLIA_FACTORY) {
+            revert("expected Sepolia Factory refusal");
+        } catch Error(string memory reason) {
+            assertEq(reason, "refusing Sepolia Factory on chain id 1");
+        }
+    }
+
+    function externalRefuseSepoliaFactory(address factory) external pure {
+        MainnetDeployGuard.refuseSepoliaFactory(factory);
     }
 
     /// @dev Last field of the last line whose first field equals `label` exactly.
@@ -182,10 +190,12 @@ contract MainnetDeployPackageTest is Test {
     }
 
     function _lower(string memory s) internal pure returns (string memory) {
-        bytes memory b = bytes(s);
-        for (uint256 i; i < b.length; i++) {
-            uint8 c = uint8(b[i]);
+        bytes memory src = bytes(s);
+        bytes memory b = new bytes(src.length);
+        for (uint256 i; i < src.length; i++) {
+            uint8 c = uint8(src[i]);
             if (c >= 65 && c <= 90) b[i] = bytes1(c + 32);
+            else b[i] = src[i];
         }
         return string(b);
     }

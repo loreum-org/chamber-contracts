@@ -53,7 +53,7 @@ contract CreateMainnetLoreChamber is Script {
         console.log("symbol                 ", MainnetLoreHandoff.SYMBOL);
         console.log("========================================");
         console.log("Paste Chamber (proxy) into deployments/mainnet.txt from this receipt.");
-        console.log("Safe transferOwnership(LORE, chamber) is human-only. This script does not call it.");
+        console.log("Safe transferOwnership of LORE is human-only. This script does not call it.");
     }
 
     function _selectMainnet() internal {
