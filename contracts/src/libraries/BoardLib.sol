@@ -4,6 +4,7 @@ pragma solidity ^0.8.30;
 import {IBoard} from "src/interfaces/IBoard.sol";
 import {BoardTypes} from "src/types/BoardTypes.sol";
 import {EnumerableSet} from "lib/openzeppelin-contracts/contracts/utils/structs/EnumerableSet.sol";
+import {IERC721} from "lib/openzeppelin-contracts/contracts/interfaces/IERC721.sol";
 
 /**
  * @title BoardLib
@@ -18,7 +19,13 @@ library BoardLib {
         return $.nodes[tokenId];
     }
 
-    function delegate(BoardTypes.BoardStorage storage $, uint256 tokenId, uint256 amount, address sender) external {
+    function delegate(
+        BoardTypes.BoardStorage storage $,
+        uint256 tokenId,
+        uint256 amount,
+        address sender,
+        IERC721 nft
+    ) external {
         uint256[] memory prevTop = topTokenIds($);
         BoardTypes.Node storage node = $.nodes[tokenId];
         if (node.tokenId == tokenId) {
@@ -28,10 +35,18 @@ library BoardLib {
             insert($, tokenId, amount);
         }
         refreshSeating($, prevTop);
+        syncTopSeatControl($, nft);
+        syncSeatingControl($, nft, tokenId);
         emit IBoard.Delegate(sender, tokenId, amount);
     }
 
-    function undelegate(BoardTypes.BoardStorage storage $, uint256 tokenId, uint256 amount, address sender) external {
+    function undelegate(
+        BoardTypes.BoardStorage storage $,
+        uint256 tokenId,
+        uint256 amount,
+        address sender,
+        IERC721 nft
+    ) external {
         uint256[] memory prevTop = topTokenIds($);
         BoardTypes.Node storage node = $.nodes[tokenId];
         if (node.tokenId != tokenId) revert IBoard.NodeDoesNotExist();
@@ -45,6 +60,8 @@ library BoardLib {
             reposition($, tokenId);
         }
         refreshSeating($, prevTop);
+        syncTopSeatControl($, nft);
+        syncSeatingControl($, nft, tokenId);
         emit IBoard.Undelegate(sender, tokenId, amount);
     }
 
@@ -187,7 +204,7 @@ library BoardLib {
         emit IBoard.SetSeats(tokenId, numOfSeats);
     }
 
-    function executeSeatsUpdate(BoardTypes.BoardStorage storage $, uint256 tokenId) external {
+    function executeSeatsUpdate(BoardTypes.BoardStorage storage $, uint256 tokenId, IERC721 nft) external {
         uint256[] memory prevTop = topTokenIds($);
         BoardTypes.SeatUpdate storage proposal = $.seatUpdate;
 
@@ -228,6 +245,7 @@ library BoardLib {
         $.seats = uint32(newSeats);
         delete $.seatUpdate;
         refreshSeating($, prevTop);
+        syncTopSeatControl($, nft);
         emit IBoard.ExecuteSetSeats(tokenId, newSeats);
     }
 
@@ -278,6 +296,119 @@ library BoardLib {
         uint256 seatedAt = $.seatedAt[tokenId];
         if (seatedAt == 0) return true;
         return block.number >= seatedAt;
+    }
+
+    /// @dev Stored checkpoint, or `block.number + SEATING_DELAY` when `ownerOf` != seated snap (PMN-H01 A).
+    function effectiveSeatedAt(BoardTypes.BoardStorage storage $, IERC721 nft, uint256 tokenId)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 stored = $.seatedAt[tokenId];
+        address snap = $.seatedOwner[tokenId];
+        if (snap == address(0)) return stored;
+        address owner = tryOwnerOf(nft, tokenId);
+        if (owner != address(0) && owner != snap) {
+            return block.number + BoardTypes.SEATING_DELAY;
+        }
+        return stored;
+    }
+
+    function isSeatingMature(BoardTypes.BoardStorage storage $, IERC721 nft, uint256 tokenId)
+        external
+        view
+        returns (bool)
+    {
+        uint256 seatedAt = effectiveSeatedAt($, nft, tokenId);
+        if (seatedAt == 0) return true;
+        return block.number >= seatedAt;
+    }
+
+    /// @dev Bind or reset the seating clock when `ownerOf` changes. Call after board mutations and before director checks.
+    function syncSeatingControl(BoardTypes.BoardStorage storage $, IERC721 nft, uint256 tokenId) public {
+        address owner = tryOwnerOf(nft, tokenId);
+        if (owner == address(0)) {
+            delete $.seatedOwner[tokenId];
+            return;
+        }
+
+        address snap = $.seatedOwner[tokenId];
+        if (snap == address(0)) {
+            $.seatedOwner[tokenId] = owner;
+            return;
+        }
+        if (snap == owner) return;
+
+        $.seatedOwner[tokenId] = owner;
+        if (inTopSeats($, tokenId)) {
+            $.seatedAt[tokenId] = block.number + BoardTypes.SEATING_DELAY;
+        }
+    }
+
+    function syncTopSeatControl(BoardTypes.BoardStorage storage $, IERC721 nft) public {
+        uint256 current = $.head;
+        uint256 remaining = $.seats;
+        while (current != 0 && remaining != 0) {
+            syncSeatingControl($, nft, current);
+            current = uint256($.nodes[current].next);
+            unchecked {
+                --remaining;
+            }
+        }
+    }
+
+    function tryOwnerOf(IERC721 nft, uint256 tokenId) internal view returns (address owner) {
+        try nft.ownerOf(tokenId) returns (address o) {
+            return o;
+        } catch {
+            return address(0);
+        }
+    }
+
+    function inTopSeats(BoardTypes.BoardStorage storage $, uint256 tokenId) internal view returns (bool) {
+        uint256 current = $.head;
+        uint256 remaining = $.seats;
+        while (current != 0 && remaining != 0) {
+            if (current == tokenId) return true;
+            current = uint256($.nodes[current].next);
+            unchecked {
+                --remaining;
+            }
+        }
+        return false;
+    }
+
+    /// @dev Live top-seat flags whose recorded controller still matches `ownerOf` (PMN-H01 A).
+    function countCurrentDirectorFlags(
+        BoardTypes.BoardStorage storage $,
+        IERC721 nft,
+        mapping(uint256 nonce => mapping(uint256 tokenId => bool)) storage flags,
+        mapping(uint256 nonce => mapping(uint256 tokenId => address)) storage flagOwners,
+        uint256 nonce
+    ) external view returns (uint256 count) {
+        uint256 current = $.head;
+        uint256 remaining = $.seats;
+        unchecked {
+            while (current != 0 && remaining > 0) {
+                if (flags[nonce][current] && flagBelongsToCurrentController(nft, flagOwners, nonce, current)) {
+                    ++count;
+                }
+                current = uint256($.nodes[current].next);
+                --remaining;
+            }
+        }
+    }
+
+    function flagBelongsToCurrentController(
+        IERC721 nft,
+        mapping(uint256 nonce => mapping(uint256 tokenId => address)) storage flagOwners,
+        uint256 nonce,
+        uint256 tokenId
+    ) internal view returns (bool) {
+        address recorded = flagOwners[nonce][tokenId];
+        if (recorded == address(0)) return true;
+        address owner = tryOwnerOf(nft, tokenId);
+        return owner != address(0) && owner == recorded;
     }
 
     function swapUp(BoardTypes.BoardStorage storage $, uint256 tokenId) internal {
@@ -366,6 +497,8 @@ library BoardLib {
 
         while (current != 0) {
             if (remaining != 0) {
+                // TokenId-scoped: a token already in the previous top keeps seatedAt.
+                // Control-transfer reset is Chamber/BoardLib.syncSeatingControl (PMN-H01 A).
                 if ($.seatedAt[current] == 0 && !wasInTop(current, prevTop)) {
                     $.seatedAt[current] = activationBlock;
                 }
@@ -398,5 +531,124 @@ library BoardLib {
             return;
         }
         revert IBoard.OnlyProposerCanCancel();
+    }
+
+    function collectDelegations(
+        BoardTypes.BoardStorage storage $b,
+        mapping(address => mapping(uint256 => uint256)) storage holderDelegation,
+        mapping(address => uint256) storage totalHolderDelegations,
+        mapping(address => EnumerableSet.UintSet) storage holderDelegatedTokenIds,
+        address holder
+    ) external view returns (uint256[] memory tokenIds, uint256[] memory amounts) {
+        EnumerableSet.UintSet storage tracked = holderDelegatedTokenIds[holder];
+        uint256[] memory setIds = tracked.values();
+        uint256 setLen = setIds.length;
+
+        uint256 trackedTotal;
+        for (uint256 i = 0; i < setLen;) {
+            trackedTotal += holderDelegation[holder][setIds[i]];
+            unchecked {
+                ++i;
+            }
+        }
+
+        if (trackedTotal == totalHolderDelegations[holder]) {
+            tokenIds = setIds;
+            amounts = new uint256[](setLen);
+            for (uint256 i = 0; i < setLen;) {
+                amounts[i] = holderDelegation[holder][setIds[i]];
+                unchecked {
+                    ++i;
+                }
+            }
+            return (tokenIds, amounts);
+        }
+
+        uint256 maxLen = setLen + uint256($b.size) + $b.evictedTokenIds.length();
+        uint256[] memory tmpIds = new uint256[](maxLen);
+        uint256[] memory tmpAmts = new uint256[](maxLen);
+        uint256 n;
+
+        for (uint256 i = 0; i < setLen;) {
+            uint256 id = setIds[i];
+            uint256 amount = holderDelegation[holder][id];
+            if (amount > 0) {
+                tmpIds[n] = id;
+                tmpAmts[n] = amount;
+                unchecked {
+                    ++n;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        uint256 tokenId = $b.head;
+        while (tokenId != 0) {
+            uint256 amount = holderDelegation[holder][tokenId];
+            if (amount > 0 && !tracked.contains(tokenId)) {
+                tmpIds[n] = tokenId;
+                tmpAmts[n] = amount;
+                unchecked {
+                    ++n;
+                }
+            }
+            tokenId = uint256($b.nodes[tokenId].next);
+        }
+
+        uint256 evictedLen = $b.evictedTokenIds.length();
+        for (uint256 i = 0; i < evictedLen;) {
+            uint256 evictedId = $b.evictedTokenIds.at(i);
+            uint256 amount = holderDelegation[holder][evictedId];
+            if (amount > 0 && !tracked.contains(evictedId) && $b.nodes[evictedId].tokenId != evictedId) {
+                tmpIds[n] = evictedId;
+                tmpAmts[n] = amount;
+                unchecked {
+                    ++n;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        tokenIds = new uint256[](n);
+        amounts = new uint256[](n);
+        for (uint256 i = 0; i < n;) {
+            tokenIds[i] = tmpIds[i];
+            amounts[i] = tmpAmts[i];
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function syncTrackedDelegations(
+        BoardTypes.BoardStorage storage $b,
+        mapping(address => mapping(uint256 => uint256)) storage holderDelegation,
+        mapping(address => EnumerableSet.UintSet) storage holderDelegatedTokenIds,
+        address holder
+    ) external {
+        EnumerableSet.UintSet storage tracked = holderDelegatedTokenIds[holder];
+
+        uint256 tokenId = $b.head;
+        while (tokenId != 0) {
+            if (holderDelegation[holder][tokenId] > 0) {
+                tracked.add(tokenId);
+            }
+            tokenId = uint256($b.nodes[tokenId].next);
+        }
+
+        uint256 evictedLen = $b.evictedTokenIds.length();
+        for (uint256 i = 0; i < evictedLen;) {
+            uint256 evictedId = $b.evictedTokenIds.at(i);
+            if (holderDelegation[holder][evictedId] > 0) {
+                tracked.add(evictedId);
+            }
+            unchecked {
+                ++i;
+            }
+        }
     }
 }

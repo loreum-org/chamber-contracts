@@ -3,14 +3,15 @@ pragma solidity ^0.8.24;
 
 import {Board} from "src/Board.sol";
 import {BoardTypes} from "src/types/BoardTypes.sol";
+import {IERC721} from "lib/openzeppelin-contracts/contracts/interfaces/IERC721.sol";
 
 contract MockBoard is Board {
     function exposed_delegate(uint256 tokenId, uint256 amount) public nonReentrant {
-        _delegate(tokenId, amount);
+        _delegate(tokenId, amount, IERC721(address(0)));
     }
 
     function exposed_undelegate(uint256 tokenId, uint256 amount) public nonReentrant {
-        _undelegate(tokenId, amount);
+        _undelegate(tokenId, amount, IERC721(address(0)));
     }
 
     function insert(uint256 tokenId, uint256 amount) public {
@@ -46,7 +47,7 @@ contract MockBoard is Board {
     }
 
     function executeSeatsUpdate(uint256 tokenId) public {
-        _executeSeatsUpdate(tokenId);
+        _executeSeatsUpdate(tokenId, IERC721(address(0)));
     }
 
     function cancelSeatUpdate(uint256 tokenId) public {

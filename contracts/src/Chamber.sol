@@ -41,8 +41,8 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
      * @notice ERC-7201 namespaced storage layout for Chamber
      * @dev Packing: `nft` (address, 20 bytes) sits alone in its slot; remaining fields are
      *      dynamic types or mappings which each occupy a full slot.
-     *      `holderDelegatedTokenIds` and `directorSession` are appended so existing ERC-7201
-     *      slots stay stable.
+     *      `holderDelegatedTokenIds`, `directorSession`, `confirmOwner`, and `cancelOwner`
+     *      are appended so existing ERC-7201 slots stay stable.
      * @custom:storage-location erc7201:loreum.Chamber
      */
     struct ChamberStorage {
@@ -53,6 +53,10 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         mapping(address => EnumerableSet.UintSet) holderDelegatedTokenIds;
         /// @dev Session key for a contract-owned membership NFT. Stale if `owner` != current `ownerOf`.
         mapping(uint256 tokenId => DirectorSession) directorSession;
+        /// @dev `ownerOf` when the confirm bit was last written. Mismatch is ignored for quorum (PMN-H01 A).
+        mapping(uint256 nonce => mapping(uint256 tokenId => address)) confirmOwner;
+        /// @dev `ownerOf` when the cancel bit was last written. Mismatch is ignored for quorum (PMN-H01 A).
+        mapping(uint256 nonce => mapping(uint256 tokenId => address)) cancelOwner;
     }
 
     /// @dev keccak256(abi.encode(uint256(keccak256("erc7201:loreum.Chamber")) - 1)) & ~bytes32(uint256(0xff))
@@ -75,7 +79,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
      *      (length word + data word) and incurs an SLOAD on every read. A bytes32 constant is
      *      inlined at compile time: zero runtime gas, zero storage slots.
      */
-    bytes32 public constant VERSION = "1.1.6";
+    bytes32 public constant VERSION = "1.1.7";
 
     /// @notice Function selector for upgradeImplementation(address,bytes)
     bytes4 private constant UPGRADE_SELECTOR = 0xc89311b6;
@@ -160,8 +164,8 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
             revert IChamber.InsufficientChamberBalance();
         }
 
-        _delegate(tokenId, amount);
-        _syncTrackedDelegations(msg.sender);
+        _delegate(tokenId, amount, $.nft);
+        _syncTrackedDelegations($.holderDelegation, $.holderDelegatedTokenIds, msg.sender);
 
         emit IChamber.DelegationUpdated(msg.sender, tokenId, $.holderDelegation[msg.sender][tokenId]);
     }
@@ -189,10 +193,10 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         // Only update board if node still exists (handles evicted nodes — Fix Finding 11)
         BoardTypes.BoardStorage storage $b = _getBoardStorage();
         if ($b.nodes[tokenId].tokenId == tokenId) {
-            _undelegate(tokenId, amount);
+            _undelegate(tokenId, amount, $.nft);
         }
 
-        _syncTrackedDelegations(msg.sender);
+        _syncTrackedDelegations($.holderDelegation, $.holderDelegatedTokenIds, msg.sender);
 
         emit IChamber.DelegationUpdated(msg.sender, tokenId, newDelegation);
     }
@@ -286,131 +290,8 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         returns (uint256[] memory tokenIds, uint256[] memory amounts)
     {
         if (holder == address(0)) revert IChamber.ZeroAddress();
-        return _collectDelegations(holder);
-    }
-
-    /**
-     * @dev Union of the holder set with leftover board/evicted amounts. When the set already
-     *      accounts for `totalHolderDelegations`, extras are skipped so insertion order is kept.
-     */
-    function _collectDelegations(address holder)
-        private
-        view
-        returns (uint256[] memory tokenIds, uint256[] memory amounts)
-    {
         ChamberStorage storage $c = _getChamberStorage();
-        EnumerableSet.UintSet storage tracked = $c.holderDelegatedTokenIds[holder];
-        uint256[] memory setIds = tracked.values();
-        uint256 setLen = setIds.length;
-
-        uint256 trackedTotal;
-        for (uint256 i = 0; i < setLen;) {
-            trackedTotal += $c.holderDelegation[holder][setIds[i]];
-            unchecked {
-                ++i;
-            }
-        }
-
-        if (trackedTotal == $c.totalHolderDelegations[holder]) {
-            tokenIds = setIds;
-            amounts = new uint256[](setLen);
-            for (uint256 i = 0; i < setLen;) {
-                amounts[i] = $c.holderDelegation[holder][setIds[i]];
-                unchecked {
-                    ++i;
-                }
-            }
-            return (tokenIds, amounts);
-        }
-
-        BoardTypes.BoardStorage storage $b = _getBoardStorage();
-        uint256 maxLen = setLen + uint256($b.size) + $b.evictedTokenIds.length();
-        uint256[] memory tmpIds = new uint256[](maxLen);
-        uint256[] memory tmpAmts = new uint256[](maxLen);
-        uint256 n;
-
-        for (uint256 i = 0; i < setLen;) {
-            uint256 id = setIds[i];
-            uint256 amount = $c.holderDelegation[holder][id];
-            if (amount > 0) {
-                tmpIds[n] = id;
-                tmpAmts[n] = amount;
-                unchecked {
-                    ++n;
-                }
-            }
-            unchecked {
-                ++i;
-            }
-        }
-
-        uint256 tokenId = $b.head;
-        while (tokenId != 0) {
-            uint256 amount = $c.holderDelegation[holder][tokenId];
-            if (amount > 0 && !tracked.contains(tokenId)) {
-                tmpIds[n] = tokenId;
-                tmpAmts[n] = amount;
-                unchecked {
-                    ++n;
-                }
-            }
-            tokenId = uint256($b.nodes[tokenId].next);
-        }
-
-        uint256 evictedLen = $b.evictedTokenIds.length();
-        for (uint256 i = 0; i < evictedLen;) {
-            uint256 evictedId = $b.evictedTokenIds.at(i);
-            uint256 amount = $c.holderDelegation[holder][evictedId];
-            if (amount > 0 && !tracked.contains(evictedId) && $b.nodes[evictedId].tokenId != evictedId) {
-                tmpIds[n] = evictedId;
-                tmpAmts[n] = amount;
-                unchecked {
-                    ++n;
-                }
-            }
-            unchecked {
-                ++i;
-            }
-        }
-
-        tokenIds = new uint256[](n);
-        amounts = new uint256[](n);
-        for (uint256 i = 0; i < n;) {
-            tokenIds[i] = tmpIds[i];
-            amounts[i] = tmpAmts[i];
-            unchecked {
-                ++i;
-            }
-        }
-    }
-
-    /**
-     * @dev Lazy-backfill the holder set from leftover board/evicted amounts after an upgrade.
-     *      Does not require an off-chain holder list; only the caller is synced.
-     */
-    function _syncTrackedDelegations(address holder) private {
-        ChamberStorage storage $c = _getChamberStorage();
-        BoardTypes.BoardStorage storage $b = _getBoardStorage();
-        EnumerableSet.UintSet storage tracked = $c.holderDelegatedTokenIds[holder];
-
-        uint256 tokenId = $b.head;
-        while (tokenId != 0) {
-            if ($c.holderDelegation[holder][tokenId] > 0) {
-                tracked.add(tokenId);
-            }
-            tokenId = uint256($b.nodes[tokenId].next);
-        }
-
-        uint256 evictedLen = $b.evictedTokenIds.length();
-        for (uint256 i = 0; i < evictedLen;) {
-            uint256 evictedId = $b.evictedTokenIds.at(i);
-            if ($c.holderDelegation[holder][evictedId] > 0) {
-                tracked.add(evictedId);
-            }
-            unchecked {
-                ++i;
-            }
-        }
+        return _collectDelegations($c.holderDelegation, $c.totalHolderDelegations, $c.holderDelegatedTokenIds, holder);
     }
 
     /**
@@ -494,7 +375,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
      * @param tokenId The tokenId executing the update
      */
     function executeSeatsUpdate(uint256 tokenId) public override nonReentrant isDirector(tokenId) {
-        _executeSeatsUpdate(tokenId);
+        _executeSeatsUpdate(tokenId, _getChamberStorage().nft);
     }
 
     /**
@@ -630,7 +511,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         if (transaction.executed) revert IWallet.TransactionAlreadyExecuted();
         if ($w.cancelled[transactionId]) revert IWallet.TransactionAlreadyCancelled();
         _notExpired(transactionId);
-        if (_countCurrentDirectorFlags($w.isConfirmed, transactionId) < _requiredConfirmations(transactionId)) {
+        if (_countLiveConfirmFlags(transactionId) < _requiredConfirmations(transactionId)) {
             revert IChamber.NotEnoughConfirmations();
         }
         _requireWalletExecuteAllowed(transaction.target, transactionId, data);
@@ -670,7 +551,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         _recordCancelVote(tokenId, transactionId);
         emit IChamber.TransactionCancelVoted(transactionId, msg.sender);
 
-        if (_countCurrentDirectorFlags($w.isCancelConfirmed, transactionId) >= getQuorum()) {
+        if (_countLiveCancelFlags(transactionId) >= getQuorum()) {
             _cancelTransaction(transactionId);
         }
     }
@@ -830,7 +711,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
 
             if (transaction.executed) revert IWallet.TransactionAlreadyExecuted();
             _notExpired(transactionId);
-            if (_countCurrentDirectorFlags($w.isConfirmed, transactionId) < _requiredConfirmations(transactionId)) {
+            if (_countLiveConfirmFlags(transactionId) < _requiredConfirmations(transactionId)) {
                 revert IChamber.NotEnoughConfirmations();
             }
             _requireWalletExecuteAllowed(transaction.target, transactionId, data[i]);
@@ -876,6 +757,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     ///      that holds `quorum` distinct top-seat membership NFTs can submit, self-confirm, and
     ///      execute — a single-actor treasury. This is intended; confirmations are not capped per owner.
     modifier isDirector(uint256 tokenId) {
+        _syncSeatingControl(_getChamberStorage().nft, tokenId);
         _isDirector(tokenId);
         _;
     }
@@ -886,7 +768,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     function _isDirector(uint256 tokenId) internal view {
         _requireTokenAuthorized(tokenId);
         if (!_isInTopSeats(tokenId)) revert IChamber.NotDirector();
-        if (!_isSeatingMature(tokenId)) revert IChamber.DirectorNotSeated();
+        if (!_isSeatingMature(_getChamberStorage().nft, tokenId)) revert IChamber.DirectorNotSeated();
     }
 
     /// @dev NFT owner of `tokenId`, or the live session key on a contract-owned NFT.
@@ -946,26 +828,42 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         return false;
     }
 
-    /**
-     * @notice Counts flags set by tokenIds that are still in the top-seat set.
-     * @dev Mirrors {_executeSeatsUpdate}: one O(seats) walk; evicted tokenIds are ignored.
-     */
-    function _countCurrentDirectorFlags(
-        mapping(uint256 nonce => mapping(uint256 tokenId => bool)) storage flags,
-        uint256 nonce
-    ) internal view returns (uint256 count) {
-        BoardTypes.BoardStorage storage $b = _getBoardStorage();
-        uint256 current = $b.head;
-        uint256 remaining = _getSeats();
-        unchecked {
-            while (current != 0 && remaining > 0) {
-                if (flags[nonce][current]) {
-                    ++count;
-                }
-                current = uint256($b.nodes[current].next);
-                --remaining;
-            }
-        }
+    function _countLiveConfirmFlags(uint256 nonce) internal view returns (uint256) {
+        ChamberStorage storage $ = _getChamberStorage();
+        return _countCurrentDirectorFlags($.nft, _getWalletStorage().isConfirmed, $.confirmOwner, nonce);
+    }
+
+    function _countLiveCancelFlags(uint256 nonce) internal view returns (uint256) {
+        ChamberStorage storage $ = _getChamberStorage();
+        return _countCurrentDirectorFlags($.nft, _getWalletStorage().isCancelConfirmed, $.cancelOwner, nonce);
+    }
+
+    function _submitTransactionWithMetadata(
+        uint256 tokenId,
+        address target,
+        uint256 value,
+        bytes memory data,
+        string memory metadataURI,
+        uint256 deadline
+    ) internal override {
+        super._submitTransactionWithMetadata(tokenId, target, value, data, metadataURI, deadline);
+        _getChamberStorage().confirmOwner[getNextTransactionId() - 1][tokenId] = _ownerOfOrZero(tokenId);
+    }
+
+    function _confirmTransaction(uint256 tokenId, uint256 nonce) internal override {
+        super._confirmTransaction(tokenId, nonce);
+        _getChamberStorage().confirmOwner[nonce][tokenId] = _ownerOfOrZero(tokenId);
+    }
+
+    function _recordCancelVote(uint256 tokenId, uint256 nonce) internal override {
+        super._recordCancelVote(tokenId, nonce);
+        _getChamberStorage().cancelOwner[nonce][tokenId] = _ownerOfOrZero(tokenId);
+    }
+
+    function _ownerOfOrZero(uint256 tokenId) internal view returns (address owner) {
+        try _getChamberStorage().nft.ownerOf(tokenId) returns (address o) {
+            owner = o;
+        } catch {}
     }
 
     /**
@@ -974,7 +872,13 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
      * @return seatedAtBlock Activation block, or zero if no checkpoint is stored
      */
     function getSeatedAt(uint256 tokenId) public view override returns (uint256 seatedAtBlock) {
-        return _getSeatedAt(tokenId);
+        return _effectiveSeatedAt(_getChamberStorage().nft, tokenId);
+    }
+
+    /// @inheritdoc IChamber
+    function syncSeating(uint256 tokenId) external override {
+        if (tokenId == 0) revert IChamber.ZeroTokenId();
+        _syncSeatingControl(_getChamberStorage().nft, tokenId);
     }
 
     /// PROXY UPGRADE FUNCTIONS ///

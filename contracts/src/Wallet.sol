@@ -106,7 +106,7 @@ abstract contract Wallet {
         bytes memory data,
         string memory metadataURI,
         uint256 deadline
-    ) internal {
+    ) internal virtual {
         WalletLib.submitTransactionWithMetadata(
             _getWalletStorage(),
             tokenId,
@@ -124,7 +124,7 @@ abstract contract Wallet {
         return 0;
     }
 
-    function _confirmTransaction(uint256 tokenId, uint256 nonce) internal {
+    function _confirmTransaction(uint256 tokenId, uint256 nonce) internal virtual {
         WalletLib.confirmTransaction(_getWalletStorage(), tokenId, nonce);
     }
 
@@ -132,7 +132,7 @@ abstract contract Wallet {
         WalletLib.revokeConfirmation(_getWalletStorage(), tokenId, nonce);
     }
 
-    function _recordCancelVote(uint256 tokenId, uint256 nonce) internal {
+    function _recordCancelVote(uint256 tokenId, uint256 nonce) internal virtual {
         WalletLib.recordCancelVote(_getWalletStorage(), tokenId, nonce);
     }
 

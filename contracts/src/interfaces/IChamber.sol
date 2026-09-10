@@ -91,6 +91,14 @@ interface IChamber is IERC4626, IBoard, IWallet {
     function isTokenAuthorized(uint256 tokenId, address account) external view returns (bool);
 
     /**
+     * @notice Binds `seatedAt` to the current `ownerOf(tokenId)` (PMN-H01 Solution A).
+     * @dev Permissionless. Call after a seated NFT changes hands so the new controller's
+     *      `SEATING_DELAY` is stored. Director actions that revert do not persist this write.
+     * @param tokenId Membership token to rebind
+     */
+    function syncSeating(uint256 tokenId) external;
+
+    /**
      * @notice Updates the number of seats
      * @param tokenId The tokenId proposing the update
      * @param numOfSeats The new number of seats
@@ -236,6 +244,7 @@ interface IChamber is IERC4626, IBoard, IWallet {
     error NotDirector();
 
     /// @notice Thrown when a tokenId is in the live top seats but the seating delay has not elapsed
+    ///         (new top-seat entry, or `ownerOf` change since the last seating bind).
     error DirectorNotSeated();
 
     /// @notice Thrown when address is zero

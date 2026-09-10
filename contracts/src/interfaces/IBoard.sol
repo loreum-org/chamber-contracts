@@ -60,7 +60,9 @@ interface IBoard {
      * @notice First block at which `tokenId` may exercise director rights.
      * @dev Zero means no checkpoint: a pre-upgrade incumbent already in the top set
      *      (treated as mature), or a token that is not seated. Newly entering tokenIds
-     *      are set to `block.number + SEATING_DELAY`.
+     *      are set to `block.number + SEATING_DELAY`. After `ownerOf` changes for an
+     *      already-seated token, the effective value moves to `block.number + SEATING_DELAY`
+     *      until the new controller's delay elapses (PMN-H01 Solution A).
      * @param tokenId The membership token ID
      * @return seatedAtBlock Activation block, or zero if no checkpoint is stored
      */
