@@ -15,20 +15,46 @@ cd contracts
 forge install
 ```
 
-## What Registry deploy does
+## What Factory deploy does
 
-`script/Registry.s.sol` (via `DeployRegistry` helper):
+`script/Factory.s.sol` (`DeployFactory`):
+
+1. Deploy or reuse a **Chamber** implementation (`CHAMBER_IMPLEMENTATION`, or a new `Chamber`).  
+2. Deploy **Factory** with that implementation and an **owner** (`ADMIN`, or `msg.sender`).  
+3. Return the **Factory address** the app should use (`VITE_*_FACTORY` env vars).
+
+Each **`Factory.createChamber`** then:
+
+- Spawns a **Chamber proxy** initialized with your ERC‑20, ERC‑721, seats, name, symbol.  
+- Transfers **ProxyAdmin ownership** to the Chamber (upgrades go through director queue).  
+- Emits **`ChamberCreated`** for indexers / `getLogs`. It does **not** write parent/child tables.
+
+Example:
+
+```bash
+cd contracts
+forge script script/Factory.s.sol:DeployFactory \
+  --rpc-url "$RPC_URL" \
+  --broadcast \
+  --private-key "$PRIVATE_KEY"
+```
+
+Set **`ADMIN`** in the environment if the owner should not be `msg.sender`.
+
+## What leftover Registry deploy does
+
+`script/Registry.s.sol` (via `DeployRegistry` helper) is the **deprecated** factory + index. It is not what Create uses when Factory is configured.
 
 1. Deploy **Registry** implementation.  
 2. Deploy **Chamber** implementation.  
 3. Deploy **Registry proxy** with `initialize(chamberImplementation, admin)`.  
-4. Return the **Registry address** your app should use (`VITE_*_REGISTRY` env vars).
+4. Return the **Registry address** (`VITE_*_REGISTRY` env vars).
 
-Each **`createChamber`** then:
+Each leftover **`Registry.createChamber`** then:
 
 - Spawns a **Chamber proxy** initialized with your ERC‑20, ERC‑721, seats, name, symbol.  
-- Transfers **ProxyAdmin ownership** to the Chamber (upgrades go through director queue).  
-- Optionally links **parent/child** if the asset token is another registered Chamber.
+- Transfers **ProxyAdmin ownership** to the Chamber.  
+- Optionally links **parent/child** if the asset token is another registered Chamber. That nested wiring is leftover — not the live architecture.
 
 Example:
 
@@ -44,7 +70,7 @@ Set **`ADMIN`** in the environment if the admin should not be `msg.sender`.
 
 ## Standalone Chamber script (local only)
 
-`script/Chamber.s.sol` deploys a Chamber proxy **without** Registry semantics (ProxyAdmin may stay with a separate admin EOA). Prefer **Registry** for production documentation and the app.
+`script/Chamber.s.sol` deploys a Chamber proxy **without** Factory semantics (ProxyAdmin may stay with a separate admin EOA). Prefer **Factory** for production documentation and the app. Registry remains a leftover index + create path.
 
 ## Post-create board bootstrap (Anvil or Sepolia)
 

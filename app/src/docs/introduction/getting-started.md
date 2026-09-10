@@ -21,7 +21,7 @@ Skim **[What is a Chamber?](./overview.md)** first if the ideas are new.
 
 **Go to:** **Deploy** (`/deploy`)
 
-You are launching a new treasury + governance ruleset through the **Factory** (Registry if Factory is unset).
+You are launching a new treasury + governance ruleset through the **Factory**. That is the intended create path. Registry `createChamber` is leftover — the app falls back to it only if Factory is unset.
 
 | Field | What it means |
 |--------|----------------|
@@ -46,7 +46,7 @@ Happy path on **Sepolia** or **Anvil**:
    - **Your own collection:** receive or already hold a token. Chamber does not mint third-party NFTs and does not auto-seat strangers.
 3. **Deposit shares** — **Staking** tab. Delegation needs Chamber shares.
 4. **Delegate** to a token ID you hold — **Delegation** tab (the CTA prefills a token you own when it can).
-5. **Wait `SEATING_DELAY`** — **1 block**. Then the creator is a seated director and the queue can run.
+5. **Wait `SEATING_DELAY`** — **1 block**. Then the creator is a seated director and the queue can run. The same 1-block delay applies when `ownerOf` changes for an already-seated token.
 
 Quorum stays `1 + (seats * 51) / 100` (I-02). Seating delay stays 1 block (H-02).
 

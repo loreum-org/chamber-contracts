@@ -9,7 +9,7 @@ Open the docs in the app at **`/docs`**. Start here:
 1. **[What is a Chamber?](./introduction/overview.md)** — the idea in one sitting  
 2. **[Why not just a multisig?](./introduction/why-not-multisig.md)** — Chamber vs a classic treasury wallet  
 3. **[Founder exit via Chamber](./introduction/founder-exit.md)** — gradual operational handoff while retaining token stake  
-4. **[Chambers and Sub-Chambers](./introduction/chamber-and-sub-chambers.md)** — one treasury, many specialized groups  
+4. **[Chambers and Sub-Chambers](./introduction/chamber-and-sub-chambers.md)** — what Create deploys; nested chambers as a contemplated pattern  
 5. **[Getting started](./introduction/getting-started.md)** — connect a wallet and use the app  
 
 Then, as you need detail:
@@ -26,7 +26,7 @@ Then, as you need detail:
 | Topic | Page |
 |--------|------|
 | Design goals | **[Vision](./protocol/vision.md)** |
-| Contracts and Registry | **[Architecture](./protocol/architecture.md)** |
+| Contracts and Factory | **[Architecture](./protocol/architecture.md)** |
 | Limits and implementation notes | **[Design notes](./protocol/design-notes.md)** |
 | Who may act for a director NFT | **[Director authorization](./protocol/director-authorization.md)** |
 | Deploy with Foundry | **[Deployment](./guides/deployment.md)** |
