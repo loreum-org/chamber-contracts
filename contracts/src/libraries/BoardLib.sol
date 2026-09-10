@@ -358,6 +358,7 @@ library BoardLib {
     }
 
     function tryOwnerOf(IERC721 nft, uint256 tokenId) internal view returns (address owner) {
+        if (address(nft) == address(0) || address(nft).code.length == 0) return address(0);
         try nft.ownerOf(tokenId) returns (address o) {
             return o;
         } catch {
