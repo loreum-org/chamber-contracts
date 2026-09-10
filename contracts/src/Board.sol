@@ -6,6 +6,8 @@ import {
 } from "lib/openzeppelin-contracts-upgradeable/contracts/utils/ReentrancyGuardTransientUpgradeable.sol";
 import {BoardTypes} from "src/types/BoardTypes.sol";
 import {BoardLib} from "src/libraries/BoardLib.sol";
+import {IERC721} from "lib/openzeppelin-contracts/contracts/interfaces/IERC721.sol";
+import {EnumerableSet} from "lib/openzeppelin-contracts/contracts/utils/structs/EnumerableSet.sol";
 
 /**
  * @title Board
@@ -42,12 +44,12 @@ abstract contract Board is ReentrancyGuardTransientUpgradeable {
         return Node({tokenId: node.tokenId, amount: node.amount, next: node.next, prev: node.prev});
     }
 
-    function _delegate(uint256 tokenId, uint256 amount) internal {
-        BoardLib.delegate(_getBoardStorage(), tokenId, amount, msg.sender);
+    function _delegate(uint256 tokenId, uint256 amount, IERC721 nft) internal {
+        BoardLib.delegate(_getBoardStorage(), tokenId, amount, msg.sender, nft);
     }
 
-    function _undelegate(uint256 tokenId, uint256 amount) internal {
-        BoardLib.undelegate(_getBoardStorage(), tokenId, amount, msg.sender);
+    function _undelegate(uint256 tokenId, uint256 amount, IERC721 nft) internal {
+        BoardLib.undelegate(_getBoardStorage(), tokenId, amount, msg.sender, nft);
     }
 
     function _reposition(uint256 tokenId) internal {
@@ -78,8 +80,8 @@ abstract contract Board is ReentrancyGuardTransientUpgradeable {
         BoardLib.setSeats(_getBoardStorage(), tokenId, numOfSeats);
     }
 
-    function _executeSeatsUpdate(uint256 tokenId) internal {
-        BoardLib.executeSeatsUpdate(_getBoardStorage(), tokenId);
+    function _executeSeatsUpdate(uint256 tokenId, IERC721 nft) internal {
+        BoardLib.executeSeatsUpdate(_getBoardStorage(), tokenId, nft);
     }
 
     function _cancelSeatUpdate(uint256 tokenId) internal {
@@ -96,5 +98,45 @@ abstract contract Board is ReentrancyGuardTransientUpgradeable {
 
     function _isSeatingMature(uint256 tokenId) internal view returns (bool) {
         return BoardLib.isSeatingMature(_getBoardStorage(), tokenId);
+    }
+
+    function _effectiveSeatedAt(IERC721 nft, uint256 tokenId) internal view returns (uint256) {
+        return BoardLib.effectiveSeatedAt(_getBoardStorage(), nft, tokenId);
+    }
+
+    function _isSeatingMature(IERC721 nft, uint256 tokenId) internal view returns (bool) {
+        return BoardLib.isSeatingMature(_getBoardStorage(), nft, tokenId);
+    }
+
+    function _syncSeatingControl(IERC721 nft, uint256 tokenId) internal {
+        BoardLib.syncSeatingControl(_getBoardStorage(), nft, tokenId);
+    }
+
+    function _countCurrentDirectorFlags(
+        IERC721 nft,
+        mapping(uint256 nonce => mapping(uint256 tokenId => bool)) storage flags,
+        mapping(uint256 nonce => mapping(uint256 tokenId => address)) storage flagOwners,
+        uint256 nonce
+    ) internal view returns (uint256) {
+        return BoardLib.countCurrentDirectorFlags(_getBoardStorage(), nft, flags, flagOwners, nonce);
+    }
+
+    function _collectDelegations(
+        mapping(address => mapping(uint256 => uint256)) storage holderDelegation,
+        mapping(address => uint256) storage totalHolderDelegations,
+        mapping(address => EnumerableSet.UintSet) storage holderDelegatedTokenIds,
+        address holder
+    ) internal view returns (uint256[] memory, uint256[] memory) {
+        return BoardLib.collectDelegations(
+            _getBoardStorage(), holderDelegation, totalHolderDelegations, holderDelegatedTokenIds, holder
+        );
+    }
+
+    function _syncTrackedDelegations(
+        mapping(address => mapping(uint256 => uint256)) storage holderDelegation,
+        mapping(address => EnumerableSet.UintSet) storage holderDelegatedTokenIds,
+        address holder
+    ) internal {
+        BoardLib.syncTrackedDelegations(_getBoardStorage(), holderDelegation, holderDelegatedTokenIds, holder);
     }
 }

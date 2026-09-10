@@ -50,6 +50,8 @@ library BoardTypes {
         uint32 seats;
         mapping(uint256 tokenId => uint256 seatedAtBlock) seatedAt;
         EnumerableSet.UintSet evictedTokenIds;
+        /// @dev `ownerOf` snapshotted when seating last bound. Appended so existing ERC-7201 slots stay stable.
+        mapping(uint256 tokenId => address) seatedOwner;
     }
 
     /// @dev keccak256(abi.encode(uint256(keccak256("erc7201:loreum.Board")) - 1)) & ~bytes32(uint256(0xff))

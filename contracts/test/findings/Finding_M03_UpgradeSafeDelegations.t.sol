@@ -39,7 +39,7 @@ contract ChamberDelegationHarness is Chamber {
     }
 
     function exposedBoardDelegate(uint256 tokenId, uint256 amount) external {
-        _delegate(tokenId, amount);
+        _delegate(tokenId, amount, this.nft());
     }
 
     function exposedSetLength(address holder) external view returns (uint256) {
