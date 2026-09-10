@@ -84,11 +84,11 @@ Consider a Chamber if:
 - **Many people** deposit into a shared treasury and need **transparent share accounting**.  
 - Leadership should **track delegation**, not a one-time signer CSV.  
 - You want **proposal → quorum → execution** entirely **onchain** for major outbound actions.  
-- You may grow into **Sub-Chambers** (treasury vs ops vs R&D) without one Safe holding everything.
+- You may deploy **more than one Chamber** for separate mandates. Nested Sub-Chambers (parent↔child) are a contemplated pattern, not what Create wires.
 
 ## Can you use both?
 
-Yes. A **multisig contract** can **own a membership NFT** and act as one **director seat** on the board. Humans might still use Safe internally; Chamber sees one **seat** with one voting path on the queue. See **[Chambers and Sub-Chambers](./chamber-and-sub-chambers.md)**.
+Yes. A **multisig contract** can **own a membership NFT** and act as one **director seat** on the board. Humans might still use Safe internally; Chamber sees one **seat** with one voting path on the queue. See **[Director authorization](../protocol/director-authorization.md)**.
 
 ## Read next
 

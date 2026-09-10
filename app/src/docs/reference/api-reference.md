@@ -2,11 +2,36 @@
 
 > **Audience:** developers integrating with or auditing contracts. New users should start with **[What is a Chamber?](../introduction/overview.md)** and **[Governance](../protocol/governance.md)**.
 
-Generated from interfaces in `contracts/src/` (`Registry`, `Chamber` / `IChamber`, plus **`IWallet`**, **`IBoard`**, **`IERC4626`**). Prefer NatSpec in-repo for exact wording.
+Generated from interfaces in `contracts/src/` (`Factory` / `IFactory`, leftover `Registry`, `Chamber` / `IChamber`, plus **`IWallet`**, **`IBoard`**, **`IERC4626`**). Prefer NatSpec in-repo for exact wording.
 
-## `Registry`
+## `Factory`
 
-Upgradeable registry behind a **`TransparentUpgradeableProxy`** in the production deploy script pattern (`contracts/test/utils/DeployRegistry.sol`). `Registry.initialize` pins the **Chamber implementation** and grants **`DEFAULT_ADMIN_ROLE`** and **`ADMIN_ROLE`** to `admin`.
+Thin, non-proxy deployer (`contracts/src/Factory.sol`). Constructor pins the **Chamber implementation** and **owner**. Create today uses this path. There is no **`createAgent()`**. The Factory does **not** store a world list or parent/child tables.
+
+### Write
+
+| Function | Notes |
+|---------|--------|
+| **`createChamber(address erc20Token, address erc721Token, uint256 seats, string name, string symbol) → address payable chamber`** | Deploys **Chamber `TransparentUpgradeableProxy`**, runs **`Chamber.initialize`**, transfers **ProxyAdmin ownership to `chamber`**. Reverts on zero addresses, `implementation == 0`, or invalid **seats** (must be **1–20**). `erc20Token` must be a **standard ERC-20** (no factory allowlist; fee-on-transfer / rebasing unsupported). |
+| **`setImplementation(address newImplementation)`** | **Owner only**; updates pointer for **future** `createChamber` only. Same-address updates are a no-op. |
+
+### Read
+
+| Function | Returns |
+|---------|---------|
+| **`implementation()`** | Chamber logic for the next proxy. |
+
+### Events / errors
+
+- **`ChamberCreated(chamber, asset, nft, seats, name, symbol, creator)`**
+- **`ChamberImplementationUpdated(previous, newImplementation)`**
+- **`ZeroAddress()`**, **`InvalidSeats()`**
+
+---
+
+## `Registry` (leftover)
+
+Historical factory + enumerable index. Not the live Create path when Factory is configured. Upgradeable registry behind a **`TransparentUpgradeableProxy`** (`contracts/test/utils/DeployRegistry.sol`). `Registry.initialize` pins the **Chamber implementation** and grants **`DEFAULT_ADMIN_ROLE`** and **`ADMIN_ROLE`** to `admin`. Parent/child getters describe leftover Registry wiring, not Factory Create.
 
 ### Write
 
@@ -109,19 +134,19 @@ Read helpers: **`getTransactionCount`**, **`getNextTransactionId`**, **`getTrans
 |---------|------|
 | **`getProxyAdmin() → address`** | Reads ERC‑1967 admin slot (OZ **ProxyAdmin** contract). |
 | **`upgradeImplementation(address newImplementation, bytes calldata data)`** | Requires **`msg.sender == address(this)`** (e.g. via **`executeTransaction`**); **`ProxyAdmin.owner() == address(this)`**; invokes **`upgradeAndCall`**. |
-| **`acceptAdmin()`** | No-op; registry transfers ProxyAdmin ownership directly. |
+| **`acceptAdmin()`** | No-op; Factory (or leftover Registry) transfers ProxyAdmin ownership directly. |
 
 ---
 
 ## Events (high-signal)
 
-From **`IChamber`** / **`IBoard`** / **`IWallet`** / **`IRegistry`** (non-exhaustive):
+From **`IChamber`** / **`IBoard`** / **`IWallet`** / **`IFactory`** / leftover **`IRegistry`** (non-exhaustive):
 
 - **Delegation / board:** `DelegationUpdated`, `Delegate`, `Undelegate`, `SetSeats`, `SeatUpdateCancelled`, `ExecuteSetSeats`  
 - **Wallet:** `SubmitTransaction`, `ProposalMetadataSet`, `ConfirmTransaction`, `RevokeConfirmation`, `ExecuteTransaction`, `CancelTransaction`, `TransactionCancelled`  
 - **Chamber-level wallet wraps:** `TransactionSubmitted`, `TransactionConfirmed`, `TransactionExecuted`, `TransactionCancelVoted`  
 - **Treasury receive:** `Received`, `ReceivedERC721`  
-- **Registry:** `ChamberCreated`, `ChamberImplementationUpdated`  
+- **Factory / leftover Registry:** `ChamberCreated`, `ChamberImplementationUpdated`  
 
 ---
 
@@ -129,7 +154,7 @@ From **`IChamber`** / **`IBoard`** / **`IWallet`** / **`IRegistry`** (non-exhaus
 
 | Area | Examples |
 |------|-----------|
-| Registry | `ZeroAddress`, `InvalidSeats` |
+| Factory / leftover Registry | `ZeroAddress`, `InvalidSeats` |
 | Chamber / IChamber | `InsufficientChamberBalance`, `ExceedsDelegatedAmount`, `AssetAmountMismatch`, `NotDirector`, `NotEnoughConfirmations`, `InvalidTransaction`, `NotAuthorized`, seat / token errors |
 | Board | `CircuitBreakerActive`, `TokenIdTooLarge`, `MaxNodesReached`, seat proposal / timelock errors |
 | Wallet / IWallet | `TransactionDoesNotExist`, `TransactionAlreadyExecuted`, `TransactionAlreadyConfirmed`, `TransactionNotConfirmed`, `TransactionAlreadyCancelled`, `DataHashMismatch`, `TransactionFailed`, `InvalidTarget` |
@@ -140,8 +165,8 @@ See interface files for full enumerations.
 
 ## Minimal integration checklist
 
-1. Discover **`Registry`** address for your chain.  
-2. Enumerate chambers via **`getChambers`** or subgraph.  
+1. Discover **`Factory`** address for your chain.  
+2. Enumerate chambers via **`ChamberCreated`** logs, indexer, or leftover Registry **`getChambers`**.  
 3. For a Chamber: read **`asset()`**, **`nft()`**, **`getSeats()`, `getQuorum()`, `getTop`/`getDirectors`**.  
 4. For wallets / indexers: subscribe to **`SubmitTransaction`** to persist **`bytes data`** alongside **`nonce`**.  
 5. For execution UI: reconstruct calldata matching stored hash before calling **`executeTransaction`**.  

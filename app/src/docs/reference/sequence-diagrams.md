@@ -234,31 +234,30 @@ flowchart LR
 
 ## Chamber Deployment
 
-This diagram shows how a new Chamber is deployed through the Registry.
+This diagram shows how Create deploys a new Chamber through the **Factory**. The leftover Registry can still `createChamber` and write parent/child links; that is not the live path.
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Registry
+    participant Factory
     participant ChamberImpl
     participant ChamberProxy
 
-    Note over User,ChamberProxy: Chamber deployment via Registry
+    Note over User,ChamberProxy: Chamber deployment via Factory
 
-    User->>Registry: createChamber(erc20Token, erc721Token, seats, name, symbol)
+    User->>Factory: createChamber(erc20Token, erc721Token, seats, name, symbol)
 
-    Registry->>Registry: Validate tokens non-zero, seats in 1..20, implementation set
+    Factory->>Factory: Validate tokens non-zero, seats in 1..20, implementation set
 
-    Registry->>ChamberProxy: new TransparentUpgradeableProxy(implementation, address(this), initData)
+    Factory->>ChamberProxy: new TransparentUpgradeableProxy(implementation, address(this), initData)
     Note over ChamberProxy: initData encodes Chamber.initialize(erc20, erc721, seats, name, symbol)
 
     ChamberProxy->>ChamberImpl: delegatecall initialize(...)
     ChamberImpl-->>ChamberProxy: ERC-4626 + Board + Wallet storage ready
 
-    Registry->>Registry: index chamber, parent/child if asset is chamber
-    Registry->>Registry: transfer Chamber ProxyAdmin ownership to address(chamber)
+    Factory->>Factory: transfer Chamber ProxyAdmin ownership to address(chamber)
 
-    Registry-->>User: ChamberCreated + return chamber proxy
+    Factory-->>User: ChamberCreated + return chamber proxy
 ```
 
 ---

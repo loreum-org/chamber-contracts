@@ -21,7 +21,7 @@ Skim **[What is a Chamber?](./overview.md)** first if the ideas are new.
 
 **Go to:** **Deploy** (`/deploy`)
 
-You are launching a new treasury + governance ruleset through the **Factory** (Registry if Factory is unset).
+You are launching a new treasury + governance ruleset through the **Factory**. A leftover Registry create path may still exist if Factory is unset — that is not the live default.
 
 | Field | What it means |
 |--------|----------------|

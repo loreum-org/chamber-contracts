@@ -38,7 +38,7 @@ flowchart TB
 - **Legibility** — an outsider can read seats, quorum, and queued proposals from chain data.  
 - **Liquidity of influence** — delegation changes without redeploying a Safe.  
 - **Enforced execution** — approvals are **confirmations on a nonce**, not a separate offchain vote.  
-- **Composable orgs** — Sub-Chambers and Registry indexing for teams that outgrow one pot.  
+- **Composable orgs (contemplated)** — nested Sub-Chambers and leftover Registry indexing for teams that outgrow one pot. Create today deploys one standalone Chamber.  
 
 Agents, analytics, and dashboards sit **around** these interfaces. They do not replace onchain quorum or vault accounting.
 
@@ -46,5 +46,5 @@ Agents, analytics, and dashboards sit **around** these interfaces. They do not r
 
 - **[What is a Chamber?](../introduction/overview.md)**  
 - **[Why not just a multisig?](../introduction/why-not-multisig.md)**  
-- **[Architecture](./architecture.md)** — contracts and Registry (builders)  
+- **[Architecture](./architecture.md)** — contracts and Factory (builders)  
 - **[Whitepaper](https://loreum.org/whitepaper)** — long-form narrative  

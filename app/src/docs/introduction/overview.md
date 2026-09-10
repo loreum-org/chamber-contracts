@@ -56,9 +56,9 @@ flowchart LR
 - **Board** — delegation ranks **NFT token IDs**; top **N** seats are directors.  
 - **Wallet** — directors queue **transactions** (send ETH, call contracts) with **quorum**.
 
-## Sub-Chambers (bigger organizations)
+## Nested chambers (contemplated)
 
-One **root Chamber** can anchor the main treasury. **Sub-Chambers** are additional Chambers with their own vault and directors for focused mandates (treasury committee, operations, experiments). See **[Chambers and Sub-Chambers](./chamber-and-sub-chambers.md)**.
+Create deploys **one standalone Chamber** — vault, ranked board, quorum wallet. Nested **Sub-Chambers** (a root treasury with child Chambers, Registry parent↔child links) are a **contemplated pattern**, not what Create wires today. You can still deploy more than one Chamber if you want separate pots. See **[Chambers and Sub-Chambers](./chamber-and-sub-chambers.md)**.
 
 ## Where to go next
 

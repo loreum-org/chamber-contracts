@@ -78,9 +78,9 @@ This stops a quick flash of votes from resizing the board without giving the com
 
 Directors can **vote to cancel** a queued transaction. If cancel votes reach **quorum**, the proposal is dead — it cannot be confirmed or executed afterward.
 
-## Sub-Chambers
+## Nested chambers (contemplated)
 
-If a Chamber’s vault asset is **another Chamber’s share token**, the Registry can record **parent / child** links. Each child still has its **own** board and queue. See **[Chambers and Sub-Chambers](../introduction/chamber-and-sub-chambers.md)**.
+A leftover Registry can record **parent / child** links when a Chamber’s vault asset is **another Chamber’s share token**. That is **not** what Factory Create writes. Nested Sub-Chambers remain a contemplated pattern. See **[Chambers and Sub-Chambers](../introduction/chamber-and-sub-chambers.md)**.
 
 ## Read next
 

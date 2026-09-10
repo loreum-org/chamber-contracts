@@ -172,18 +172,25 @@ function Whitepaper() {
               
               <h3 className="text-2xl font-display mb-4 mt-8 text-white">2.1 System Components</h3>
               <p className="text-gray-300 leading-relaxed mb-4">
-                The Chamber Protocol consists of four primary contracts:
+                The shipped object is a Factory-deployed ERC-4626 vault, a liquid-delegated
+                ranked board of membership NFTs, and a quorum wallet. Create deploys that
+                standalone Chamber. Nested Sub-Chambers and Registry parent↔child wiring
+                are a contemplated pattern — not the live architecture. The primary
+                contracts are Factory, Chamber, Board, and Wallet.
               </p>
               
               <div className="bg-space-800/40 border border-white/10 rounded-xl p-6 mb-6 backdrop-blur-md">
-                <h4 className="text-xl font-display mb-3 text-space-accent">Registry</h4>
+                <h4 className="text-xl font-display mb-3 text-space-accent">Factory</h4>
                 <p className="text-gray-300 leading-relaxed mb-3">
-                  A factory contract that deploys Chamber instances using the TransparentUpgradeableProxy pattern. 
-                  The Registry maintains an index of all deployed chambers and their associated assets. Upon deployment, 
-                  each Chamber receives ownership of its ProxyAdmin, enabling self-governed upgrades.
+                  A thin, non-proxy deployer that creates Chamber instances using the
+                  TransparentUpgradeableProxy pattern. Upon deployment, each Chamber
+                  receives ownership of its ProxyAdmin, enabling self-governed upgrades.
+                  The Factory does not store a world directory, asset index, or parent/child
+                  tables. Discover chambers via <code className="text-space-accent">ChamberCreated</code> logs.
+                  There is no <code className="text-space-accent">createAgent()</code> API.
                 </p>
                 <p className="text-gray-400 text-sm font-mono">
-                  Key Functions: createChamber(), createAgent(), getAllChambers()
+                  Key Functions: createChamber(), setImplementation(), implementation()
                 </p>
               </div>
 
@@ -221,6 +228,23 @@ function Whitepaper() {
                 </p>
                 <p className="text-gray-400 text-sm font-mono">
                   Key Functions: _submitTransaction(), _confirmTransaction(), _executeTransaction()
+                </p>
+              </div>
+
+              <div className="bg-space-800/40 border border-white/10 rounded-xl p-6 mb-6 backdrop-blur-md">
+                <h4 className="text-xl font-display mb-3 text-space-accent">Registry (leftover)</h4>
+                <p className="text-gray-300 leading-relaxed mb-3">
+                  Historical factory and enumerable index. An earlier create path used
+                  Registry <code className="text-space-accent">createChamber()</code> and
+                  {" "}<code className="text-space-accent">getAllChambers()</code>, and could
+                  record parent↔child links when a Chamber&apos;s asset was another Chamber&apos;s
+                  share token. Create today uses Factory.
+                  {" "}<code className="text-space-accent">createAgent()</code> was never a
+                  shipped API. Registry remains in-repo as leftover / historical — not
+                  the live factory.
+                </p>
+                <p className="text-gray-400 text-sm font-mono">
+                  Leftover: createChamber(), getAllChambers(), getParentChamber(), getChildChambers()
                 </p>
               </div>
             </section>
