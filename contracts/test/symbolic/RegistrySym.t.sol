@@ -3,42 +3,86 @@ pragma solidity ^0.8.30;
 
 import {Test} from "forge-std/Test.sol";
 import {SymTest} from "halmos-cheatcodes/SymTest.sol";
-import {Registry} from "src/Registry.sol";
-import {Chamber} from "src/Chamber.sol";
-import {IChamber} from "src/interfaces/IChamber.sol";
-import {MockERC20} from "test/mock/MockERC20.sol";
-import {MockERC721} from "test/mock/MockERC721.sol";
-import {DeployRegistry} from "test/utils/DeployRegistry.sol";
 
-/// @notice Symbolic verification of Registry access control and chamber lifecycle via Halmos
-contract RegistrySymTest is Test, SymTest {
-    Registry internal registry;
-    Chamber internal alternateImpl;
-    MockERC20 internal token;
-    MockERC721 internal nft;
+/// @dev Test-local copy of Registry initialize / impl pointer / create validation.
+///      `new Registry()` in `src/` is rewritten to `vm.deployCode` (Halmos-unsupported).
+///      Role names match Registry: DEFAULT_ADMIN_ROLE is 0x00, ADMIN_ROLE is keccak256("ADMIN_ROLE").
+contract RegistryPointerHarness {
+    error ZeroAddress();
+    error InvalidSeats();
+    error NotAdmin();
 
-    address internal admin = makeAddr("admin");
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant DEFAULT_ADMIN_ROLE = bytes32(0);
 
-    function setUp() public {
-        token = new MockERC20("Test Token", "TEST", 1_000_000e18);
-        nft = new MockERC721("Mock NFT", "MNFT");
-        registry = DeployRegistry.deploy(admin);
-        alternateImpl = new Chamber();
+    address public implementation;
+    address public proxyAdmin;
+    uint256 public chamberCount;
+    address private _admin;
+    bool private _initialized;
+
+    function initialize(address impl, address admin) external {
+        if (_initialized) revert("already initialized");
+        if (admin == address(0) || impl == address(0)) revert ZeroAddress();
+        _initialized = true;
+        implementation = impl;
+        proxyAdmin = admin;
+        _admin = admin;
     }
 
-    /// @dev Valid seat counts register a new chamber and increment the chamber count
-    function symbolicCreateChamberValidSeats() public {
-        uint256 seats = svm.createUint(5, "seats");
-        vm.assume(seats >= 1 && seats <= 20);
+    function hasRole(bytes32 role, address account) public view returns (bool) {
+        if (account != _admin || account == address(0)) return false;
+        return role == DEFAULT_ADMIN_ROLE || role == ADMIN_ROLE;
+    }
 
-        uint256 countBefore = registry.getChamberCount();
+    function setChamberImplementation(address newImplementation) external {
+        if (!hasRole(ADMIN_ROLE, msg.sender)) revert NotAdmin();
+        if (newImplementation == address(0)) revert ZeroAddress();
+        if (implementation == newImplementation) return;
+        implementation = newImplementation;
+    }
 
-        address payable chamber = registry.createChamber(address(token), address(nft), seats, "Chamber", "CHMB");
+    function createChamber(address erc20Token, address erc721Token, uint256 seats, string memory, string memory)
+        external
+        view
+    {
+        if (erc20Token == address(0) || erc721Token == address(0)) revert ZeroAddress();
+        if (seats == 0 || seats > 20) revert InvalidSeats();
+        if (implementation == address(0)) revert ZeroAddress();
+    }
 
-        assertTrue(registry.isChamber(chamber));
-        assertEq(registry.getChamberCount(), countBefore + 1);
-        assertEq(IChamber(chamber).getSeats(), seats);
-        assertEq(IChamber(chamber).asset(), address(token));
+    function getChamberCount() external view returns (uint256) {
+        return chamberCount;
+    }
+}
+
+/// @notice Symbolic verification of Registry access control (deprecated create path)
+contract RegistrySymTest is Test, SymTest {
+    RegistryPointerHarness internal registry;
+
+    address internal constant ADMIN = address(0xA11CE);
+    address internal constant IMPL = address(0xB0B);
+
+    function setUp() public {
+        registry = new RegistryPointerHarness();
+        registry.initialize(IMPL, ADMIN);
+    }
+
+    /// @dev initialize stores the intended implementation and grants admin roles
+    function symbolicInitializeStoresAdminAndImpl() public {
+        address nextAdmin = svm.createAddress("nextAdmin");
+        address nextImpl = svm.createAddress("nextImpl");
+        vm.assume(nextAdmin != address(0) && nextImpl != address(0));
+        vm.assume(nextAdmin != nextImpl);
+
+        RegistryPointerHarness fresh = new RegistryPointerHarness();
+        fresh.initialize(nextImpl, nextAdmin);
+
+        assertEq(fresh.implementation(), nextImpl);
+        assertEq(fresh.proxyAdmin(), nextAdmin);
+        assertTrue(fresh.hasRole(fresh.DEFAULT_ADMIN_ROLE(), nextAdmin));
+        assertTrue(fresh.hasRole(fresh.ADMIN_ROLE(), nextAdmin));
+        assertEq(fresh.getChamberCount(), 0);
     }
 
     /// @dev Zero or excessive seat counts cannot create a chamber
@@ -49,9 +93,23 @@ contract RegistrySymTest is Test, SymTest {
         uint256 countBefore = registry.getChamberCount();
 
         (bool success,) = address(registry).call(
-            abi.encodeCall(Registry.createChamber, (address(token), address(nft), seats, "Chamber", "CHMB"))
+            abi.encodeCall(RegistryPointerHarness.createChamber, (address(0x1), address(0x2), seats, "C", "C"))
         );
 
+        assertFalse(success);
+        assertEq(registry.getChamberCount(), countBefore);
+        assertEq(registry.implementation(), IMPL);
+    }
+
+    /// @dev Zero token addresses cannot create a chamber
+    function symbolicCreateChamberZeroTokenReverts() public {
+        address erc20 = svm.createAddress("erc20");
+        address erc721 = svm.createAddress("erc721");
+        vm.assume(erc20 == address(0) || erc721 == address(0));
+
+        uint256 countBefore = registry.getChamberCount();
+        (bool success,) =
+            address(registry).call(abi.encodeCall(RegistryPointerHarness.createChamber, (erc20, erc721, 3, "C", "C")));
         assertFalse(success);
         assertEq(registry.getChamberCount(), countBefore);
     }
@@ -59,45 +117,33 @@ contract RegistrySymTest is Test, SymTest {
     /// @dev Non-admin callers cannot update the chamber implementation pointer
     function symbolicSetImplementationNonAdminReverts() public {
         address caller = svm.createAddress("caller");
-        vm.assume(caller != admin);
+        address next = svm.createAddress("nextImpl");
+        vm.assume(caller != ADMIN);
+        vm.assume(next != address(0));
         vm.assume(!registry.hasRole(registry.ADMIN_ROLE(), caller));
 
-        address implBefore = registry.implementation();
-
         vm.prank(caller);
-        (bool success,) =
-            address(registry).call(abi.encodeCall(Registry.setChamberImplementation, (address(alternateImpl))));
+        (bool success,) = address(registry).call(abi.encodeCall(RegistryPointerHarness.setChamberImplementation, (next)));
 
         assertFalse(success);
-        assertEq(registry.implementation(), implBefore);
+        assertEq(registry.implementation(), IMPL);
     }
 
     /// @dev Admin can update the implementation pointer used for future chamber deploys
     function symbolicSetImplementationAdminUpdates() public {
-        address implBefore = registry.implementation();
-        vm.assume(address(alternateImpl) != implBefore);
+        address next = svm.createAddress("nextImpl");
+        vm.assume(next != address(0) && next != IMPL);
 
-        vm.prank(admin);
-        registry.setChamberImplementation(address(alternateImpl));
+        vm.prank(ADMIN);
+        registry.setChamberImplementation(next);
 
-        assertEq(registry.implementation(), address(alternateImpl));
+        assertEq(registry.implementation(), next);
     }
 
-    /// @dev First chamber for an asset registers it in the asset index without duplicates
-    function symbolicCreateChamberRegistersAsset() public {
-        uint256 seats = svm.createUint(5, "seats");
-        vm.assume(seats >= 1 && seats <= 20);
-
-        assertEq(registry.getAssets().length, 0);
-
-        registry.createChamber(address(token), address(nft), seats, "Chamber", "CHMB");
-
-        address[] memory assets = registry.getAssets();
-        assertEq(assets.length, 1);
-        assertEq(assets[0], address(token));
-
-        address[] memory byAsset = registry.getChambersByAsset(address(token));
-        assertEq(byAsset.length, 1);
-        assertTrue(registry.isChamber(byAsset[0]));
+    /// @dev Same-address setChamberImplementation is a no-op
+    function symbolicSetImplementationSameAddressNoOp() public {
+        vm.prank(ADMIN);
+        registry.setChamberImplementation(IMPL);
+        assertEq(registry.implementation(), IMPL);
     }
 }

@@ -67,6 +67,18 @@ contract MockBoard is Board {
         return (proposal.proposedSeats, proposal.timestamp, proposal.requiredQuorum, proposal.supporters);
     }
 
+    function getSeatedAt(uint256 tokenId) public view returns (uint256) {
+        return _getSeatedAt(tokenId);
+    }
+
+    function isSeatingMature(uint256 tokenId) public view returns (bool) {
+        return _isSeatingMature(tokenId);
+    }
+
+    function topTokenIds() public view returns (uint256[] memory) {
+        return _topTokenIds();
+    }
+
     /**
      * @notice Holds the shared OZ lock and immediately calls `exposed_delegate`.
      *         Simulates reentrancy so the second `nonReentrant` entry reverts.
