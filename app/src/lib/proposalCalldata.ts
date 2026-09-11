@@ -5,7 +5,16 @@
  * metadata URI, SubmitTransaction logs.
  */
 
-import { keccak256, parseAbiItem, type Hex, type PublicClient } from 'viem'
+import {
+  decodeFunctionData,
+  erc20Abi,
+  formatUnits,
+  keccak256,
+  parseAbi,
+  parseAbiItem,
+  type Hex,
+  type PublicClient,
+} from 'viem'
 import { chamberAbi } from '@/contracts/abis'
 
 const STORAGE_PREFIX = 'chamber-proposal-calldata'
@@ -96,10 +105,129 @@ export async function fetchProposalCalldataFromEvents(
   return null
 }
 
-function normalizeCalldataHex(raw: string): `0x${string}` | null {
+const KNOWN_ACTION_ABI = parseAbi([
+  'function transfer(address to, uint256 amount)',
+  'function approve(address spender, uint256 amount)',
+  'function transferFrom(address from, address to, uint256 amount)',
+  'function mint(address to, uint256 amount)',
+  'function mint(uint256 amount)',
+  'function burn(uint256 amount)',
+  'function pause()',
+  'function unpause()',
+  'function upgradeImplementation(address newImplementation, bytes data)',
+  'function deposit()',
+  'function deposit(uint256 assets, address receiver)',
+  'function withdraw(uint256 amount)',
+  'function withdraw(uint256 assets, address receiver, address owner)',
+  'function claim()',
+  'function claim(uint256 id)',
+])
+
+export function normalizeCalldataHex(raw: string): `0x${string}` | null {
   const trimmed = raw.trim()
   if (!trimmed || trimmed === '0x') return null
   return (trimmed.startsWith('0x') ? trimmed : `0x${trimmed}`) as `0x${string}`
+}
+
+function shortHexAddress(value: string): string {
+  if (value.length < 12) return value
+  return `${value.slice(0, 6)}…${value.slice(-4)}`
+}
+
+function formatUintAmount(value: bigint): string {
+  if (value === 0n) return '0'
+  const formatted = formatUnits(value, 18)
+  const [whole, frac = ''] = formatted.split('.')
+  if (whole !== '0') {
+    const trimmedFrac = frac.replace(/0+$/, '')
+    return trimmedFrac ? `${whole}.${trimmedFrac}` : whole
+  }
+  const leadingZeros = frac.match(/^0*/)?.[0].length ?? 0
+  if (leadingZeros >= 6) return value.toString()
+  const trimmedFrac = frac.replace(/0+$/, '')
+  return trimmedFrac ? `0.${trimmedFrac}` : '0'
+}
+
+function formatDecodedArg(value: unknown): string {
+  if (typeof value === 'bigint') return formatUintAmount(value)
+  if (typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/.test(value)) return shortHexAddress(value)
+  if (typeof value === 'string') return value.length > 22 ? `${value.slice(0, 10)}…` : value
+  if (Array.isArray(value)) return `[${value.map(formatDecodedArg).join(', ')}]`
+  return String(value)
+}
+
+function summarizeDecodedCall(name: string, args: readonly unknown[] | undefined): string {
+  const a = args ?? []
+  switch (name) {
+    case 'transfer':
+      return `Transfer ${formatDecodedArg(a[1])} to ${formatDecodedArg(a[0])}`
+    case 'approve':
+      return `Approve ${formatDecodedArg(a[0])} for ${formatDecodedArg(a[1])}`
+    case 'transferFrom':
+      return `Transfer ${formatDecodedArg(a[2])} from ${formatDecodedArg(a[0])} to ${formatDecodedArg(a[1])}`
+    case 'mint':
+      return a.length >= 2
+        ? `Mint ${formatDecodedArg(a[1])} to ${formatDecodedArg(a[0])}`
+        : `Mint ${formatDecodedArg(a[0])}`
+    case 'burn':
+      return `Burn ${formatDecodedArg(a[0])}`
+    case 'pause':
+      return 'Pause'
+    case 'unpause':
+      return 'Unpause'
+    case 'upgradeImplementation':
+      return `Upgrade implementation to ${formatDecodedArg(a[0])}`
+    case 'deposit':
+      return a.length >= 1 ? `Deposit ${formatDecodedArg(a[0])}` : 'Deposit'
+    case 'withdraw':
+      return a.length >= 1 ? `Withdraw ${formatDecodedArg(a[0])}` : 'Withdraw'
+    case 'claim':
+      return a.length >= 1 ? `Claim ${formatDecodedArg(a[0])}` : 'Claim'
+    default:
+      return a.length > 0 ? `${name}(${a.map(formatDecodedArg).join(', ')})` : `${name}()`
+  }
+}
+
+export type DecodedProposalAction = {
+  functionName: string
+  summary: string
+}
+
+/**
+ * Decode archived execution bytes into a director-facing action line.
+ * Tries Chamber + ERC-20 ABIs; falls back to metadata functionName or the selector.
+ */
+export function decodeProposalAction(
+  calldata: string | undefined,
+  hints?: { functionName?: string },
+): DecodedProposalAction | null {
+  const hex = calldata ? normalizeCalldataHex(calldata) : null
+  if (!hex) return null
+
+  for (const abi of [KNOWN_ACTION_ABI, erc20Abi, chamberAbi] as const) {
+    try {
+      const decoded = decodeFunctionData({ abi, data: hex })
+      const args = (decoded.args as readonly unknown[] | undefined) ?? []
+      return {
+        functionName: decoded.functionName,
+        summary: summarizeDecodedCall(decoded.functionName, args),
+      }
+    } catch {
+      // Selector is not in this ABI.
+    }
+  }
+
+  const selector = hex.slice(0, 10).toLowerCase()
+  if (hints?.functionName) {
+    return {
+      functionName: hints.functionName,
+      summary: `${hints.functionName} (${selector})`,
+    }
+  }
+  return {
+    functionName: selector,
+    summary: `Contract call ${selector}`,
+  }
 }
 
 export function resolveCalldataFromMetadataField(
