@@ -10,7 +10,7 @@ Given RPC + a signer + a chamber address:
 
 | Action | Chamber function |
 | --- | --- |
-| Read board + quorum | `getTop`, `getSeats`, `getQuorum`, `getDirectors`, `getSeatedAt`, `paused` |
+| Read board + quorum | `getTop`, `getSeats`, `getQuorum`, `getReachableDirectorCount`, `getDirectors`, `getSeatedAt`, `paused` |
 | Delegate | `delegate` |
 | Submit | `submitTransaction` |
 | Confirm | `confirmTransaction` |

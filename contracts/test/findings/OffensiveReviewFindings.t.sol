@@ -76,8 +76,8 @@ contract OffensiveReviewFindingsTest is Test {
         assertTrue(_isDirectorToken(2));
         assertTrue(_isDirectorToken(3));
 
-        uint256 quorum = chamber.getQuorum(); // seats=5 => 1 + 255/100 = 3
-        assertEq(quorum, 3);
+        uint256 quorum = chamber.getQuorum(); // 3 reachable directors → 1 + (3 * 51) / 100 = 2
+        assertEq(quorum, 2);
 
         deal(address(chamber), 1 ether);
 

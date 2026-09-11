@@ -48,7 +48,7 @@ Happy path on **Sepolia** or **Anvil**:
 4. **Delegate** to a token ID you hold — **Delegation** tab (the CTA prefills a token you own when it can).
 5. **Wait `SEATING_DELAY`** — **1 block**. Then the creator is a seated director and the queue can run.
 
-Quorum stays `1 + (seats * 51) / 100` (I-02). Seating delay stays 1 block (H-02).
+Quorum is `1 + (n * 51) / 100` over reachable authorized directors (PMN-M01). Seating delay stays 1 block (H-02).
 
 **Go to:** **Dashboard** (`/`) → click your Chamber → **Overview** (`/chamber/:address`)
 

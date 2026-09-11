@@ -36,10 +36,12 @@ interface IBoard {
     function getSize() external view returns (uint256 size);
 
     /**
-     * @notice Wallet confirmation threshold: `1 + (seats * 51) / 100` distinct director tokens.
-     * @dev Integer (truncating) division. One- and two-seat chambers require all seats.
-     *      Quorum is token-weighted (per membership `tokenId`), not 1-address-1-vote.
-     *      One address holding `quorum` top-seat NFTs is a single-actor treasury.
+     * @notice Wallet confirmation threshold: `1 + (n * 51) / 100` distinct director tokens.
+     * @dev `n` is the number of reachable authorized top-seat `tokenId`s (`ownerOf` succeeds
+     *      and the owner is not the chamber). Empty seats and burned/inert ids do not inflate
+     *      `n` (PMN-M01). Integer (truncating) division. One- and two-director boards require
+     *      all reachable directors. Quorum is token-weighted, not 1-address-1-vote. One address
+     *      holding `quorum` top-seat NFTs is a single-actor treasury.
      * @return quorum Minimum confirmations required to execute a transaction
      */
     function getQuorum() external view returns (uint256 quorum);

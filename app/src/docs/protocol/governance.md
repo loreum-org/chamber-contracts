@@ -44,14 +44,20 @@ Spending uses the **transaction queue**. Each proposal needs enough **confirmati
 Quorum is **not** “half of directors” and is **not** a real-number “51% of seats + 1.” It is computed as:
 
 \[
-\text{quorum} = 1 + \lfloor \text{seats} \times 51 / 100 \rfloor
+\text{quorum} = 1 + \lfloor n \times 51 / 100 \rfloor
 \]
 
-This is the Solidity integer formula `1 + (seats * 51) / 100`. For many seat counts the result is about 55–67% of seats. One- and two-seat chambers require 100% of seats.
+where \(n\) is the reachable authorized director count.
+
+This is the Solidity integer formula `1 + (n * 51) / 100`, where `n` is reachable
+authorized directors (`ownerOf` succeeds, owner is not the chamber). Empty seats
+and burned or chamber-held tokenIds do not inflate `n` (PMN-M01). For many counts
+the result is about 55–67% of `n`. One- and two-director boards require all
+reachable directors.
 
 Examples:
 
-| Seats | Confirmations needed |
+| Reachable directors \(n\) | Confirmations needed |
 |------:|---------------------:|
 | 1 | 1 |
 | 2 | 2 |

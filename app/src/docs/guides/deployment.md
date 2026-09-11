@@ -48,7 +48,7 @@ Set **`ADMIN`** in the environment if the admin should not be `msg.sender`.
 
 ## Post-create board bootstrap (Anvil or Sepolia)
 
-`createChamber` leaves the board empty. The creator must hold a membership NFT and delegate after depositing shares. Director rights unlock after `SEATING_DELAY` (1 block). Quorum stays `1 + (seats * 51) / 100`.
+`createChamber` leaves the board empty. The creator must hold a membership NFT and delegate after depositing shares. Director rights unlock after `SEATING_DELAY` (1 block). Quorum is `1 + (n * 51) / 100` over reachable authorized directors (PMN-M01).
 
 ```bash
 # 1. Membership NFT — mock mint on Anvil/Sepolia, or transfer an existing token

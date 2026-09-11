@@ -25,6 +25,8 @@ contract FindingM04QuorumSnapshotTest is Test {
     address public user1 = address(0x1);
     address public user2 = address(0x2);
     address public user3 = address(0x3);
+    address public user4 = address(0x4);
+    address public user5 = address(0x5);
 
     function setUp() public {
         token = new MockERC20("Mock Token", "MCK", 0);
@@ -34,9 +36,11 @@ contract FindingM04QuorumSnapshotTest is Test {
         _setupDirector(user1, 1, 1 ether);
         _setupDirector(user2, 2, 1 ether);
         _setupDirector(user3, 3, 1 ether);
+        _setupDirector(user4, 4, 1 ether);
+        _setupDirector(user5, 5, 1 ether);
         vm.roll(block.number + 1);
 
-        // 5 seats → quorum = 1 + (5 * 51) / 100 = 3
+        // 5 filled seats → reachable quorum = 1 + (5 * 51) / 100 = 3 (PMN-M01)
         assertEq(chamber.getSeats(), 5);
         assertEq(chamber.getQuorum(), 3);
     }

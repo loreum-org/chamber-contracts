@@ -205,7 +205,13 @@ Returns total number of nodes in board.
 #### `getQuorum() → uint256`
 Returns current quorum requirement.
 
-**Returns**: Quorum value (`1 + (seats * 51) / 100`). One- and two-seat chambers require all seats.
+**Returns**: Quorum value (`1 + (n * 51) / 100`) where `n` is reachable authorized top-seat directors (`getReachableDirectorCount`). Empty seats and burned or chamber-held tokenIds do not inflate `n`. One- and two-director boards require all reachable directors.
+
+#### `getReachableDirectorCount() → uint256`
+Returns how many top-seat tokenIds can still authorize (`ownerOf` succeeds, owner is not the chamber).
+
+#### `recoverSeats(uint256 tokenId, uint256 newSeats)`
+Lowers configured `seats` when filled authorized directors are below the configured-seat quorum. Dedicated recovery path; not an allowed wallet self-call.
 
 **Note**: Quorum is token-weighted. It counts distinct director `tokenId` confirmations, not unique addresses. One owner of `quorum` top-seat membership NFTs is a single-actor treasury.
 

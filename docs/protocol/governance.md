@@ -32,10 +32,14 @@ The number of seats on the Board can be updated through a governance proposal.
 
 ## Quorum Calculation
 
-Quorum is the integer formula `1 + (seats * 51) / 100` (Solidity truncating division).
-This is not a simple majority and is not "51% of seats + 1" as a real-number percentage.
-For many seat counts the result is about 55–67% of seats. One- and two-seat chambers
-require 100% of seats (quorum equals seats).
+Quorum is the integer formula `1 + (n * 51) / 100` (Solidity truncating division),
+where `n` is the number of **reachable authorized** directors in the top-seat set
+(`ownerOf` succeeds and the owner is not the chamber). Empty seats and burned or
+chamber-held tokenIds do not inflate `n` (PMN-M01). This is not a simple majority
+and is not "51% of seats + 1" as a real-number percentage. For many counts the
+result is about 55–67% of `n`. One- and two-director boards require all reachable
+directors. When filled authorized directors are below the configured-seat quorum,
+`recoverSeats` can lower `seats` (PMN-M01 C); ordinary wallet spend cannot use that path.
 
 That threshold is a count of distinct director **token IDs**, not unique addresses. `isDirector` and confirmations are per membership NFT. One address holding `quorum` top-seat membership NFTs can submit, self-confirm, and execute — a **single-actor treasury**. This is intended (token-weighted quorum); confirmations are not capped per owner.
 

@@ -106,12 +106,15 @@ Token holders delegate their voting power to NFT token IDs. The delegation amoun
 
 ### Quorum
 
-Quorum is calculated as `1 + (seats * 51) / 100` (integer division). This is not a simple majority:
-one- and two-seat chambers require 100% of seats. For example:
-- 1 seat → quorum = 1 + (1 * 51) / 100 = 1
-- 2 seats → quorum = 1 + (2 * 51) / 100 = 2
-- 5 seats → quorum = 1 + (5 * 51) / 100 = 3
-- 7 seats → quorum = 1 + (7 * 51) / 100 = 4
+Quorum is calculated as `1 + (n * 51) / 100` (integer division) where `n` is the
+number of reachable authorized directors in the top-seat set (PMN-M01). Empty seats
+and burned or chamber-held tokenIds do not inflate `n`. This is not a simple majority:
+one- and two-director boards require all reachable directors. For example, when `n`
+equals the configured seat count:
+- 1 director → quorum = 1 + (1 * 51) / 100 = 1
+- 2 directors → quorum = 1 + (2 * 51) / 100 = 2
+- 5 directors → quorum = 1 + (5 * 51) / 100 = 3
+- 7 directors → quorum = 1 + (7 * 51) / 100 = 4
 
 Quorum is **token-weighted**, not 1-address-1-vote. `isDirector` and confirmations are per membership `tokenId`. An address that holds `quorum` distinct top-seat membership NFTs can submit, self-confirm, and execute — a **single-actor treasury**. Confirmations are not capped per owner.
 

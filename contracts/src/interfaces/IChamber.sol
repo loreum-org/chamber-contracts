@@ -99,11 +99,26 @@ interface IChamber is IERC4626, IBoard, IWallet {
     function syncSeating(uint256 tokenId) external;
 
     /**
+     * @notice Top-seat tokenIds that can still authorize (`ownerOf` succeeds, owner is not the chamber).
+     * @dev Denominator for {getQuorum} (PMN-M01). Does not compact leaderboard rank (#210).
+     */
+    function getReachableDirectorCount() external view returns (uint256);
+
+    /**
      * @notice Updates the number of seats
      * @param tokenId The tokenId proposing the update
      * @param numOfSeats The new number of seats
      */
     function updateSeats(uint256 tokenId, uint256 numOfSeats) external;
+
+    /**
+     * @notice Lowers `seats` when filled authorized directors are below the configured-seat quorum.
+     * @dev PMN-M01 Solution C. Dedicated recovery; not an allowed wallet self-call, so ordinary
+     *      spend cannot use this path. `newSeats` must be in `[1, filled]` and `< getSeats()`.
+     * @param tokenId Director token authorizing the recovery
+     * @param newSeats Seat count after recovery
+     */
+    function recoverSeats(uint256 tokenId, uint256 newSeats) external;
 
     /**
      * @notice Executes a pending seat update proposal if it has enough support and the timelock has expired
@@ -221,6 +236,14 @@ interface IChamber is IERC4626, IBoard, IWallet {
      */
     event DirectorOperatorSet(uint256 indexed tokenId, address indexed owner, address indexed operator);
 
+    /**
+     * @notice Emitted when {recoverSeats} lowers the configured seat count (PMN-M01 C).
+     * @param tokenId Director token that authorized the recovery
+     * @param previousSeats Seat count before recovery
+     * @param newSeats Seat count after recovery
+     */
+    event SeatsRecovered(uint256 indexed tokenId, uint256 previousSeats, uint256 newSeats);
+
     /// Errors
     /// @notice Thrown when there is insufficient delegated amount
     error InsufficientDelegatedAmount();
@@ -261,6 +284,9 @@ interface IChamber is IERC4626, IBoard, IWallet {
 
     /// @notice Thrown when number of seats is zero
     error ZeroSeats();
+
+    /// @notice Thrown when {recoverSeats} is not available or `newSeats` is out of range (PMN-M01 C)
+    error SeatRecoveryUnavailable();
 
     /// @notice Thrown when number of seats exceeds maximum
     error TooManySeats();
