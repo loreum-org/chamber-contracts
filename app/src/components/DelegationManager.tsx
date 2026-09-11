@@ -265,7 +265,7 @@ export default function DelegationManager({
         <div className="panel p-4 border-accent-500/25 bg-accent-500/5">
           <p className="text-slate-200 text-sm font-medium">Seat the board</p>
           <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-            The board is empty. Delegate shares to a membership NFT you hold. Director rights unlock one block later.
+            The board is empty. Delegate shares to a membership token you hold. Director rights unlock one block later.
           </p>
           <Link
             to="/docs/introduction/getting-started"
@@ -333,14 +333,14 @@ export default function DelegationManager({
             </div>
             <div>
               <h3 className="font-heading font-semibold text-slate-100">Delegate</h3>
-              <p className="text-slate-500 text-xs">Give voting power to a member</p>
+              <p className="text-slate-500 text-xs">Point your shares at a member to give them a board seat</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-slate-300 text-sm font-medium mb-2">
-                Member ID
+                Member #
               </label>
               {ownsMembershipNft ? (
                 <select
@@ -422,12 +422,12 @@ export default function DelegationManager({
                 <div className="text-sm">
                   {delegateRankPreview.currentRank ? (
                     <span className={delegateRankPreview.willBeDirector ? 'text-accent-300' : 'text-slate-400'}>
-                      Member Id #{delegateTokenId} moves from Rank #{delegateRankPreview.currentRank} → Rank #{delegateRankPreview.newRank}
+                      Member #{delegateTokenId} moves from Rank #{delegateRankPreview.currentRank} → Rank #{delegateRankPreview.newRank}
                       {delegateRankPreview.willBeDirector ? ' — would fill a board seat' : ''}
                     </span>
                   ) : (
                     <span className={delegateRankPreview.willBeDirector ? 'text-accent-300' : 'text-slate-400'}>
-                      Member Id #{delegateTokenId} enters at Rank #{delegateRankPreview.newRank}
+                      Member #{delegateTokenId} enters at Rank #{delegateRankPreview.newRank}
                       {delegateRankPreview.willBeDirector ? ' — would fill a board seat' : ''}
                     </span>
                   )}
@@ -480,7 +480,7 @@ export default function DelegationManager({
           <div className="space-y-4">
             <div>
               <label className="block text-slate-300 text-sm font-medium mb-2">
-                Member ID
+                Member #
               </label>
               <select
                 className="input"
@@ -590,7 +590,7 @@ export default function DelegationManager({
                   />
                   <div className="flex-1">
                     <div className="font-mono text-slate-100">
-                      Member Id #{delegation.tokenId.toString()}
+                      Member #{delegation.tokenId.toString()}
                     </div>
                     {member && member.rank && member.rank <= seats && (
                       <span className="badge badge-primary text-[10px] mt-1">

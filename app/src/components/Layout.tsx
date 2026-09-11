@@ -13,7 +13,7 @@ import { formatLocalTestMintToast, formatWalletSendError } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 const navItems = [
-  { path: '/', label: 'Chambers', icon: FiHome },
+  { path: '/', label: 'My Chambers', icon: FiHome },
   { path: '/deploy', label: 'Deploy Chamber', icon: FiPlus },
   { path: '/docs', label: 'Docs', icon: FiBook },
 ]
@@ -270,7 +270,7 @@ export default function Layout() {
               </nav>
 
               <div className="p-4 border-t border-slate-800 text-xs text-slate-600">
-                Loreum Chambers · Decentralized Governance
+                Chamber · Decentralized Governance
               </div>
             </motion.div>
           </>
@@ -290,7 +290,7 @@ export default function Layout() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-slate-500 text-sm">
               <img src="https://cdn.loreum.org/logos/white.svg" alt="Chamber Logo" className="w-6 h-6 object-contain opacity-80" />
-              <span className="font-medium">Loreum Chambers</span>
+              <span className="font-medium">Chamber</span>
               <span className="text-slate-700">|</span>
               <span>Decentralized Governance</span>
             </div>

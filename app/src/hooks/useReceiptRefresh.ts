@@ -33,7 +33,7 @@ export function queueWritePendingLabel(kind: QueueWriteKind, phase: 'wallet' | '
       case 'cancel':
         return 'Confirm cancel vote in wallet'
       case 'seat-propose':
-        return 'Confirm board proposal in wallet'
+        return 'Confirm board change in wallet'
       case 'seat-support':
         return 'Confirm support in wallet'
       case 'seat-execute':
@@ -57,13 +57,13 @@ export function queueWritePendingLabel(kind: QueueWriteKind, phase: 'wallet' | '
     case 'cancel':
       return 'Cancel vote submitted, waiting for confirmation'
     case 'seat-propose':
-      return 'Board proposal submitted, waiting for confirmation'
+      return 'Board change submitted, waiting for confirmation'
     case 'seat-support':
       return 'Support submitted, waiting for confirmation'
     case 'seat-execute':
-      return 'Board proposal execution submitted, waiting for confirmation'
+      return 'Board change execution submitted, waiting for confirmation'
     case 'seat-cancel':
-      return 'Board proposal cancel submitted, waiting for confirmation'
+      return 'Board change cancel submitted, waiting for confirmation'
   }
 }
 
@@ -82,13 +82,13 @@ export function queueWriteSuccessMessage(kind: QueueWriteKind): string {
     case 'cancel':
       return 'Cancel vote recorded'
     case 'seat-propose':
-      return 'Board proposal created'
+      return 'Board change created'
     case 'seat-support':
-      return 'Board proposal supported'
+      return 'Board change supported'
     case 'seat-execute':
-      return 'Board proposal executed'
+      return 'Board change executed'
     case 'seat-cancel':
-      return 'Board proposal cancelled'
+      return 'Board change cancelled'
   }
 }
 
@@ -107,7 +107,7 @@ export function queueWriteErrorMessage(kind: QueueWriteKind): string {
     case 'cancel':
       return 'Cancel vote failed on-chain'
     case 'seat-propose':
-      return 'Board proposal failed on-chain'
+      return 'Board change failed on-chain'
     case 'seat-support':
       return 'Support failed on-chain'
     case 'seat-execute':

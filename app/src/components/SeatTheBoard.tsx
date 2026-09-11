@@ -84,7 +84,7 @@ export default function SeatTheBoard({
         account: userAddress,
       })
       await writeContractAsync(request)
-      toast.success('Founder membership NFT minted. Deposit shares, then delegate to seat the board.')
+      toast.success('Founder membership token minted. Deposit shares, then delegate to seat the board.')
       void refetchNfts()
       void refetchBoard()
       void refetchShares()
@@ -103,16 +103,16 @@ export default function SeatTheBoard({
 
   const nextCopy: Record<NextAction, { detail: string; cta: string }> = {
     mint: {
-      detail: 'Mint a founder membership NFT on this test collection, then deposit and delegate to it.',
+      detail: 'Mint a founder membership token on this test collection, then deposit and delegate to it.',
       cta: 'Mint founder NFT',
     },
     receive: {
       detail:
-        'Receive a membership NFT from this collection, or use a token ID you already hold. Deploy does not mint or seat anyone.',
+        'Receive a membership token from this collection, or use a token ID you already hold. Deploy does not mint or seat anyone.',
       cta: 'Open chamber',
     },
     deposit: {
-      detail: 'You hold a membership NFT. Deposit vault assets so you have shares to delegate.',
+      detail: 'You hold a membership token. Deposit vault assets so you have shares to delegate.',
       cta: 'Deposit shares',
     },
     delegate: {
@@ -134,7 +134,7 @@ export default function SeatTheBoard({
         <div className="min-w-0">
           <h3 className="font-heading text-xl font-bold text-slate-100">Seat the board</h3>
           <p className="text-slate-400 text-sm mt-1 leading-relaxed">
-            This chamber has no directors. Submit, confirm, and execute stay locked until a membership NFT
+            This chamber has no directors. Submit, confirm, and execute stay locked until a membership token
             receives delegation and seating matures.
           </p>
           <Link
@@ -147,7 +147,7 @@ export default function SeatTheBoard({
       </div>
 
       <ol className="space-y-2 text-sm">
-        <Step done={holdsNft} loading={!!userAddress && nftsLoading && !holdsNft} label="Hold a membership NFT" />
+        <Step done={holdsNft} loading={!!userAddress && nftsLoading && !holdsNft} label="Hold a membership token" />
         <Step done={hasShares} label="Deposit shares" />
         <Step done={false} label={`Delegate, then wait ${SEATING_DELAY_BLOCKS.toString()} block`} />
       </ol>

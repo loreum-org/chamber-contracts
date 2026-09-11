@@ -93,7 +93,7 @@ export default function ChamberCard({ address }: ChamberCardProps) {
         <div className="flex items-center gap-3 text-slate-500 flex-wrap">
           <span className="flex items-center gap-1.5">
             <FiCheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-            <span>{quorum} quorum</span>
+            <span>{quorum} of {seats} directors must confirm</span>
           </span>
           <span className="flex items-center gap-1.5">
             <FiUsers className="w-3.5 h-3.5 text-accent-500" />

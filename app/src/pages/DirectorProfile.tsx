@@ -421,7 +421,7 @@ export default function DirectorProfile() {
             <Row label="Rank" value={rank !== null ? `#${rank} of ${members.length}` : 'Not ranked'} />
             <Row label="Seats" value={`${chamberInfo.seats ?? '—'} total`} />
             <Row label="Status" value={isDirector ? 'Active Director' : rank !== null ? 'Queued (not seated)' : 'Not on board'} highlight={isDirector} />
-            <Row label="Quorum required" value={chamberInfo.quorum ? `${chamberInfo.quorum} / ${chamberInfo.seats}` : '—'} />
+            <Row label="Quorum required" value={chamberInfo.quorum && chamberInfo.seats ? `${chamberInfo.quorum} of ${chamberInfo.seats} directors must confirm` : '—'} />
           </div>
 
           {/* Delegation detail */}
@@ -455,7 +455,7 @@ export default function DirectorProfile() {
               <FiLayers className="w-3.5 h-3.5" /> View Chamber
             </Link>
             <Link to={`/chamber/${chamberAddress}/transactions`} className="flex items-center gap-2 text-sm text-slate-400 hover:text-accent-400 transition-colors">
-              <FiActivity className="w-3.5 h-3.5" /> Transaction Queue
+              <FiActivity className="w-3.5 h-3.5" /> Proposals
             </Link>
             {nftOwner && nftOwner !== zeroAddress && explorerUrl && (
               <a
