@@ -245,8 +245,9 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
     )
   }
 
+  const registryImplementation = implSync.registryImplementation
   const showImplMismatch =
-    implSync.implMismatch && !implSync.isLoading && !!implSync.registryImplementation
+    implSync.implMismatch && !implSync.isLoading && !!registryImplementation
 
   return (
     <div className="space-y-6">
@@ -274,7 +275,7 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
           </div>
         </motion.div>
       )}
-      {showImplMismatch && (
+      {showImplMismatch && registryImplementation && (
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -290,7 +291,7 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
                 <span className="font-mono tabular-nums">
                   v{implSync.registryImplementationVersionLabel ?? '—'}
                 </span>{' '}
-                ({shortenAddress(implSync.registryImplementation, 6)}
+                ({shortenAddress(registryImplementation, 6)}
                 ). This chamber proxy still uses{' '}
                 <span className="font-mono tabular-nums">
                   {chamberVersionTag === '…' ? '—' : chamberVersionTag}
