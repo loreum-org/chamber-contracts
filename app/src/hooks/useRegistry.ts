@@ -163,9 +163,13 @@ export function useChamberCount() {
  * Probe the address (`VERSION` / `nft` / `getSeats`) instead of requiring Registry.isChamber.
  * Registry.isChamber remains a soft hint for chambers that are still in the deprecated index.
  */
-export function useIsChamber(address: `0x${string}` | undefined) {
+export function useIsChamber(
+  address: `0x${string}` | undefined,
+  opts?: { enabled?: boolean },
+) {
   const registryAddress = useRegistryAddress()
   const registryOk = isNonZeroAddress(registryAddress)
+  const enabled = (opts?.enabled ?? true) && !!address
 
   const {
     data: probe,
@@ -179,7 +183,7 @@ export function useIsChamber(address: `0x${string}` | undefined) {
           { address, abi: chamberAbi, functionName: 'getSeats' as const },
         ]
       : [],
-    query: { enabled: !!address, retry: 1 },
+    query: { enabled, retry: 1 },
   })
 
   const { data: registryHint, isFetched: hintFetched } = useReadContract({
@@ -187,10 +191,10 @@ export function useIsChamber(address: `0x${string}` | undefined) {
     abi: registryAbi,
     functionName: 'isChamber',
     args: address ? [address] : undefined,
-    query: { enabled: !!address && registryOk },
+    query: { enabled: enabled && registryOk },
   })
 
-  if (!address) return undefined
+  if (!address || !enabled) return undefined
 
   const looksLikeChamber = !!probe?.some((r) => r.status === 'success' && r.result !== undefined)
   if (looksLikeChamber) return true

@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAccount, useReadContract, useReadContracts, useChainId, usePublicClient } from 'wagmi'
 import { useQuery } from '@tanstack/react-query'
-import { formatEther, formatUnits, isAddress, parseAbiItem, zeroAddress } from 'viem'
+import { formatEther, formatUnits, parseAbiItem, zeroAddress } from 'viem'
 import {
   FiArrowLeft,
   FiShield,
@@ -25,6 +25,7 @@ import { chamberAbi, erc721Abi } from '@/contracts/abis'
 import { useChamberInfo, useBoardMembers, useNftTokenImage } from '@/hooks'
 import { getBlockExplorerAddressUrl } from '@/lib/utils'
 import { NftRetryableImage } from '@/components/NftRetryableImage'
+import { ChamberRouteGate } from '@/components/ChamberRouteGate'
 
 // Minimal generated-abi event fragments for log queries
 const SUBMIT_TX_EVENT = parseAbiItem('event SubmitTransaction(uint256 indexed tokenId, uint256 indexed nonce, address indexed to, uint256 value, bytes data)')
@@ -139,12 +140,25 @@ function ActivityRow({ action, nonce, detail, href }: {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DirectorProfile() {
-  const { address, tokenId: tokenIdParam } = useParams<{ address: string; tokenId: string }>()
+  const { address, tokenId } = useParams<{ address: string; tokenId: string }>()
+  return (
+    <ChamberRouteGate address={address}>
+      {(chamberAddress) => (
+        <DirectorProfileContent chamberAddress={chamberAddress} tokenIdParam={tokenId} />
+      )}
+    </ChamberRouteGate>
+  )
+}
+
+function DirectorProfileContent({
+  chamberAddress,
+  tokenIdParam,
+}: {
+  chamberAddress: `0x${string}`
+  tokenIdParam: string | undefined
+}) {
   const { address: userAddress } = useAccount()
   const chainId = useChainId()
-
-  const validAddress = address && isAddress(address)
-  const chamberAddress = (validAddress ? address : zeroAddress) as `0x${string}`
   const tokenId = useMemo(() => {
     try { return tokenIdParam ? BigInt(tokenIdParam) : 0n } catch { return 0n }
   }, [tokenIdParam])
@@ -159,7 +173,7 @@ export default function DirectorProfile() {
     abi: chamberAbi,
     functionName: 'getMember',
     args: [tokenId],
-    query: { enabled: tokenId > 0n && !!validAddress },
+    query: { enabled: tokenId > 0n },
   })
 
   // NFT owner
@@ -197,7 +211,7 @@ export default function DirectorProfile() {
       functionName: 'getConfirmation' as const,
       args: [tokenId, BigInt(id)],
     })),
-    query: { enabled: tokenId > 0n && txIds.length > 0 && !!validAddress },
+    query: { enabled: tokenId > 0n && txIds.length > 0 },
   })
 
   // Log-based activity (events filtered by tokenId)
@@ -239,12 +253,12 @@ export default function DirectorProfile() {
   }, [logs])
 
   // Guards
-  if (!validAddress || tokenId === 0n) {
+  if (tokenId === 0n) {
     return (
       <div className="flex flex-col items-center justify-center min-h-64 gap-4 text-center">
         <FiAlertTriangle className="w-12 h-12 text-red-400" />
         <h2 className="font-heading text-xl font-bold text-slate-100">Invalid URL</h2>
-        <p className="text-slate-400">Chamber address or token ID is missing.</p>
+        <p className="text-slate-400">Token ID is missing.</p>
         <Link to="/" className="btn btn-primary">Back to Dashboard</Link>
       </div>
     )

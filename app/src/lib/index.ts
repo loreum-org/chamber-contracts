@@ -1,4 +1,5 @@
 export * from './wagmi'
 export * from './chamberGovernance'
+export * from './chamberRoute'
 export * from './indexer'
 export * from './chamberDiscovery'
