@@ -81,6 +81,26 @@ The app will be available at `http://localhost:5173`
 npm run build
 ```
 
+### Sepolia wallet smoke (Playwright + MetaMask)
+
+Short wallet-UI smoke on **Sepolia (11155111)**: load the app, connect via the RainbowKit modal + MetaMask (Dappwright), stay on Sepolia, then open a known chamber by address (or assert connected **My chambers**). This is not a submit / confirm / execute cycle.
+
+`scripts/verify-sepolia-discovery.ts` stays the RPC-only discovery check (`npm run test:discovery`). This script is the wallet layer on top of that.
+
+| Variable | Required to run | Notes |
+| --- | --- | --- |
+| `E2E_SEPOLIA_PRIVATE_KEY` or `SEPOLIA_PRIVATE_KEY` | yes | Throwaway account. **Never commit.** Fund it with Sepolia ETH (faucet) before a real run. |
+| `PLAYWRIGHT_BASE_URL` | no | Defaults to `https://app.loreum.org`. |
+| `PLAYWRIGHT_SEPOLIA_CHAMBER` | no | Chamber to open. Default is a known Sepolia chamber from Factory `0x43aA92c8A26392f21F63cdA88B6BaB5031C40550` / discovery. |
+
+```bash
+cd app
+# Skips with exit 0 when neither key env is set (default CI stays green)
+npm run test:e2e:sepolia
+```
+
+The key is read from the environment only. Do not put it in the repo, commit messages, or Playwright artifacts.
+
 ## Project Structure
 
 ```

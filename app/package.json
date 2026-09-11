@@ -9,7 +9,8 @@
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test:discovery": "npx --yes tsx --tsconfig tsconfig.json scripts/verify-chamber-discovery.ts && npx --yes tsx --tsconfig tsconfig.json scripts/verify-sepolia-discovery.ts"
+    "test:discovery": "npx --yes tsx --tsconfig tsconfig.json scripts/verify-chamber-discovery.ts && npx --yes tsx --tsconfig tsconfig.json scripts/verify-sepolia-discovery.ts",
+    "test:e2e:sepolia": "node ./scripts/run-e2e-sepolia.mjs"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.1.0",
@@ -30,6 +31,8 @@
     "wagmi": "^2.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@tenkeylabs/dappwright": "^2.13.12",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@typescript-eslint/eslint-plugin": "^7.2.0",

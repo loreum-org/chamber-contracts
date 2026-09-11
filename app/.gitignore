@@ -24,3 +24,9 @@ npm-debug.log*
 # Cache
 .cache/
 *.tsbuildinfo
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
