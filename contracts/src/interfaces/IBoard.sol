@@ -151,4 +151,7 @@ interface IBoard {
 
     /// @notice Thrown when a tokenId exceeds type(uint128).max (Node.next/prev are packed as uint128)
     error TokenIdTooLarge();
+
+    /// @notice Thrown when `cleanupInertSeat` is called on a tokenId whose `ownerOf` still succeeds
+    error SeatNotInert();
 }

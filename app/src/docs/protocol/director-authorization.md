@@ -37,6 +37,13 @@ A session key may exercise the same **token-gated** Chamber actions as the
 owner for that `tokenId`: director-gated board and wallet functions, and
 `revokeConfirmation` (which is owner-authorized, not seat-gated).
 
+Confirm and cancel bits count toward execute only while `ownerOf` succeeds
+and the recorded controller still matches (PMN-H01 A, PMN-M02 A). Burned
+tokens are skipped. A control change to an owner with no live session key
+drops the prior bits. `cleanupInertSeat(tokenId)` drops a burned id from the
+top set; later `refreshSeating` does not put it back while it stays inert
+(PMN-M02 Solution B).
+
 The owner may still act as itself. The owner clears the key by calling
 `setDirectorOperator(tokenId, address(0))`. Only the current owner may set or
 clear the key; the operator cannot replace itself.

@@ -15,17 +15,17 @@ library BoardLib {
     using EnumerableSet for EnumerableSet.UintSet;
     using BoardTypes for BoardTypes.BoardStorage;
 
-    function getNode(BoardTypes.BoardStorage storage $, uint256 tokenId) external view returns (BoardTypes.Node memory) {
+    function getNode(BoardTypes.BoardStorage storage $, uint256 tokenId)
+        external
+        view
+        returns (BoardTypes.Node memory)
+    {
         return $.nodes[tokenId];
     }
 
-    function delegate(
-        BoardTypes.BoardStorage storage $,
-        uint256 tokenId,
-        uint256 amount,
-        address sender,
-        IERC721 nft
-    ) external {
+    function delegate(BoardTypes.BoardStorage storage $, uint256 tokenId, uint256 amount, address sender, IERC721 nft)
+        external
+    {
         uint256[] memory prevTop = topTokenIds($);
         BoardTypes.Node storage node = $.nodes[tokenId];
         if (node.tokenId == tokenId) {
@@ -40,13 +40,9 @@ library BoardLib {
         emit IBoard.Delegate(sender, tokenId, amount);
     }
 
-    function undelegate(
-        BoardTypes.BoardStorage storage $,
-        uint256 tokenId,
-        uint256 amount,
-        address sender,
-        IERC721 nft
-    ) external {
+    function undelegate(BoardTypes.BoardStorage storage $, uint256 tokenId, uint256 amount, address sender, IERC721 nft)
+        external
+    {
         uint256[] memory prevTop = topTokenIds($);
         BoardTypes.Node storage node = $.nodes[tokenId];
         if (node.tokenId != tokenId) revert IBoard.NodeDoesNotExist();
@@ -379,12 +375,19 @@ library BoardLib {
         return false;
     }
 
-    /// @dev Live top-seat flags whose recorded controller still matches `ownerOf` (PMN-H01 A).
+    /// @dev Live top-seat flags with a current owner path (PMN-H01 A, PMN-M02 A).
+    ///      Skips `ownerOf` failure. A control change with no live session key is
+    ///      dropped when the recorded controller no longer matches `ownerOf`.
     function countCurrentDirectorFlags(
         BoardTypes.BoardStorage storage $,
         IERC721 nft,
         mapping(uint256 nonce => mapping(uint256 tokenId => bool)) storage flags,
-        mapping(uint256 nonce => mapping(uint256 tokenId => address)) storage flagOwners,
+        mapping(
+            uint256 nonce
+                => mapping(
+                uint256 tokenId => address
+            )
+        ) storage flagOwners,
         uint256 nonce
     ) external view returns (uint256 count) {
         uint256 current = $.head;
@@ -406,10 +409,21 @@ library BoardLib {
         uint256 nonce,
         uint256 tokenId
     ) internal view returns (bool) {
+        address owner = tryOwnerOf(nft, tokenId);
+        if (owner == address(0)) return false;
         address recorded = flagOwners[nonce][tokenId];
         if (recorded == address(0)) return true;
-        address owner = tryOwnerOf(nft, tokenId);
-        return owner != address(0) && owner == recorded;
+        return owner == recorded;
+    }
+
+    /// @dev Permissionless rank drop for a burned / `ownerOf`-failing node (PMN-M02 B).
+    function cleanupInertSeat(BoardTypes.BoardStorage storage $, IERC721 nft, uint256 tokenId) external {
+        if ($.nodes[tokenId].tokenId != tokenId) revert IBoard.NodeDoesNotExist();
+        if (tryOwnerOf(nft, tokenId) != address(0)) revert IBoard.SeatNotInert();
+        uint256[] memory prevTop = topTokenIds($);
+        remove($, tokenId);
+        refreshSeating($, prevTop);
+        syncTopSeatControl($, nft);
     }
 
     function swapUp(BoardTypes.BoardStorage storage $, uint256 tokenId) internal {
@@ -628,7 +642,9 @@ library BoardLib {
     function syncTrackedDelegations(
         BoardTypes.BoardStorage storage $b,
         mapping(address => mapping(uint256 => uint256)) storage holderDelegation,
-        mapping(address => EnumerableSet.UintSet) storage holderDelegatedTokenIds,
+        mapping(
+            address => EnumerableSet.UintSet
+        ) storage holderDelegatedTokenIds,
         address holder
     ) external {
         EnumerableSet.UintSet storage tracked = holderDelegatedTokenIds[holder];

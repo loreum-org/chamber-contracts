@@ -79,7 +79,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
      *      (length word + data word) and incurs an SLOAD on every read. A bytes32 constant is
      *      inlined at compile time: zero runtime gas, zero storage slots.
      */
-    bytes32 public constant VERSION = "1.1.7";
+    bytes32 public constant VERSION = "1.1.8";
 
     /// @notice Function selector for upgradeImplementation(address,bytes)
     bytes4 private constant UPGRADE_SELECTOR = 0xc89311b6;
@@ -879,6 +879,13 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     function syncSeating(uint256 tokenId) external override {
         if (tokenId == 0) revert IChamber.ZeroTokenId();
         _syncSeatingControl(_getChamberStorage().nft, tokenId);
+    }
+
+    /// @inheritdoc IChamber
+    function cleanupInertSeat(uint256 tokenId) external override nonReentrant {
+        if (tokenId == 0) revert IChamber.ZeroTokenId();
+        _cleanupInertSeat(_getChamberStorage().nft, tokenId);
+        emit IChamber.InertSeatCleaned(tokenId);
     }
 
     /// PROXY UPGRADE FUNCTIONS ///
