@@ -116,9 +116,14 @@ abstract contract Board is ReentrancyGuardTransientUpgradeable {
         IERC721 nft,
         mapping(uint256 nonce => mapping(uint256 tokenId => bool)) storage flags,
         mapping(uint256 nonce => mapping(uint256 tokenId => address)) storage flagOwners,
+        mapping(uint256 tokenId => BoardTypes.DirectorSession) storage sessions,
         uint256 nonce
     ) internal view returns (uint256) {
-        return BoardLib.countCurrentDirectorFlags(_getBoardStorage(), nft, flags, flagOwners, nonce);
+        return BoardLib.countCurrentDirectorFlags(_getBoardStorage(), nft, flags, flagOwners, sessions, nonce);
+    }
+
+    function _cleanupInertSeat(IERC721 nft, uint256 tokenId) internal {
+        BoardLib.cleanupInertSeat(_getBoardStorage(), nft, tokenId);
     }
 
     function _collectDelegations(

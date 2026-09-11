@@ -40,6 +40,13 @@ A session key may exercise the same **token-gated** Chamber actions as the
 owner for that `tokenId`: director-gated board and wallet functions, and
 `revokeConfirmation` (which is owner-authorized, not seat-gated).
 
+Confirm and cancel bits count toward execute only while the `tokenId` still
+has a revoke path: `ownerOf` succeeds and the owner is an EOA, or a live
+session key exists. Burned tokens and contract owners with no session key
+are skipped (PMN-M02 Solution A). `cleanupInertSeat(tokenId)` drops a burned
+id from the top set; later `refreshSeating` does not put it back while it
+stays inert (PMN-M02 Solution B).
+
 The owner may still act as itself. The owner clears the key by calling
 `setDirectorOperator(tokenId, address(0))`. Only the current owner may set or
 clear the key; the operator cannot replace itself.

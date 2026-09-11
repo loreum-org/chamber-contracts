@@ -227,6 +227,24 @@ Returns addresses of current directors.
 
 ---
 
+#### `cleanupInertSeat(uint256 tokenId)`
+Permissionless rank drop for a burned membership token (PMN-M02 Solution B).
+
+**Parameters**:
+- `tokenId`: Membership token ID whose `ownerOf` fails
+
+**Reverts**:
+- `ZeroTokenId`: If tokenId is 0
+- `NodeDoesNotExist`: If the token is not on the board
+- `SeatNotInert`: If `ownerOf` still succeeds
+
+**Events**:
+- `InertSeatCleaned(tokenId)`
+
+**Note**: Later `refreshSeating` (delegate/undelegate) does not restore the id while it stays inert. Reminting the same tokenId is not required.
+
+---
+
 #### `updateSeats(uint256 tokenId, uint256 numOfSeats)`
 Proposes or supports seat update.
 
@@ -647,6 +665,7 @@ Transfers tokens from another address.
 - `InsufficientVotes()`: Insufficient votes
 - `MaxNodesReached()`: Maximum nodes reached
 - `CircuitBreakerActive()`: Circuit breaker active
+- `SeatNotInert()`: `cleanupInertSeat` called on a tokenId whose `ownerOf` still succeeds
 
 ### Wallet Errors
 

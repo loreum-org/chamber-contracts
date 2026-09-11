@@ -31,12 +31,6 @@ import {EnumerableSet} from "lib/openzeppelin-contracts/contracts/utils/structs/
 contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, IChamber, IERC721Receiver {
     using EnumerableSet for EnumerableSet.UintSet;
 
-    /// @dev Bound to the approving contract owner so an NFT transfer drops the key.
-    struct DirectorSession {
-        address owner;
-        address operator;
-    }
-
     /**
      * @notice ERC-7201 namespaced storage layout for Chamber
      * @dev Packing: `nft` (address, 20 bytes) sits alone in its slot; remaining fields are
@@ -52,7 +46,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         /// @dev Per-holder set of tokenIds with a positive delegation, including board-evicted ids.
         mapping(address => EnumerableSet.UintSet) holderDelegatedTokenIds;
         /// @dev Session key for a contract-owned membership NFT. Stale if `owner` != current `ownerOf`.
-        mapping(uint256 tokenId => DirectorSession) directorSession;
+        mapping(uint256 tokenId => BoardTypes.DirectorSession) directorSession;
         /// @dev `ownerOf` when the confirm bit was last written. Mismatch is ignored for quorum (PMN-H01 A).
         mapping(uint256 nonce => mapping(uint256 tokenId => address)) confirmOwner;
         /// @dev `ownerOf` when the cancel bit was last written. Mismatch is ignored for quorum (PMN-H01 A).
@@ -79,7 +73,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
      *      (length word + data word) and incurs an SLOAD on every read. A bytes32 constant is
      *      inlined at compile time: zero runtime gas, zero storage slots.
      */
-    bytes32 public constant VERSION = "1.1.7";
+    bytes32 public constant VERSION = "1.1.8";
 
     /// @notice Function selector for upgradeImplementation(address,bytes)
     bytes4 private constant UPGRADE_SELECTOR = 0xc89311b6;
@@ -327,7 +321,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         if (operator == address(0)) {
             delete $.directorSession[tokenId];
         } else {
-            $.directorSession[tokenId] = DirectorSession({owner: owner, operator: operator});
+            $.directorSession[tokenId] = BoardTypes.DirectorSession({owner: owner, operator: operator});
         }
         emit IChamber.DirectorOperatorSet(tokenId, owner, operator);
     }
@@ -795,7 +789,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     /// @dev Session key is live only for the current contract owner that registered it.
     function _isLiveSessionKey(uint256 tokenId, address owner, address account) internal view returns (bool) {
         if (account == address(0) || owner.code.length == 0) return false;
-        DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
+        BoardTypes.DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
         return session.owner == owner && session.operator == account;
     }
 
@@ -804,7 +798,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         if (tokenId == 0) return (false, address(0));
         try _getChamberStorage().nft.ownerOf(tokenId) returns (address owner) {
             if (owner.code.length == 0) return (false, address(0));
-            DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
+            BoardTypes.DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
             if (session.owner != owner || session.operator == address(0)) return (false, address(0));
             return (true, session.operator);
         } catch {
@@ -830,12 +824,13 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
 
     function _countLiveConfirmFlags(uint256 nonce) internal view returns (uint256) {
         ChamberStorage storage $ = _getChamberStorage();
-        return _countCurrentDirectorFlags($.nft, _getWalletStorage().isConfirmed, $.confirmOwner, nonce);
+        return _countCurrentDirectorFlags($.nft, _getWalletStorage().isConfirmed, $.confirmOwner, $.directorSession, nonce);
     }
 
     function _countLiveCancelFlags(uint256 nonce) internal view returns (uint256) {
         ChamberStorage storage $ = _getChamberStorage();
-        return _countCurrentDirectorFlags($.nft, _getWalletStorage().isCancelConfirmed, $.cancelOwner, nonce);
+        return
+            _countCurrentDirectorFlags($.nft, _getWalletStorage().isCancelConfirmed, $.cancelOwner, $.directorSession, nonce);
     }
 
     function _submitTransactionWithMetadata(
@@ -879,6 +874,13 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     function syncSeating(uint256 tokenId) external override {
         if (tokenId == 0) revert IChamber.ZeroTokenId();
         _syncSeatingControl(_getChamberStorage().nft, tokenId);
+    }
+
+    /// @inheritdoc IChamber
+    function cleanupInertSeat(uint256 tokenId) external override nonReentrant {
+        if (tokenId == 0) revert IChamber.ZeroTokenId();
+        _cleanupInertSeat(_getChamberStorage().nft, tokenId);
+        emit IChamber.InertSeatCleaned(tokenId);
     }
 
     /// PROXY UPGRADE FUNCTIONS ///

@@ -99,6 +99,15 @@ interface IChamber is IERC4626, IBoard, IWallet {
     function syncSeating(uint256 tokenId) external;
 
     /**
+     * @notice Removes a burned membership `tokenId` from the leaderboard (PMN-M02 Solution B).
+     * @dev Permissionless. `ownerOf` must revert (or otherwise fail). `refreshSeating` on a later
+     *      delegate/undelegate does not put the id back while it stays inert. Reminting the same
+     *      `tokenId` is not required. Live tokens revert {IBoard.SeatNotInert}.
+     * @param tokenId Membership token to drop from the top set
+     */
+    function cleanupInertSeat(uint256 tokenId) external;
+
+    /**
      * @notice Updates the number of seats
      * @param tokenId The tokenId proposing the update
      * @param numOfSeats The new number of seats
@@ -220,6 +229,12 @@ interface IChamber is IERC4626, IBoard, IWallet {
      * @param operator Session key, or `address(0)` when cleared
      */
     event DirectorOperatorSet(uint256 indexed tokenId, address indexed owner, address indexed operator);
+
+    /**
+     * @notice Emitted when a burned / `ownerOf`-failing tokenId is dropped from the board.
+     * @param tokenId Membership token removed from the leaderboard
+     */
+    event InertSeatCleaned(uint256 indexed tokenId);
 
     /// Errors
     /// @notice Thrown when there is insufficient delegated amount
