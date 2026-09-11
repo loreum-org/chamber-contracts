@@ -58,6 +58,26 @@ refreshes expiry or scope by calling `setDirectorOperator` again (that reset
 also restarts `liveAt`). Only the current owner may set or clear the key; the
 operator cannot replace itself.
 
+## Public session views
+
+These getters are how callers read the session. They match the rules above.
+
+- `getDirectorOperator(tokenId)` — live operator, or zero if unset, stale,
+  expired, EOA-owned, or burned. Does **not** apply `scope` or the
+  confirm/execute delay.
+- `getDirectorOperatorScope(tokenId)` — `scope` of that live session, or
+  `0` if there is no live session. `0` is not unscoped; unscoped is
+  `SESSION_SCOPE_UNSCOPED`.
+- `getDirectorOperatorLiveAt(tokenId)` — first block the live session may
+  confirm or execute (`liveAt`), or `0` if there is no live session.
+  Confirm/execute require `block.number >= liveAt`.
+- `getDirectorSession(tokenId)` — raw stored `(sessionOwner, operator,
+  expiry, scope, liveAt)`. These fields may be stale or expired. Use the
+  live getters above for the current key.
+- `isTokenAuthorized(tokenId, account)` — NFT owner or live (unexpired)
+  session key. Does **not** check board seats, seating delay, `scope`, or
+  the confirm/execute delay. Burned tokens return false.
+
 ## Callers that may not act
 
 - Any address that is neither the current `ownerOf(tokenId)` nor the live

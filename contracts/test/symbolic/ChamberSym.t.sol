@@ -115,6 +115,8 @@ contract ChamberSymTest is Test, SymTest {
     }
 
     /// @dev Only the registered session key (plus the contract owner) is authorized.
+    ///      Reads the PMN-M04 session ABI (expiry/scope/liveAt). Not a symbolic proof of
+    ///      expiry, scope bits, or the confirm/execute delay.
     function symbolicSessionKeyIsOnlyApprovedOperator() public {
         uint256 tokenId = svm.createUint(128, "tokenId");
         address sessionKey = svm.createAddress("sessionKey");
@@ -136,5 +138,15 @@ contract ChamberSymTest is Test, SymTest {
         assertTrue(chamber.isTokenAuthorized(tokenId, sessionKey));
         assertFalse(chamber.isTokenAuthorized(tokenId, other));
         assertEq(chamber.getDirectorOperator(tokenId), sessionKey);
+        assertEq(chamber.getDirectorOperatorScope(tokenId), type(uint32).max);
+        assertEq(chamber.getDirectorOperatorLiveAt(tokenId), block.number + 1);
+
+        (address sessionOwner, address storedOp, uint256 expiry, uint32 scope, uint256 liveAt) =
+            chamber.getDirectorSession(tokenId);
+        assertEq(sessionOwner, address(wallet));
+        assertEq(storedOp, sessionKey);
+        assertEq(expiry, type(uint64).max);
+        assertEq(scope, type(uint32).max);
+        assertEq(liveAt, block.number + 1);
     }
 }

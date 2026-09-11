@@ -78,18 +78,14 @@ contract FindingPMNM04SessionKeyScopeTest is Test {
     function test_PMNM04_ownerOnlySetsAndClears() public {
         vm.prank(sessionKey);
         vm.expectRevert(IChamber.NotDirector.selector);
-        chamber.setDirectorOperator(
-            TOKEN_WALLET, sessionKey, block.timestamp + 30 days, UNSCOPED
-        );
+        chamber.setDirectorOperator(TOKEN_WALLET, sessionKey, block.timestamp + 30 days, UNSCOPED);
 
         _setKey(sessionKey, block.timestamp + 30 days, UNSCOPED);
         assertEq(chamber.getDirectorOperator(TOKEN_WALLET), sessionKey);
 
         vm.prank(sessionKey);
         vm.expectRevert(IChamber.NotDirector.selector);
-        chamber.setDirectorOperator(
-            TOKEN_WALLET, address(0xFEE1), block.timestamp + 30 days, UNSCOPED
-        );
+        chamber.setDirectorOperator(TOKEN_WALLET, address(0xFEE1), block.timestamp + 30 days, UNSCOPED);
         assertEq(chamber.getDirectorOperator(TOKEN_WALLET), sessionKey, "key cannot replace itself");
 
         wallet.execute(address(chamber), abi.encodeCall(chamber.setDirectorOperator, (TOKEN_WALLET, address(0), 0, 0)));
@@ -251,6 +247,150 @@ contract FindingPMNM04SessionKeyScopeTest is Test {
         chamber.executeTransaction(TOKEN_WALLET, 0, "");
         (bool executed,,,,) = chamber.getTransaction(0);
         assertTrue(executed, "key may execute after SEATING_DELAY");
+    }
+
+    /// @notice Live getters expose scope and liveAt. Raw getDirectorSession may retain leftovers.
+    function test_PMNM04_viewsExposeScopeAndLiveAt() public {
+        assertEq(chamber.getDirectorOperatorScope(TOKEN_WALLET), 0);
+        assertEq(chamber.getDirectorOperatorLiveAt(TOKEN_WALLET), 0);
+
+        uint32 confirmOnly = chamber.SESSION_SCOPE_CONFIRM();
+        _setKey(sessionKey, block.timestamp + 30 days, confirmOnly);
+        uint256 expectedLiveAt = block.number + SEATING_DELAY;
+
+        assertEq(chamber.getDirectorOperator(TOKEN_WALLET), sessionKey);
+        assertEq(chamber.getDirectorOperatorScope(TOKEN_WALLET), confirmOnly);
+        assertEq(chamber.getDirectorOperatorLiveAt(TOKEN_WALLET), expectedLiveAt);
+
+        (,,, uint32 rawScope, uint256 rawLiveAt) = chamber.getDirectorSession(TOKEN_WALLET);
+        assertEq(rawScope, confirmOnly);
+        assertEq(rawLiveAt, expectedLiveAt);
+
+        vm.warp(block.timestamp + 31 days);
+        assertEq(chamber.getDirectorOperator(TOKEN_WALLET), address(0), "expired key is not live");
+        assertEq(chamber.getDirectorOperatorScope(TOKEN_WALLET), 0);
+        assertEq(chamber.getDirectorOperatorLiveAt(TOKEN_WALLET), 0);
+        (,,, uint32 leftoverScope,) = chamber.getDirectorSession(TOKEN_WALLET);
+        assertEq(leftoverScope, confirmOnly, "raw session retains leftover scope");
+    }
+
+    /// @notice Burning the membership NFT drops the live key. Leftover storage is not a director.
+    function test_PMNM04_burnDropsLiveKey() public {
+        _setKey(sessionKey, block.timestamp + 30 days, UNSCOPED);
+        assertEq(chamber.getDirectorOperator(TOKEN_WALLET), sessionKey);
+        assertEq(chamber.getDirectorOperatorScope(TOKEN_WALLET), UNSCOPED);
+
+        nft.burn(TOKEN_WALLET);
+
+        assertEq(chamber.getDirectorOperator(TOKEN_WALLET), address(0));
+        assertEq(chamber.getDirectorOperatorScope(TOKEN_WALLET), 0);
+        assertEq(chamber.getDirectorOperatorLiveAt(TOKEN_WALLET), 0);
+        assertFalse(chamber.isTokenAuthorized(TOKEN_WALLET, sessionKey));
+        assertFalse(chamber.isTokenAuthorized(TOKEN_WALLET, address(wallet)));
+
+        vm.prank(sessionKey);
+        vm.expectRevert();
+        chamber.submitTransaction(TOKEN_WALLET, address(0x3), 0, "");
+    }
+
+    /// @notice Confirm-only cannot revoke. A revoke-scoped key may revoke immediately (no C delay).
+    function test_PMNM04_revokeRespectsScope() public {
+        vm.prank(user1);
+        chamber.submitTransaction(1, address(0x3), 0, "");
+
+        uint32 confirmOnly = chamber.SESSION_SCOPE_CONFIRM();
+        _setKey(sessionKey, block.timestamp + 30 days, confirmOnly);
+        vm.roll(block.number + SEATING_DELAY);
+
+        vm.prank(sessionKey);
+        chamber.confirmTransaction(TOKEN_WALLET, 0);
+        assertTrue(chamber.getConfirmation(TOKEN_WALLET, 0));
+
+        vm.prank(sessionKey);
+        vm.expectRevert(IChamber.NotDirector.selector);
+        chamber.revokeConfirmation(TOKEN_WALLET, 0);
+
+        uint32 revokeOnly = chamber.SESSION_SCOPE_REVOKE();
+        _setKey(sessionKey, block.timestamp + 30 days, revokeOnly);
+        assertEq(chamber.getDirectorOperatorScope(TOKEN_WALLET), revokeOnly);
+
+        vm.prank(sessionKey);
+        chamber.revokeConfirmation(TOKEN_WALLET, 0);
+        assertFalse(chamber.getConfirmation(TOKEN_WALLET, 0), "revoke-scoped key may revoke immediately");
+    }
+
+    /// @notice Batch confirm/execute wait `SEATING_DELAY`. Confirm-only cannot executeBatch.
+    function test_PMNM04_batchRespectsScopeAndDelay() public {
+        vm.prank(user1);
+        chamber.submitTransaction(1, address(0x3), 0, "");
+
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 0;
+        bytes[] memory execData = new bytes[](1);
+
+        _setKey(sessionKey, block.timestamp + 30 days, UNSCOPED);
+        assertEq(chamber.getDirectorOperatorLiveAt(TOKEN_WALLET), block.number + SEATING_DELAY);
+
+        vm.prank(sessionKey);
+        vm.expectRevert(IChamber.NotDirector.selector);
+        chamber.confirmBatchTransactions(TOKEN_WALLET, ids);
+
+        vm.prank(sessionKey);
+        vm.expectRevert(IChamber.NotDirector.selector);
+        chamber.executeBatchTransactions(TOKEN_WALLET, ids, execData);
+
+        address[] memory targets = new address[](1);
+        targets[0] = address(0x4);
+        uint256[] memory values = new uint256[](1);
+        bytes[] memory data = new bytes[](1);
+        vm.prank(sessionKey);
+        chamber.submitBatchTransactions(TOKEN_WALLET, targets, values, data);
+
+        vm.roll(block.number + SEATING_DELAY);
+        vm.prank(sessionKey);
+        chamber.confirmBatchTransactions(TOKEN_WALLET, ids);
+        assertTrue(chamber.getConfirmation(TOKEN_WALLET, 0));
+
+        uint32 confirmOnly = chamber.SESSION_SCOPE_CONFIRM();
+        _setKey(sessionKey, block.timestamp + 30 days, confirmOnly);
+        vm.roll(block.number + SEATING_DELAY);
+        vm.prank(sessionKey);
+        vm.expectRevert(IChamber.NotDirector.selector);
+        chamber.executeBatchTransactions(TOKEN_WALLET, ids, execData);
+    }
+
+    /// @notice Refreshing the key restarts `liveAt`. Confirm/execute wait the delay again.
+    function test_PMNM04_refreshRestartsLiveAt() public {
+        vm.prank(user1);
+        chamber.submitTransaction(1, address(0x3), 0, "");
+
+        _setKey(sessionKey, block.timestamp + 30 days, UNSCOPED);
+        uint256 firstLiveAt = chamber.getDirectorOperatorLiveAt(TOKEN_WALLET);
+        vm.roll(firstLiveAt);
+        vm.prank(sessionKey);
+        chamber.confirmTransaction(TOKEN_WALLET, 0);
+
+        vm.prank(user1);
+        chamber.submitTransaction(1, address(0x5), 0, "");
+
+        _setKey(sessionKey, block.timestamp + 60 days, UNSCOPED);
+        uint256 secondLiveAt = chamber.getDirectorOperatorLiveAt(TOKEN_WALLET);
+        assertGt(secondLiveAt, firstLiveAt, "refresh restarts liveAt");
+        assertEq(secondLiveAt, firstLiveAt + SEATING_DELAY, "refresh liveAt is prior liveAt plus SEATING_DELAY");
+        assertEq(chamber.getDirectorOperatorScope(TOKEN_WALLET), UNSCOPED);
+
+        vm.prank(sessionKey);
+        vm.expectRevert(IChamber.NotDirector.selector);
+        chamber.confirmTransaction(TOKEN_WALLET, 1);
+
+        vm.prank(sessionKey);
+        vm.expectRevert(IChamber.NotDirector.selector);
+        chamber.executeTransaction(TOKEN_WALLET, 1, "");
+
+        vm.roll(secondLiveAt);
+        vm.prank(sessionKey);
+        chamber.confirmTransaction(TOKEN_WALLET, 1);
+        assertTrue(chamber.getConfirmation(TOKEN_WALLET, 1));
     }
 
     /// @notice Solution D only after written acceptance on #212. Not shipped in this PR.

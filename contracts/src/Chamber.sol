@@ -380,6 +380,24 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     }
 
     /**
+     * @notice `scope` of the live session, or `0` if none / stale / expired / burned.
+     */
+    function getDirectorOperatorScope(uint256 tokenId) public view override returns (uint32) {
+        (bool live,) = _liveSessionKey(tokenId);
+        if (!live) return 0;
+        return _getChamberStorage().directorSession[tokenId].scope;
+    }
+
+    /**
+     * @notice Confirm/execute unlock block of the live session, or `0` if none / stale / expired / burned.
+     */
+    function getDirectorOperatorLiveAt(uint256 tokenId) public view override returns (uint256) {
+        (bool live,) = _liveSessionKey(tokenId);
+        if (!live) return 0;
+        return _getChamberStorage().directorSession[tokenId].liveAt;
+    }
+
+    /**
      * @notice Stored session fields for `tokenId` (raw; not liveness-filtered).
      */
     function getDirectorSession(uint256 tokenId)

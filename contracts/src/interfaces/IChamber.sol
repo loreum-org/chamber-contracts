@@ -86,14 +86,30 @@ interface IChamber is IERC4626, IBoard, IWallet {
 
     /**
      * @notice Live session key for `tokenId`, or `address(0)` if none, stale, or expired.
-     * @dev Stale after NFT transfer, while the current owner is an EOA, or after `expiry`.
-     *      Does not check scope or the post-set confirm/execute delay.
+     * @dev Stale after NFT transfer, while the current owner is an EOA, after `expiry`, or if burned.
+     *      Does not apply scope or the post-set confirm/execute delay. See
+     *      {getDirectorOperatorScope} and {getDirectorOperatorLiveAt}.
      */
     function getDirectorOperator(uint256 tokenId) external view returns (address operator);
 
     /**
+     * @notice `scope` of the live session for `tokenId`, or `0` if none / stale / expired / burned.
+     * @dev Same liveness as {getDirectorOperator}. `0` here means no live session, not unscoped
+     *      (`type(uint32).max`). Raw leftover scope is on {getDirectorSession}.
+     */
+    function getDirectorOperatorScope(uint256 tokenId) external view returns (uint32 scope);
+
+    /**
+     * @notice First block the live session may confirm or execute, or `0` if none / stale / expired / burned.
+     * @dev Same liveness as {getDirectorOperator}. Confirm/execute require `block.number >= liveAt`.
+     *      Raw leftover `liveAt` is on {getDirectorSession}.
+     */
+    function getDirectorOperatorLiveAt(uint256 tokenId) external view returns (uint256 liveAt);
+
+    /**
      * @notice Stored session fields for `tokenId` (raw; not liveness-filtered).
-     * @dev `operator` here may be stale or expired. Use {getDirectorOperator} for the live key.
+     * @dev `operator` / `scope` / `liveAt` here may be stale or expired. Use {getDirectorOperator},
+     *      {getDirectorOperatorScope}, and {getDirectorOperatorLiveAt} for the live session.
      */
     function getDirectorSession(uint256 tokenId)
         external
