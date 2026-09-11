@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { isAddress } from 'viem'
-import { useChainModal } from '@rainbow-me/rainbowkit'
+import { useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import { FiAlertTriangle, FiLoader, FiRefreshCw } from 'react-icons/fi'
 import { useChamberRouteDecision } from '@/hooks/useChamberRouteGate'
 import {
@@ -54,6 +54,7 @@ export function WrongNetworkPanel({
   const { isConnected } = useAccount()
   const { switchChainAsync, isPending } = useSwitchChain()
   const { openChainModal } = useChainModal()
+  const { openConnectModal } = useConnectModal()
 
   const currentName = getNetworkName(currentChainId)
   const supportedNames = supportedChainIds.map((id) => getNetworkName(id))
@@ -62,7 +63,11 @@ export function WrongNetworkPanel({
   const targetName = targetId != null ? getNetworkName(targetId) : undefined
 
   const onSwitch = async () => {
-    if (targetId && isConnected && switchChainAsync) {
+    if (!isConnected) {
+      openConnectModal?.()
+      return
+    }
+    if (targetId && switchChainAsync) {
       try {
         await switchChainAsync({ chainId: targetId })
         return
@@ -71,10 +76,12 @@ export function WrongNetworkPanel({
         return
       }
     }
-    openChainModal?.()
+    openChainModal?.() ?? openConnectModal?.()
   }
 
-  const canSwitch = Boolean((targetId && isConnected) || openChainModal)
+  const canSwitch = Boolean(
+    openConnectModal || openChainModal || (isConnected && targetId && switchChainAsync),
+  )
 
   return (
     <div className="flex flex-col items-center justify-center min-h-64 px-4">
