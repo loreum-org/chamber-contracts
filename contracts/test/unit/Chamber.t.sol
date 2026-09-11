@@ -1777,7 +1777,10 @@ contract ChamberTest is Test {
         chamber.delegate(tokenId, 1 ether);
         vm.roll(block.number + 1);
 
-        wallet.execute(address(chamber), abi.encodeCall(chamber.setDirectorOperator, (tokenId, sessionKey)));
+        wallet.execute(address(chamber), abi.encodeCall(
+                chamber.setDirectorOperator,
+                (tokenId, sessionKey, block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED())
+            ));
         assertEq(chamber.getDirectorOperator(tokenId), sessionKey);
         assertTrue(chamber.isTokenAuthorized(tokenId, sessionKey));
         assertTrue(chamber.isTokenAuthorized(tokenId, address(wallet)));
@@ -1801,7 +1804,10 @@ contract ChamberTest is Test {
         chamber.delegate(tokenId, 1 ether);
         vm.roll(block.number + 1);
 
-        wallet.execute(address(chamber), abi.encodeCall(chamber.setDirectorOperator, (tokenId, sessionKey)));
+        wallet.execute(address(chamber), abi.encodeCall(
+                chamber.setDirectorOperator,
+                (tokenId, sessionKey, block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED())
+            ));
 
         vm.prank(random1271Caller);
         vm.expectRevert(IChamber.NotDirector.selector);
@@ -1817,7 +1823,7 @@ contract ChamberTest is Test {
 
         vm.prank(user1);
         vm.expectRevert(IChamber.NotDirector.selector);
-        chamber.setDirectorOperator(tokenId, address(0xB0B));
+        chamber.setDirectorOperator(tokenId, address(0xB0B), block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED());
     }
 
     function test_Chamber_SetDirectorOperator_NonOwnerReverts() public {
@@ -1827,7 +1833,7 @@ contract ChamberTest is Test {
 
         vm.prank(address(0xB0B));
         vm.expectRevert(IChamber.NotDirector.selector);
-        chamber.setDirectorOperator(tokenId, address(0xB0B));
+        chamber.setDirectorOperator(tokenId, address(0xB0B), block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED());
     }
 
     function test_Chamber_SetDirectorOperator_OperatorCannotReplace() public {
@@ -1836,11 +1842,16 @@ contract ChamberTest is Test {
         uint256 tokenId = 17;
         MockERC721(address(nft)).mintWithTokenId(address(wallet), tokenId);
 
-        wallet.execute(address(chamber), abi.encodeCall(chamber.setDirectorOperator, (tokenId, sessionKey)));
+        wallet.execute(address(chamber), abi.encodeCall(
+                chamber.setDirectorOperator,
+                (tokenId, sessionKey, block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED())
+            ));
 
         vm.prank(sessionKey);
         vm.expectRevert(IChamber.NotDirector.selector);
-        chamber.setDirectorOperator(tokenId, address(0xFEE1));
+        chamber.setDirectorOperator(
+            tokenId, address(0xFEE1), block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED()
+        );
     }
 
     function test_Chamber_SessionKey_InvalidatedOnTransfer() public {
@@ -1855,7 +1866,10 @@ contract ChamberTest is Test {
         chamber.delegate(tokenId, 1 ether);
         vm.roll(block.number + 1);
 
-        wallet.execute(address(chamber), abi.encodeCall(chamber.setDirectorOperator, (tokenId, sessionKey)));
+        wallet.execute(address(chamber), abi.encodeCall(
+                chamber.setDirectorOperator,
+                (tokenId, sessionKey, block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED())
+            ));
 
         vm.prank(address(wallet));
         nft.transferFrom(address(wallet), user1, tokenId);
@@ -1880,8 +1894,14 @@ contract ChamberTest is Test {
         chamber.delegate(tokenId, 1 ether);
         vm.roll(block.number + 1);
 
-        wallet.execute(address(chamber), abi.encodeCall(chamber.setDirectorOperator, (tokenId, sessionKey)));
-        wallet.execute(address(chamber), abi.encodeCall(chamber.setDirectorOperator, (tokenId, address(0))));
+        wallet.execute(address(chamber), abi.encodeCall(
+                chamber.setDirectorOperator,
+                (tokenId, sessionKey, block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED())
+            ));
+        wallet.execute(
+            address(chamber),
+            abi.encodeCall(chamber.setDirectorOperator, (tokenId, address(0), 0, 0))
+        );
 
         assertEq(chamber.getDirectorOperator(tokenId), address(0));
         vm.prank(sessionKey);

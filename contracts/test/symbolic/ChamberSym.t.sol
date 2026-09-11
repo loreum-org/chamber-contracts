@@ -127,7 +127,12 @@ contract ChamberSymTest is Test, SymTest {
         vm.assume(other != address(wallet));
 
         nft.mintWithTokenId(address(wallet), tokenId);
-        wallet.execute(address(chamber), abi.encodeCall(IChamber.setDirectorOperator, (tokenId, sessionKey)));
+        wallet.execute(
+            address(chamber),
+            abi.encodeCall(
+                IChamber.setDirectorOperator, (tokenId, sessionKey, type(uint64).max, type(uint32).max)
+            )
+        );
 
         assertTrue(chamber.isTokenAuthorized(tokenId, address(wallet)));
         assertTrue(chamber.isTokenAuthorized(tokenId, sessionKey));

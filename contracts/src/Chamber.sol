@@ -32,9 +32,16 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     using EnumerableSet for EnumerableSet.UintSet;
 
     /// @dev Bound to the approving contract owner so an NFT transfer drops the key.
+    ///      Packed into two slots: `owner`/`expiry`/`scope` then `operator`/`liveAt`.
+    ///      `expiry == 0` is not live (rejected at set; leftover zero-expiry rows are inert).
+    ///      `scope == 0` grants no actions. `SESSION_SCOPE_UNSCOPED` is explicit full access.
+    ///      `liveAt` is the first block the key may confirm or execute (PMN-M04 C).
     struct DirectorSession {
         address owner;
+        uint64 expiry;
+        uint32 scope;
         address operator;
+        uint64 liveAt;
     }
 
     /**
@@ -51,7 +58,8 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         mapping(address => uint256) totalHolderDelegations;
         /// @dev Per-holder set of tokenIds with a positive delegation, including board-evicted ids.
         mapping(address => EnumerableSet.UintSet) holderDelegatedTokenIds;
-        /// @dev Session key for a contract-owned membership NFT. Stale if `owner` != current `ownerOf`.
+        /// @dev Session key for a contract-owned membership NFT. Stale if `owner` != current `ownerOf`,
+        ///      expired, or (for confirm/execute) `block.number < liveAt`.
         mapping(uint256 tokenId => DirectorSession) directorSession;
         /// @dev `ownerOf` when the confirm bit was last written. Mismatch is ignored for quorum (PMN-H01 A).
         mapping(uint256 nonce => mapping(uint256 tokenId => address)) confirmOwner;
@@ -72,6 +80,21 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
 
     /// Constants
     uint256 private constant MAX_SEATS = 20;
+
+    /// @notice Session scope bit: submit (including batch and metadata variants)
+    uint32 public constant SESSION_SCOPE_SUBMIT = 1 << 0;
+    /// @notice Session scope bit: confirm (including batch)
+    uint32 public constant SESSION_SCOPE_CONFIRM = 1 << 1;
+    /// @notice Session scope bit: execute (including batch)
+    uint32 public constant SESSION_SCOPE_EXECUTE = 1 << 2;
+    /// @notice Session scope bit: updateSeats / executeSeatsUpdate / cancelSeatUpdate
+    uint32 public constant SESSION_SCOPE_UPDATE_SEATS = 1 << 3;
+    /// @notice Session scope bit: revokeConfirmation
+    uint32 public constant SESSION_SCOPE_REVOKE = 1 << 4;
+    /// @notice Session scope bit: cancelTransaction
+    uint32 public constant SESSION_SCOPE_CANCEL = 1 << 5;
+    /// @notice Explicit unscoped sentinel. Scope `0` is rejected at set and grants nothing.
+    uint32 public constant SESSION_SCOPE_UNSCOPED = type(uint32).max;
 
     /**
      * @notice Implementation version stored as a bytes32 constant.
@@ -316,8 +339,14 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     /**
      * @notice Registers or clears the session key for a contract-owned membership NFT.
      * @dev Only the current contract owner may call. Never consults ERC-1271 (M-01).
+     *      `expiry == 0` is rejected (PMN-M04 A). `scope == 0` is rejected; unscoped is
+     *      `SESSION_SCOPE_UNSCOPED` (PMN-M04 B). Confirm/execute wait `SEATING_DELAY` (PMN-M04 C).
      */
-    function setDirectorOperator(uint256 tokenId, address operator) external override nonReentrant {
+    function setDirectorOperator(uint256 tokenId, address operator, uint256 expiry, uint32 scope)
+        external
+        override
+        nonReentrant
+    {
         if (tokenId == 0) revert IChamber.NotDirector();
         address owner = _getChamberStorage().nft.ownerOf(tokenId);
         if (owner != msg.sender) revert IChamber.NotDirector();
@@ -326,18 +355,45 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         ChamberStorage storage $ = _getChamberStorage();
         if (operator == address(0)) {
             delete $.directorSession[tokenId];
-        } else {
-            $.directorSession[tokenId] = DirectorSession({owner: owner, operator: operator});
+            emit IChamber.DirectorOperatorSet(tokenId, owner, operator, 0, 0);
+            return;
         }
-        emit IChamber.DirectorOperatorSet(tokenId, owner, operator);
+
+        if (expiry == 0 || expiry > type(uint64).max || expiry <= block.timestamp) {
+            revert IChamber.InvalidSessionExpiry();
+        }
+        if (scope == 0) revert IChamber.InvalidSessionScope();
+
+        uint256 liveAt = block.number + BoardTypes.SEATING_DELAY;
+        $.directorSession[tokenId] = DirectorSession({
+            owner: owner,
+            expiry: uint64(expiry),
+            scope: scope,
+            operator: operator,
+            liveAt: uint64(liveAt)
+        });
+        emit IChamber.DirectorOperatorSet(tokenId, owner, operator, expiry, scope);
     }
 
     /**
-     * @notice Live session key for `tokenId`, or zero if unset, stale, or EOA-owned.
+     * @notice Live session key for `tokenId`, or zero if unset, stale, expired, or EOA-owned.
      */
     function getDirectorOperator(uint256 tokenId) public view override returns (address) {
         (bool authorized, address operator) = _liveSessionKey(tokenId);
         return authorized ? operator : address(0);
+    }
+
+    /**
+     * @notice Stored session fields for `tokenId` (raw; not liveness-filtered).
+     */
+    function getDirectorSession(uint256 tokenId)
+        public
+        view
+        override
+        returns (address sessionOwner, address operator, uint256 expiry, uint32 scope, uint256 liveAt)
+    {
+        DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
+        return (session.owner, session.operator, session.expiry, session.scope, session.liveAt);
     }
 
     /**
@@ -773,11 +829,12 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
 
     /// @dev NFT owner of `tokenId`, or the live session key on a contract-owned NFT.
     ///      Never consults ERC-1271 (M-01). `ownerOf` reverts if the token is burned.
+    ///      Session keys are also gated by expiry, optional scope, and confirm/execute delay.
     function _requireTokenAuthorized(uint256 tokenId) internal view {
         if (tokenId == 0) revert IChamber.NotDirector();
         address owner = _getChamberStorage().nft.ownerOf(tokenId);
         if (owner == msg.sender) return;
-        if (_isLiveSessionKey(tokenId, owner, msg.sender)) return;
+        if (_isLiveSessionKey(tokenId, owner, msg.sender) && _sessionMayAct(tokenId, msg.sig)) return;
         revert IChamber.NotDirector();
     }
 
@@ -792,20 +849,65 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         }
     }
 
-    /// @dev Session key is live only for the current contract owner that registered it.
+    /// @dev Session key is live only for the current contract owner that registered it,
+    ///      and only while `block.timestamp <= expiry`. `expiry == 0` is not live.
     function _isLiveSessionKey(uint256 tokenId, address owner, address account) internal view returns (bool) {
         if (account == address(0) || owner.code.length == 0) return false;
         DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
-        return session.owner == owner && session.operator == account;
+        if (session.owner != owner || session.operator != account) return false;
+        if (session.expiry == 0 || block.timestamp > session.expiry) return false;
+        return true;
     }
 
-    /// @dev `(true, operator)` when a live session exists; otherwise `(false, 0)`.
+    /// @dev Scope and post-set delay for a live session key. Owner callers skip this.
+    ///      Unknown selectors fail closed unless the owner passed `SESSION_SCOPE_UNSCOPED`.
+    function _sessionMayAct(uint256 tokenId, bytes4 selector) internal view returns (bool) {
+        DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
+        (uint32 bit, bool delayed) = _sessionScopeForSelector(selector);
+        if (delayed && block.number < session.liveAt) return false;
+        if (session.scope == SESSION_SCOPE_UNSCOPED) return true;
+        return bit != 0 && (session.scope & bit) != 0;
+    }
+
+    /// @dev Maps Chamber director entry points to a scope bit and the C delay flag.
+    function _sessionScopeForSelector(bytes4 selector) internal pure returns (uint32 bit, bool delayed) {
+        if (
+            selector == bytes4(keccak256("submitTransaction(uint256,address,uint256,bytes)"))
+                || selector == bytes4(keccak256("submitTransaction(uint256,address,uint256,bytes,uint256)"))
+                || selector == bytes4(keccak256("submitTransactionWithMetadata(uint256,address,uint256,bytes,string)"))
+                || selector
+                    == bytes4(keccak256("submitTransactionWithMetadata(uint256,address,uint256,bytes,string,uint256)"))
+                || selector == bytes4(keccak256("submitBatchTransactions(uint256,address[],uint256[],bytes[])"))
+        ) {
+            return (SESSION_SCOPE_SUBMIT, false);
+        }
+        if (selector == IWallet.confirmTransaction.selector || selector == IWallet.confirmBatchTransactions.selector) {
+            return (SESSION_SCOPE_CONFIRM, true);
+        }
+        if (selector == IWallet.executeTransaction.selector || selector == IWallet.executeBatchTransactions.selector) {
+            return (SESSION_SCOPE_EXECUTE, true);
+        }
+        if (selector == IChamber.executeSeatsUpdate.selector) {
+            return (SESSION_SCOPE_UPDATE_SEATS, true);
+        }
+        if (selector == IChamber.updateSeats.selector || selector == IChamber.cancelSeatUpdate.selector) {
+            return (SESSION_SCOPE_UPDATE_SEATS, false);
+        }
+        if (selector == IWallet.revokeConfirmation.selector) {
+            return (SESSION_SCOPE_REVOKE, false);
+        }
+        if (selector == IWallet.cancelTransaction.selector) {
+            return (SESSION_SCOPE_CANCEL, false);
+        }
+        return (0, false);
+    }
+
+    /// @dev `(true, operator)` when a live (unexpired) session exists; otherwise `(false, 0)`.
     function _liveSessionKey(uint256 tokenId) internal view returns (bool, address) {
         if (tokenId == 0) return (false, address(0));
         try _getChamberStorage().nft.ownerOf(tokenId) returns (address owner) {
-            if (owner.code.length == 0) return (false, address(0));
             DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
-            if (session.owner != owner || session.operator == address(0)) return (false, address(0));
+            if (!_isLiveSessionKey(tokenId, owner, session.operator)) return (false, address(0));
             return (true, session.operator);
         } catch {
             return (false, address(0));
