@@ -66,16 +66,16 @@ export default function Dashboard() {
   }, [location.pathname, refetchMine])
 
   const handleSwitchToSupportedChain = async () => {
-    if (preferredChainId && isConnected && switchChainAsync) {
+    if (!isConnected) {
+      openConnectModal?.()
+      return
+    }
+    if (preferredChainId && switchChainAsync) {
       try {
         await switchChainAsync({ chainId: preferredChainId })
         return
       } catch {
-        if (openChainModal) {
-          openChainModal()
-          return
-        }
-        openConnectModal?.()
+        openChainModal?.()
         return
       }
     }
