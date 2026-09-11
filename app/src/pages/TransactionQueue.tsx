@@ -903,7 +903,10 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                     {...writeReporters}
                   />
                 ))}
+              </div>
+            )}
 
+            {/* Expired */}
             {expiredTransactions.length > 0 && (
               <div className="space-y-3">
                 <h3 className="font-heading font-semibold text-red-400/80 flex items-center gap-2">
@@ -923,8 +926,6 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                     {...writeReporters}
                   />
                 ))}
-              </div>
-            )}
               </div>
             )}
 
