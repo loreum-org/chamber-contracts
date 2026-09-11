@@ -197,7 +197,7 @@ function App() {
                 icon: <Network className="w-7 h-7 text-emerald-300" />,
                 tag: "§ 104(c)(2)(F–G)",
                 title: "Distributed & Impartial",
-                desc: "Authority must be distributed and the system impartial. Chamber seats directors from liquid delegation to membership NFTs. Director actions require the caller to be that NFT's owner; a quorum of directors then executes.",
+                desc: "Authority must be distributed and the system impartial. Chamber seats directors from liquid delegation to membership NFTs. Director actions require the NFT owner as msg.sender, or a session key the contract owner registered; a quorum of directors then executes.",
                 glow: "bg-emerald-500/10"
               }
             ].map((item, i) => (
@@ -288,7 +288,7 @@ function App() {
               {
                 icon: <Cpu className="w-8 h-8 text-emerald-400" />,
                 title: "Ranked Board & Quorum Wallet",
-                desc: "Membership NFTs form a liquid-delegated ranked board. Directors submit and confirm; a quorum of seats executes. The caller must be the NFT owner — an EIP-1271 agent-director path is not shipped.",
+                desc: "Membership NFTs form a liquid-delegated ranked board. Directors submit and confirm; a quorum of seats executes. The caller must be the NFT owner as msg.sender, or a session key the contract owner registered. An EIP-1271 agent-director path is not shipped.",
                 glow: "bg-emerald-500/20"
               }
             ].map((feature, i) => (
@@ -373,7 +373,8 @@ function App() {
                    <h3 className="text-2xl font-display mb-3 text-white group-hover:text-space-accent transition-colors">Quorum Wallet</h3>
                    <p className="text-gray-400 leading-relaxed font-light break-words">
                       Directors submit and confirm transactions; execution requires quorum.
-                      The caller must own the membership NFT for that seat.
+                      The caller must be the NFT owner as msg.sender, or a session key the
+                      contract owner registered. EIP-1271 is not shipped.
                    </p>
                 </div>
              </FadeIn>

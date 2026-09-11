@@ -86,8 +86,9 @@ function Whitepaper() {
               </p>
               <p className="text-gray-300 leading-relaxed">
                 Technical contributions include: (1) NFT-based directorship (live auth is the
-                membership NFT owner as <code className="text-space-accent">msg.sender</code>;
-                EIP-1271 contract-agent directors remain a design path, not shipped),
+                membership NFT owner as <code className="text-space-accent">msg.sender</code>,
+                or a session key the contract owner registered; EIP-1271 contract-agent
+                directors remain a design path, not shipped),
                 (2) liquid delegation without governance lockups, subject to solvency checks on delegated balances, 
                 (3) circuit-safe linked list repositioning for the governance leaderboard, and (4) self-sovereign
                 upgrade paths executed only through quorum-approved transactions. We provide specifications, security
@@ -139,7 +140,8 @@ function Whitepaper() {
                 single-actor capture when parameters and seat counts are tuned to policy; <strong className="text-space-accent font-normal">
                 agent parity</strong> — a designed EIP-1271 path would let smart-contract directors participate under the
                 same validation rules as EOAs. That path is not shipped; live director auth requires
-                {" "}<code className="text-space-accent">msg.sender</code> to be the membership NFT owner.
+                {" "}<code className="text-space-accent">msg.sender</code> to be the membership NFT owner, or a
+                session key the contract owner registered.
               </p>
 
               <h3 className="text-2xl font-display mb-4 mt-10 text-white">1.2 Chamber as protocol response</h3>
@@ -315,8 +317,8 @@ function Whitepaper() {
                 This section is a design specification for contract-agent directors, not the live
                 authorization path. Shipped Chamber requires{" "}
                 <code className="text-space-accent">msg.sender</code> to be the membership NFT
-                owner. EIP-1271 agent directors are research; they are not a Chamber capability
-                until that path ships.
+                owner, or a session key the contract owner registered. EIP-1271 agent directors
+                are research; they are not a Chamber capability until that path ships.
               </p>
               
               <h3 className="text-2xl font-display mb-4 mt-8 text-white">4.1 EIP-1271 Signature Validation</h3>
