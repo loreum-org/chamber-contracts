@@ -237,6 +237,18 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
 
   const upgradeProposalHref = `/chamber/${chamberAddress}/transactions?proposal=upgrade`
 
+  const copyUpgradeProposalLink = () => {
+    const url = new URL(upgradeProposalHref, window.location.origin).href
+    void navigator.clipboard.writeText(url).then(
+      () => toast.success('Upgrade proposal link copied'),
+      () => toast.error('Could not copy link'),
+    )
+  }
+
+  const registryImplementation = implSync.registryImplementation
+  const showImplMismatch =
+    implSync.implMismatch && !implSync.isLoading && !!registryImplementation
+
   return (
     <div className="space-y-6">
       {chamberInfo.paused && (
@@ -263,7 +275,7 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
           </div>
         </motion.div>
       )}
-      {implSync.implMismatch && !implSync.isLoading && implSync.registryImplementation && (
+      {showImplMismatch && registryImplementation && (
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -279,7 +291,7 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
                 <span className="font-mono tabular-nums">
                   v{implSync.registryImplementationVersionLabel ?? '—'}
                 </span>{' '}
-                ({shortenAddress(implSync.registryImplementation, 6)}
+                ({shortenAddress(registryImplementation, 6)}
                 ). This chamber proxy still uses{' '}
                 <span className="font-mono tabular-nums">
                   {chamberVersionTag === '…' ? '—' : chamberVersionTag}
@@ -305,12 +317,36 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
                   View Registry <FiExternalLink className="w-3.5 h-3.5" aria-hidden />
                 </a>
               )}
-              <div className="flex flex-wrap gap-2 mt-4">
-                <Link to={upgradeProposalHref} className="btn btn-primary inline-flex gap-2 shrink-0">
-                  <FiUpload className="w-4 h-4" aria-hidden />
-                  Propose upgrade
-                </Link>
-              </div>
+              {directorGate.canAct ? (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <Link to={upgradeProposalHref} className="btn btn-primary inline-flex gap-2 shrink-0">
+                    <FiUpload className="w-4 h-4" aria-hidden />
+                    Propose upgrade
+                  </Link>
+                </div>
+              ) : directorGate.seatingPending ? (
+                <p className="mt-4 text-amber-100/90 leading-relaxed">
+                  You hold a live board seat, but director actions unlock at block{' '}
+                  {directorGate.seatedAt?.toString() ?? '…'}.
+                </p>
+              ) : (
+                <div className="mt-4 space-y-2">
+                  <p className="text-amber-100/85 leading-relaxed">
+                    Ask a director to open this link (with{' '}
+                    <span className="font-mono">?proposal=upgrade</span>
+                    ), review the prefilled multisig proposal, then submit.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={copyUpgradeProposalLink}
+                    className="btn btn-secondary inline-flex gap-2 shrink-0"
+                    title="Copy upgrade proposal link"
+                  >
+                    <FiCopy className="w-4 h-4" aria-hidden />
+                    Ask a director
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
@@ -363,12 +399,6 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {implSync.implMismatch && implSync.registryImplementation && (
-              <Link to={upgradeProposalHref} className="btn btn-primary gap-2">
-                <FiUpload className="w-4 h-4" aria-hidden />
-                Upgrade
-              </Link>
-            )}
             <Link
               to={`/chamber/${chamberAddress}/transactions`}
               className="btn btn-secondary relative"
