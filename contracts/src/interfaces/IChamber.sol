@@ -73,20 +73,53 @@ interface IChamber is IERC4626, IBoard, IWallet {
      * @notice Registers or clears the session key for a contract-owned membership NFT.
      * @dev Only `ownerOf(tokenId)` may call, and only when that owner is a contract.
      *      Chamber never consults ERC-1271. See docs/protocol/director-authorization.md.
+     *      Non-zero `operator` requires a future `expiry` (`0` is rejected) and a non-zero
+     *      `scope`. Pass `type(uint32).max` for explicit unscoped access. Scope `0` is rejected.
+     *      A newly set key cannot confirm or execute until `SEATING_DELAY` elapses.
+     *      Clear with `operator == address(0)` (expiry and scope are ignored).
      * @param tokenId Membership token the caller owns
      * @param operator Session key that may act for `tokenId`, or `address(0)` to clear
+     * @param expiry Exclusive-after unix timestamp; rejected if `0` or not in the future
+     * @param scope Bitmask of Chamber director entry points, or `type(uint32).max` (unscoped)
      */
-    function setDirectorOperator(uint256 tokenId, address operator) external;
+    function setDirectorOperator(uint256 tokenId, address operator, uint256 expiry, uint32 scope) external;
 
     /**
-     * @notice Live session key for `tokenId`, or `address(0)` if none or stale.
-     * @dev Stale after NFT transfer or while the current owner is an EOA.
+     * @notice Live session key for `tokenId`, or `address(0)` if none, stale, or expired.
+     * @dev Stale after NFT transfer, while the current owner is an EOA, after `expiry`, or if burned.
+     *      Does not apply scope or the post-set confirm/execute delay. See
+     *      {getDirectorOperatorScope} and {getDirectorOperatorLiveAt}.
      */
     function getDirectorOperator(uint256 tokenId) external view returns (address operator);
 
     /**
+     * @notice `scope` of the live session for `tokenId`, or `0` if none / stale / expired / burned.
+     * @dev Same liveness as {getDirectorOperator}. `0` here means no live session, not unscoped
+     *      (`type(uint32).max`). Raw leftover scope is on {getDirectorSession}.
+     */
+    function getDirectorOperatorScope(uint256 tokenId) external view returns (uint32 scope);
+
+    /**
+     * @notice First block the live session may confirm or execute, or `0` if none / stale / expired / burned.
+     * @dev Same liveness as {getDirectorOperator}. Confirm/execute require `block.number >= liveAt`.
+     *      Raw leftover `liveAt` is on {getDirectorSession}.
+     */
+    function getDirectorOperatorLiveAt(uint256 tokenId) external view returns (uint256 liveAt);
+
+    /**
+     * @notice Stored session fields for `tokenId` (raw; not liveness-filtered).
+     * @dev `operator` / `scope` / `liveAt` here may be stale or expired. Use {getDirectorOperator},
+     *      {getDirectorOperatorScope}, and {getDirectorOperatorLiveAt} for the live session.
+     */
+    function getDirectorSession(uint256 tokenId)
+        external
+        view
+        returns (address sessionOwner, address operator, uint256 expiry, uint32 scope, uint256 liveAt);
+
+    /**
      * @notice Whether `account` may act for `tokenId` (owner or live session key).
-     * @dev Does not check board seats or seating delay. Burned tokens return false.
+     * @dev Does not check board seats, seating delay, session scope, or the post-set
+     *      confirm/execute delay. Expired keys return false. Burned tokens return false.
      */
     function isTokenAuthorized(uint256 tokenId, address account) external view returns (bool);
 
@@ -218,8 +251,12 @@ interface IChamber is IERC4626, IBoard, IWallet {
      * @param tokenId Membership token
      * @param owner Owner that registered the key (`ownerOf` at the time of the call)
      * @param operator Session key, or `address(0)` when cleared
+     * @param expiry Exclusive-after unix timestamp (`0` when cleared)
+     * @param scope Bitmask or `type(uint32).max` unscoped sentinel (`0` when cleared)
      */
-    event DirectorOperatorSet(uint256 indexed tokenId, address indexed owner, address indexed operator);
+    event DirectorOperatorSet(
+        uint256 indexed tokenId, address indexed owner, address indexed operator, uint256 expiry, uint32 scope
+    );
 
     /// Errors
     /// @notice Thrown when there is insufficient delegated amount
@@ -275,4 +312,10 @@ interface IChamber is IERC4626, IBoard, IWallet {
     /// @notice Thrown when the vault's observed asset delta does not equal the requested amount
     /// @dev Rejects fee-on-transfer / deflating tokens on deposit and mint
     error AssetAmountMismatch();
+
+    /// @notice Thrown when a session-key expiry is zero, not in the future, or exceeds `uint64`
+    error InvalidSessionExpiry();
+
+    /// @notice Thrown when a session-key scope is zero (unscoped must be `type(uint32).max`)
+    error InvalidSessionScope();
 }
