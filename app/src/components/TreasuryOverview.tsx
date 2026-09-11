@@ -25,7 +25,7 @@ import {
   useSimulateDeposit,
   useSimulateWithdraw,
 } from '@/hooks'
-import { erc20Abi } from '@/contracts'
+import { chamberAbi, erc20Abi } from '@/contracts'
 
 interface TreasuryOverviewProps {
   chamberAddress: `0x${string}`
@@ -41,21 +41,39 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [pollAllowanceAfterApprove, setPollAllowanceAfterApprove] = useState(false)
 
+  // Fetch decimals for the vault asset — avoids hardcoding 18
+  const { data: assetDecimalsData } = useReadContract({
+    address: chamberInfo.assetToken,
+    abi: erc20Abi,
+    functionName: 'decimals',
+    query: { enabled: !!chamberInfo.assetToken },
+  })
+  const assetDecimals = typeof assetDecimalsData === 'number' ? assetDecimalsData : 18
+
+  // Share token decimals (ERC-4626: underlying + offset), for share/price display
+  const { data: shareDecimalsData } = useReadContract({
+    address: chamberAddress,
+    abi: erc20Abi,
+    functionName: 'decimals',
+    query: { enabled: !!chamberAddress },
+  })
+  const shareDecimals = typeof shareDecimalsData === 'number' ? shareDecimalsData : 18
+
   const depositAmountBigInt = useMemo(() => {
     try {
-      return depositAmount ? parseUnits(depositAmount, 18) : 0n
+      return depositAmount ? parseUnits(depositAmount, assetDecimals) : 0n
     } catch {
       return 0n
     }
-  }, [depositAmount])
+  }, [depositAmount, assetDecimals])
 
   const withdrawAmountBigInt = useMemo(() => {
     try {
-      return withdrawAmount ? parseUnits(withdrawAmount, 18) : 0n
+      return withdrawAmount ? parseUnits(withdrawAmount, assetDecimals) : 0n
     } catch {
       return 0n
     }
-  }, [withdrawAmount])
+  }, [withdrawAmount, assetDecimals])
 
   // Get asset token symbol
   const { data: assetSymbol } = useReadContract({
@@ -83,6 +101,22 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
   const { approve, isPending: isApproving, isConfirming: isApproveConfirming, isSuccess: isApproveSuccess } = useTokenApprove(chamberInfo.assetToken)
   const { deposit, isPending: isDepositing, isConfirming: isDepositConfirming } = useDeposit(chamberAddress)
   const { withdraw, isPending: isWithdrawing, isConfirming: isWithdrawConfirming } = useWithdraw(chamberAddress)
+
+  const withdrawableShares =
+    userBalance !== undefined
+      ? userBalance > totalDelegated
+        ? userBalance - totalDelegated
+        : 0n
+      : undefined
+
+  // withdraw() takes assets; convert free shares so MAX matches the typed amount
+  const { data: withdrawableAssets } = useReadContract({
+    address: chamberAddress,
+    abi: chamberAbi,
+    functionName: 'convertToAssets',
+    args: withdrawableShares !== undefined ? [withdrawableShares] : undefined,
+    query: { enabled: withdrawableShares !== undefined },
+  })
 
   // Watch for vault events and refresh data when transactions are mined
   useChamberEvents(chamberAddress, {
@@ -204,7 +238,7 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
   const handleDeposit = async () => {
     if (!depositAmount || !userAddress) return
     try {
-      const amount = parseUnits(depositAmount, 18)
+      const amount = parseUnits(depositAmount, assetDecimals)
       await deposit(amount, userAddress)
       toast.success('Deposit submitted!')
       setDepositAmount('')
@@ -218,7 +252,7 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
   const handleWithdraw = async () => {
     if (!withdrawAmount || !userAddress) return
     try {
-      const amount = parseUnits(withdrawAmount, 18)
+      const amount = parseUnits(withdrawAmount, assetDecimals)
       await withdraw(amount, userAddress, userAddress)
       toast.success('Withdrawal submitted!')
       setWithdrawAmount('')
@@ -255,7 +289,7 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
               <p className="text-slate-400 text-sm">Total Assets</p>
               <p className="font-heading text-2xl font-bold gradient-text">
                 {chamberInfo.totalAssets !== undefined
-                  ? parseFloat(formatUnits(chamberInfo.totalAssets, 18)).toLocaleString(undefined, {
+                  ? parseFloat(formatUnits(chamberInfo.totalAssets, assetDecimals)).toLocaleString(undefined, {
                       maximumFractionDigits: 2,
                     })
                   : '...'
@@ -290,7 +324,7 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
               <p className="text-slate-400 text-sm">Total Shares</p>
               <p className="font-heading text-2xl font-bold text-slate-100">
                 {chamberInfo.totalSupply !== undefined
-                  ? parseFloat(formatUnits(chamberInfo.totalSupply, 18)).toLocaleString(undefined, {
+                  ? parseFloat(formatUnits(chamberInfo.totalSupply, shareDecimals)).toLocaleString(undefined, {
                       maximumFractionDigits: 2,
                     })
                   : '...'
@@ -303,7 +337,10 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
           </div>
           <div className="text-slate-500 text-sm">
             1 {chamberInfo.symbol || 'share'} = {chamberInfo.totalSupply && chamberInfo.totalAssets && chamberInfo.totalSupply > 0n
-              ? (Number(chamberInfo.totalAssets) / Number(chamberInfo.totalSupply)).toFixed(4)
+              ? (
+                  Number(formatUnits(chamberInfo.totalAssets, assetDecimals)) /
+                  Number(formatUnits(chamberInfo.totalSupply, shareDecimals))
+                ).toFixed(4)
               : '1.0000'
             } {assetSymbol as string || 'assets'}
           </div>
@@ -323,7 +360,7 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
               <p className="text-slate-400 text-sm">Your Shares</p>
               <p className="font-heading text-2xl font-bold gradient-text">
                 {userBalance !== undefined
-                  ? parseFloat(formatUnits(userBalance, 18)).toLocaleString(undefined, {
+                  ? parseFloat(formatUnits(userBalance, shareDecimals)).toLocaleString(undefined, {
                       maximumFractionDigits: 4,
                     })
                   : 'Connect Wallet'
@@ -367,7 +404,7 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
                 <span className="text-slate-500 shrink-0">Wallet balance</span>
                 <span className="text-slate-200 font-mono text-right tabular-nums">
                   {tokenBalance !== undefined
-                    ? `${parseFloat(formatUnits(tokenBalance, 18)).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${assetSymbol as string || ''}`
+                    ? `${parseFloat(formatUnits(tokenBalance, assetDecimals)).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${assetSymbol as string || ''}`
                     : '—'}
                 </span>
               </div>
@@ -388,7 +425,7 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
                   />
                   <button
                     type="button"
-                    onClick={() => tokenBalance && setDepositAmount(formatUnits(tokenBalance, 18))}
+                    onClick={() => tokenBalance && setDepositAmount(formatUnits(tokenBalance, assetDecimals))}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-accent-400 hover:text-accent-300 text-sm font-medium"
                   >
                     MAX
@@ -512,15 +549,15 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-slate-500 shrink-0">Withdrawable</span>
                 <span className="text-slate-200 font-mono text-right tabular-nums">
-                  {userBalance !== undefined
-                    ? `${parseFloat(formatUnits(userBalance > totalDelegated ? userBalance - totalDelegated : 0n, 18)).toFixed(4)} ${chamberInfo.symbol || ''}`
+                  {withdrawableAssets !== undefined
+                    ? `${parseFloat(formatUnits(withdrawableAssets, assetDecimals)).toFixed(4)} ${assetSymbol as string || ''}`
                     : '—'}
                 </span>
               </div>
               {totalDelegated > 0n && userBalance !== undefined && (
                 <p className="mt-2.5 text-xs leading-relaxed text-amber-200/90 border-l-2 border-amber-500/45 pl-2.5">
                   <span className="font-medium text-amber-300">
-                    {parseFloat(formatUnits(totalDelegated, 18)).toFixed(4)} {chamberInfo.symbol || 'shares'} delegated
+                    {parseFloat(formatUnits(totalDelegated, shareDecimals)).toFixed(4)} {chamberInfo.symbol || 'shares'} delegated
                   </span>
                   <span className="text-amber-200/75"> — locked until you undelegate.</span>
                 </p>
@@ -543,9 +580,8 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
                   <button
                     type="button"
                     onClick={() => {
-                      if (userBalance === undefined) return
-                      const withdrawable = userBalance > totalDelegated ? userBalance - totalDelegated : 0n
-                      setWithdrawAmount(formatUnits(withdrawable, 18))
+                      if (withdrawableAssets === undefined) return
+                      setWithdrawAmount(formatUnits(withdrawableAssets, assetDecimals))
                     }}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-accent-400 hover:text-accent-300 text-sm font-medium"
                   >
