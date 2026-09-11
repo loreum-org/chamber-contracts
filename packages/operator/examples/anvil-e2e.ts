@@ -5,8 +5,8 @@
  * From `packages/operator`: `npm run example:anvil`
  *
  * Spawns a fresh Anvil, deploys Registry/Factory/mocks, creates a 3-seat
- * chamber, then exercises board/quorum/delegate/submit/confirm/execute and
- * the four app-mapped failure strings.
+ * chamber, then exercises board/quorum/delegate/undelegate/submit/confirm/
+ * revoke/cancel/execute and the four app-mapped failure strings.
  */
 import { spawn, type ChildProcess } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
@@ -313,6 +313,40 @@ async function main(): Promise<void> {
     }
     log('board after seating', readyBoard)
 
+    const queued = await opA.submitTransaction({
+      tokenId: 1n,
+      target: outsider.address,
+      value: 0n,
+      data: '0x',
+    })
+    log('submitTransaction (revoke/cancel path)', { nonce: queued.nonce.toString(), hash: queued.hash })
+
+    const firstConfirm = await opB.confirm(2n, queued.nonce)
+    log('confirm', { hash: firstConfirm.hash })
+    const afterConfirm = await opA.getTransaction(queued.nonce)
+    if (afterConfirm.confirmations < 1) {
+      throw new Error('expected at least one confirmation before revoke')
+    }
+
+    const revoked = await opB.revokeConfirmation(2n, queued.nonce)
+    log('revokeConfirmation', { hash: revoked.hash })
+    const afterRevoke = await opA.getTransaction(queued.nonce)
+    if (afterRevoke.confirmations !== afterConfirm.confirmations - 1) {
+      throw new Error(
+        `expected confirmations to drop after revoke (${afterConfirm.confirmations} → ${afterRevoke.confirmations})`,
+      )
+    }
+
+    const cancelA = await opA.cancelTransaction(1n, queued.nonce)
+    log('cancelTransaction (vote 1)', { hash: cancelA.hash })
+    const cancelB = await opB.cancelTransaction(2n, queued.nonce)
+    log('cancelTransaction (vote 2 / quorum)', { hash: cancelB.hash })
+    const afterCancel = await opA.getTransaction(queued.nonce)
+    if (!afterCancel.cancelled) {
+      throw new Error('expected getCancelled / tx.cancelled after quorum cancel votes')
+    }
+    log('tx after cancel', afterCancel)
+
     const submitted = await opA.submitTransaction({
       tokenId: 1n,
       target: outsider.address,
@@ -345,6 +379,10 @@ async function main(): Promise<void> {
       opB.confirm(2n, expiring.nonce),
     )
 
+    const undelegateAmount = parseEther('1')
+    const undelegated = await opA.undelegate(1n, undelegateAmount)
+    log('undelegate', { hash: undelegated.hash, amount: undelegateAmount.toString() })
+
     const pauseData = encodeFunctionData({ abi: chamberAbi, functionName: 'pause' })
     const pauseSubmit = await opA.submitTransaction({
       tokenId: 1n,
@@ -370,7 +408,7 @@ async function main(): Promise<void> {
       opA.execute(1n, pausedTx.nonce, '0x'),
     )
 
-    log('done — board, quorum, delegate, submit, confirm, execute, and the four app error strings')
+    log('done — board, quorum, delegate, undelegate, submit, confirm, revoke, cancel, execute, and the four app error strings')
   } finally {
     if (spawned) {
       spawned.kill('SIGTERM')

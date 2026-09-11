@@ -12,8 +12,11 @@ Commands:
   quorum                Read live quorum
   tx --nonce <n>        Read one queued nonce
   delegate              Delegate vault shares to a membership tokenId
+  undelegate            Undelegate vault shares from a membership tokenId
   submit                submitTransaction (director)
   confirm               confirmTransaction (director)
+  revoke                revokeConfirmation (director)
+  cancel                cancelTransaction (director)
   execute               executeTransaction (director)
 
 Required (or env):
@@ -23,12 +26,12 @@ Required (or env):
 
 Writes:
   --token-id <n>
-  --amount <wei|ether>  delegate amount (1ether or raw wei)
+  --amount <wei|ether>  delegate / undelegate amount (1ether or raw wei)
   --target <addr>       submit target
   --value <wei|ether>   submit ETH value (default 0)
   --data <hex>          submit / execute calldata (default 0x)
   --deadline <unix>     optional submit deadline
-  --nonce <n>           confirm / execute / tx
+  --nonce <n>           confirm / revoke / cancel / execute / tx
 
 A 4337 smart-account client is supported from the library API
 (createOperator({ signer: { type: 'walletClient', walletClient } })),
@@ -154,6 +157,12 @@ async function main(): Promise<void> {
       printJson(await operator.delegate(tokenId, amount))
       return
     }
+    case 'undelegate': {
+      const tokenId = parseUint(requireFlag(flags, 'token-id'), 'token-id')
+      const amount = parseAmount(requireFlag(flags, 'amount'))
+      printJson(await operator.undelegate(tokenId, amount))
+      return
+    }
     case 'submit': {
       const tokenId = parseUint(requireFlag(flags, 'token-id'), 'token-id')
       const target = requireAddress(requireFlag(flags, 'target'), 'target')
@@ -176,6 +185,18 @@ async function main(): Promise<void> {
       const tokenId = parseUint(requireFlag(flags, 'token-id'), 'token-id')
       const nonce = parseUint(requireFlag(flags, 'nonce'), 'nonce')
       printJson(await operator.confirm(tokenId, nonce))
+      return
+    }
+    case 'revoke': {
+      const tokenId = parseUint(requireFlag(flags, 'token-id'), 'token-id')
+      const nonce = parseUint(requireFlag(flags, 'nonce'), 'nonce')
+      printJson(await operator.revokeConfirmation(tokenId, nonce))
+      return
+    }
+    case 'cancel': {
+      const tokenId = parseUint(requireFlag(flags, 'token-id'), 'token-id')
+      const nonce = parseUint(requireFlag(flags, 'nonce'), 'nonce')
+      printJson(await operator.cancelTransaction(tokenId, nonce))
       return
     }
     case 'execute': {

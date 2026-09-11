@@ -58,6 +58,7 @@ export type BoardSnapshot = {
 export type TransactionSnapshot = {
   nonce: bigint
   executed: boolean
+  cancelled: boolean
   confirmations: number
   target: Address
   value: bigint
@@ -174,7 +175,10 @@ export class ChamberOperator {
   private async write<
     TFunctionName extends
       | 'delegate'
+      | 'undelegate'
       | 'confirmTransaction'
+      | 'revokeConfirmation'
+      | 'cancelTransaction'
       | 'executeTransaction'
       | 'submitTransaction',
   >(
@@ -325,7 +329,7 @@ export class ChamberOperator {
           functionName: 'getTransaction',
           args: [nonce],
         })
-      const [expired, deadline, requiredQuorum] = await Promise.all([
+      const [expired, deadline, requiredQuorum, cancelled] = await Promise.all([
         this.publicClient.readContract({
           address: this.chamber,
           abi: chamberAbi,
@@ -344,10 +348,17 @@ export class ChamberOperator {
           functionName: 'getTransactionRequiredQuorum',
           args: [nonce],
         }),
+        this.publicClient.readContract({
+          address: this.chamber,
+          abi: chamberAbi,
+          functionName: 'getCancelled',
+          args: [nonce],
+        }),
       ])
       return {
         nonce,
         executed,
+        cancelled,
         confirmations,
         target,
         value,
@@ -363,6 +374,10 @@ export class ChamberOperator {
 
   async delegate(tokenId: bigint, amount: bigint): Promise<WriteResult> {
     return this.write('delegate', [tokenId, amount])
+  }
+
+  async undelegate(tokenId: bigint, amount: bigint): Promise<WriteResult> {
+    return this.write('undelegate', [tokenId, amount])
   }
 
   async submitTransaction(args: {
@@ -385,6 +400,14 @@ export class ChamberOperator {
 
   async confirm(tokenId: bigint, nonce: bigint): Promise<WriteResult> {
     return this.write('confirmTransaction', [tokenId, nonce])
+  }
+
+  async revokeConfirmation(tokenId: bigint, nonce: bigint): Promise<WriteResult> {
+    return this.write('revokeConfirmation', [tokenId, nonce])
+  }
+
+  async cancelTransaction(tokenId: bigint, nonce: bigint): Promise<WriteResult> {
+    return this.write('cancelTransaction', [tokenId, nonce])
   }
 
   async execute(tokenId: bigint, nonce: bigint, data: Hex | string = '0x'): Promise<WriteResult> {
