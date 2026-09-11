@@ -43,8 +43,8 @@ contract InertOwner {}
 
 /**
  * @title PMN-M02: burned or inert seated NFTs keep rank and spend flags
- * @notice Solution A: execute skips confirm/cancel bits when `ownerOf` fails, or when
- *         the owner has no revoke path and there is no live session key.
+ * @notice Solution A: execute skips confirm/cancel bits when `ownerOf` fails, or
+ *         when control moves to an owner with no live session key.
  *         Solution B: `cleanupInertSeat` drops a burned tokenId from the top set;
  *         later `refreshSeating` does not restore it while inert.
  */
@@ -113,19 +113,24 @@ contract FindingPMNM02InertSeatedNftTest is Test {
         assertFalse(executed, "burned ownerOf confirm bit is skipped");
     }
 
-    /// @notice Contract owner with no Chamber-calling surface and no live session key.
+    /// @notice Owner has no Chamber-calling surface and no live session key.
     ///         Assert the live tally only.
     function test_PMNM02_caseA_uncallableOwnerFlagSkipped() public {
         InertOwner inert = new InertOwner();
         _seat(user1, 1, 100 ether);
-        _seat(address(inert), 2, 100 ether);
-        _seat(user3, 3, 50 ether);
+        _seat(user2, 2, 100 ether);
         vm.roll(block.number + SEATING_DELAY);
 
         vm.prank(user1);
         chamber.submitTransaction(1, spendTarget, 1 ether, "");
-        vm.prank(address(inert));
+        vm.prank(user2);
         chamber.confirmTransaction(2, 0);
+        assertTrue(chamber.getConfirmation(2, 0));
+
+        vm.prank(user2);
+        nft.transferFrom(user2, address(inert), 2);
+        assertEq(nft.ownerOf(2), address(inert));
+        assertEq(chamber.getDirectorOperator(2), address(0), "no live session key");
 
         assertTrue(chamber.getConfirmation(2, 0), "stored bit is still set");
         (, uint8 stored,,,) = chamber.getTransaction(0);

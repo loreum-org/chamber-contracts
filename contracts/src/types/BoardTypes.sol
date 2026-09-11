@@ -37,12 +37,6 @@ library BoardTypes {
         uint256[] supporters;
     }
 
-    /// @dev Chamber session-key bind. Passed into live flag counting (PMN-M02).
-    struct DirectorSession {
-        address owner;
-        address operator;
-    }
-
     /**
      * @notice ERC-7201 namespaced storage layout for Board
      * @custom:storage-location erc7201:loreum.Board

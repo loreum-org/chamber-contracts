@@ -31,6 +31,12 @@ import {EnumerableSet} from "lib/openzeppelin-contracts/contracts/utils/structs/
 contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, IChamber, IERC721Receiver {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    /// @dev Bound to the approving contract owner so an NFT transfer drops the key.
+    struct DirectorSession {
+        address owner;
+        address operator;
+    }
+
     /**
      * @notice ERC-7201 namespaced storage layout for Chamber
      * @dev Packing: `nft` (address, 20 bytes) sits alone in its slot; remaining fields are
@@ -46,7 +52,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         /// @dev Per-holder set of tokenIds with a positive delegation, including board-evicted ids.
         mapping(address => EnumerableSet.UintSet) holderDelegatedTokenIds;
         /// @dev Session key for a contract-owned membership NFT. Stale if `owner` != current `ownerOf`.
-        mapping(uint256 tokenId => BoardTypes.DirectorSession) directorSession;
+        mapping(uint256 tokenId => DirectorSession) directorSession;
         /// @dev `ownerOf` when the confirm bit was last written. Mismatch is ignored for quorum (PMN-H01 A).
         mapping(uint256 nonce => mapping(uint256 tokenId => address)) confirmOwner;
         /// @dev `ownerOf` when the cancel bit was last written. Mismatch is ignored for quorum (PMN-H01 A).
@@ -321,7 +327,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         if (operator == address(0)) {
             delete $.directorSession[tokenId];
         } else {
-            $.directorSession[tokenId] = BoardTypes.DirectorSession({owner: owner, operator: operator});
+            $.directorSession[tokenId] = DirectorSession({owner: owner, operator: operator});
         }
         emit IChamber.DirectorOperatorSet(tokenId, owner, operator);
     }
@@ -789,7 +795,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     /// @dev Session key is live only for the current contract owner that registered it.
     function _isLiveSessionKey(uint256 tokenId, address owner, address account) internal view returns (bool) {
         if (account == address(0) || owner.code.length == 0) return false;
-        BoardTypes.DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
+        DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
         return session.owner == owner && session.operator == account;
     }
 
@@ -798,7 +804,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
         if (tokenId == 0) return (false, address(0));
         try _getChamberStorage().nft.ownerOf(tokenId) returns (address owner) {
             if (owner.code.length == 0) return (false, address(0));
-            BoardTypes.DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
+            DirectorSession storage session = _getChamberStorage().directorSession[tokenId];
             if (session.owner != owner || session.operator == address(0)) return (false, address(0));
             return (true, session.operator);
         } catch {
@@ -824,13 +830,12 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
 
     function _countLiveConfirmFlags(uint256 nonce) internal view returns (uint256) {
         ChamberStorage storage $ = _getChamberStorage();
-        return _countCurrentDirectorFlags($.nft, _getWalletStorage().isConfirmed, $.confirmOwner, $.directorSession, nonce);
+        return _countCurrentDirectorFlags($.nft, _getWalletStorage().isConfirmed, $.confirmOwner, nonce);
     }
 
     function _countLiveCancelFlags(uint256 nonce) internal view returns (uint256) {
         ChamberStorage storage $ = _getChamberStorage();
-        return
-            _countCurrentDirectorFlags($.nft, _getWalletStorage().isCancelConfirmed, $.cancelOwner, $.directorSession, nonce);
+        return _countCurrentDirectorFlags($.nft, _getWalletStorage().isCancelConfirmed, $.cancelOwner, nonce);
     }
 
     function _submitTransactionWithMetadata(
