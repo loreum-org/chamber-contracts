@@ -24,15 +24,15 @@ product/
 
 ## Current state
 
-The graph was built from **fifteen sources** (12 research, 1 ticket, 2 memo).
-Iteration 3 (2026-05-26) added OpenZeppelin Governor, Parcel, and Commonwealth.
-Corpus health is **developing** — competitive intelligence is deeper, but
+The graph was last rebuilt from **twenty sources** (17 research, 1 ticket,
+2 memo). Iteration 5 (2026-09-11) added Bermuda Safe-native privacy (Koeppelmann
+posts + bermudabay.xyz). Corpus health is **developing** — still
 **zero user interviews**. See:
 
-- `knowledge/governance-competitor-deep-analysis.md` — full synthesis (iter 3)
-- `knowledge/assumption-audit/2026-05-26-iter-3.md` — ranked assumptions
-- `knowledge/discovery-query/2026-05-26-governance-stack-layers.md` — stack layers
-- `knowledge/research-loop/iter-003.md` — research loop journal
+- `knowledge/assumption-audit/2026-09-11-bermuda-safe-privacy.md` — new Bermuda assumptions
+- `knowledge/research-loop/iter-005.md` — research loop journal (iter 5)
+- `knowledge/competitive-landscape-2026-synthesis.md` — four-segment landscape (iter 4)
+- `knowledge/assumption-audit/2026-07-01-iter-4.md` — prior ranked assumptions
 
 Legacy product docs remain at `docs/product/` for backward compatibility; new
 mogkit work should land in `product/sources/`.

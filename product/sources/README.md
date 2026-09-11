@@ -31,6 +31,11 @@ This workspace is seeded with Chamber product artifacts migrated from
 | `2026-05-26-openzeppelin-governor-standalone-deep.md` | research | OZ Governor + Timelock baseline (iter 3) |
 | `2026-05-26-parcel-treasury-ops-deep.md` | research | Parcel Safe payroll/ops layer |
 | `2026-05-26-commonwealth-governance-deep.md` | research | Commonwealth forum + Snapshot + onchain UI |
+| `2026-07-01-hats-signer-gate-displacement-deep.md` | research | HSG displacement (Purple / Treasure / Questbook) |
+| `2026-07-01-nft-community-treasury-segment.md` | research | NFT/community vs token-protocol segment map |
+| `2026-07-01-dao-governance-competitive-landscape-2026.md` | research | 2026 four-segment governance market |
+| `2026-09-11-koeppelmann-bermuda-safe-privacy.md` | research | Koeppelmann + Bermuda private-multisig posts |
+| `2026-09-11-bermuda-bay-product-surface.md` | research | bermudabay.xyz product-surface capture |
 
 These are **product intent and competitive intelligence**, not user interviews.
 Add interview transcripts, support tickets, and sales notes here to move the
