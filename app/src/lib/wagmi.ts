@@ -240,3 +240,23 @@ export function hasValidAddresses(chainId: number): boolean {
   if (!addresses) return false
   return isNonZeroAddress(addresses.factory) || isNonZeroAddress(addresses.registry)
 }
+
+/**
+ * Prefer Sepolia when it has a Factory or Registry, otherwise the first wagmi
+ * chain that does. Does not invent addresses — only reads configured maps.
+ */
+export function getPreferredCreateChainId(): number | undefined {
+  const ordered = [
+    sepolia.id,
+    ...config.chains.map((chain) => chain.id).filter((id) => id !== sepolia.id),
+  ]
+  for (const id of ordered) {
+    if (hasValidAddresses(id)) return id
+  }
+  return undefined
+}
+
+export function getConfiguredChainName(chainId: number | undefined): string {
+  if (typeof chainId !== 'number') return 'this network'
+  return config.chains.find((chain) => chain.id === chainId)?.name ?? `Chain ${chainId}`
+}
