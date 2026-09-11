@@ -1,4 +1,5 @@
 export * from './useChamber'
+export * from './useSeatTheBoard'
 export * from './useRegistry'
 export * from './useMyChambers'
 export * from './useTransactionStatus'
