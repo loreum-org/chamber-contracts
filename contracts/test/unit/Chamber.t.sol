@@ -1305,17 +1305,13 @@ contract ChamberTest is Test {
 
         assertFalse(chamber.getCancelled(0));
 
-        // Quorum is 3 - need 3 directors to vote to cancel
+        // 3 reachable directors → quorum 2 (PMN-M01)
         vm.prank(user1);
         chamber.cancelTransaction(1, 0);
         assertFalse(chamber.getCancelled(0));
 
         vm.prank(user2);
         chamber.cancelTransaction(2, 0);
-        assertFalse(chamber.getCancelled(0));
-
-        vm.prank(user3);
-        chamber.cancelTransaction(3, 0);
         assertTrue(chamber.getCancelled(0));
 
         // Execute should revert
@@ -1334,12 +1330,10 @@ contract ChamberTest is Test {
         chamber.cancelTransaction(1, 0);
         vm.prank(user2);
         chamber.cancelTransaction(2, 0);
-        vm.prank(user3);
-        chamber.cancelTransaction(3, 0);
 
-        vm.prank(user1);
+        vm.prank(user3);
         vm.expectRevert(IWallet.TransactionAlreadyCancelled.selector);
-        chamber.cancelTransaction(1, 0);
+        chamber.cancelTransaction(3, 0);
     }
 
     function test_Chamber_ConfirmTransaction_AfterCancel_Reverts() public {
@@ -1352,8 +1346,6 @@ contract ChamberTest is Test {
         chamber.cancelTransaction(1, 0);
         vm.prank(user2);
         chamber.cancelTransaction(2, 0);
-        vm.prank(user3);
-        chamber.cancelTransaction(3, 0);
         assertTrue(chamber.getCancelled(0));
 
         vm.prank(user2);
@@ -1374,8 +1366,6 @@ contract ChamberTest is Test {
         chamber.cancelTransaction(1, 0);
         vm.prank(user2);
         chamber.cancelTransaction(2, 0);
-        vm.prank(user3);
-        chamber.cancelTransaction(3, 0);
         assertTrue(chamber.getCancelled(0));
 
         vm.prank(user2);

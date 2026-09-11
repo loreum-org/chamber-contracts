@@ -52,7 +52,8 @@ contract FindingPMNM01ReachableQuorumTest is Test {
 
         assertEq(chamber.getSeats(), 3);
         assertEq(chamber.getReachableDirectorCount(), 3);
-        assertEq(chamber.getQuorum(), 1 + (3 * 51) / 100);
+        uint256 expected = 1 + (uint256(3) * 51) / 100;
+        assertEq(chamber.getQuorum(), expected);
         assertEq(chamber.getQuorum(), 2);
     }
 
@@ -62,7 +63,7 @@ contract FindingPMNM01ReachableQuorumTest is Test {
 
         assertEq(chamber.getSeats(), 3, "configured seats stay 3");
         assertEq(chamber.getReachableDirectorCount(), 1, "only one authorized director");
-        assertEq(chamber.getQuorum(), 1 + (1 * 51) / 100, "quorum uses reachable, not empty slots");
+        assertEq(chamber.getQuorum(), 1 + (uint256(1) * 51) / 100, "quorum uses reachable, not empty slots");
         assertEq(chamber.getQuorum(), 1);
 
         uint256 configuredQuorum = 1 + (SEATS * 51) / 100;
@@ -86,13 +87,6 @@ contract FindingPMNM01ReachableQuorumTest is Test {
 
         assertEq(chamber.getQuorum(), 2, "three reachable directors");
 
-        vm.prank(user1);
-        chamber.submitTransaction(1, spendTarget, 0, "");
-        vm.prank(user2);
-        chamber.confirmTransaction(2, 0);
-        vm.prank(user3);
-        chamber.confirmTransaction(3, 0);
-
         nft.burn(2);
         nft.burn(3);
 
@@ -102,6 +96,8 @@ contract FindingPMNM01ReachableQuorumTest is Test {
         assertFalse(chamber.isTokenAuthorized(2, user2), "burned token cannot authorize");
         assertFalse(chamber.isTokenAuthorized(3, user3));
 
+        vm.prank(user1);
+        chamber.submitTransaction(1, spendTarget, 0, "");
         vm.prank(user1);
         chamber.executeTransaction(1, 0, "");
         (bool executed,,,,) = chamber.getTransaction(0);
@@ -160,9 +156,10 @@ contract FindingPMNM01ReachableQuorumTest is Test {
         _seat(user1, 1, 100 ether);
         _seat(user2, 2, 100 ether);
         _seat(user3, 3, 100 ether);
-        vm.roll(block.number + SEATING_DELAY);
+        vm.roll(block.number + SEATING_DELAY + 1);
         assertEq(filled.getReachableDirectorCount(), 3);
         assertGe(filled.getReachableDirectorCount(), 1 + (filled.getSeats() * 51) / 100);
+        assertTrue(block.number >= filled.getSeatedAt(1), "filled board directors are mature");
 
         vm.prank(user1);
         vm.expectRevert(IChamber.SeatRecoveryUnavailable.selector);
