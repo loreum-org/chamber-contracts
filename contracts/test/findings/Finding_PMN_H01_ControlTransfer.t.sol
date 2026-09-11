@@ -110,7 +110,8 @@ contract FindingPMNH01ControlTransferTest is Test {
         wallet.execute(
             address(chamber),
             abi.encodeCall(
-                chamber.setDirectorOperator, (4, sessionKey, block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED())
+                chamber.setDirectorOperator,
+                (4, sessionKey, block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED())
             )
         );
         assertEq(chamber.getDirectorOperator(4), sessionKey);
@@ -128,9 +129,10 @@ contract FindingPMNH01ControlTransferTest is Test {
         vm.expectRevert(IChamber.NotDirector.selector);
         chamber.submitTransaction(4, address(0x3), 0, "");
 
+        uint32 unscoped = type(uint32).max;
         vm.prank(sessionKey);
         vm.expectRevert(IChamber.NotDirector.selector);
-        chamber.setDirectorOperator(4, address(0xFEE1), block.timestamp + 30 days, chamber.SESSION_SCOPE_UNSCOPED());
+        chamber.setDirectorOperator(4, address(0xFEE1), block.timestamp + 30 days, unscoped);
 
         address newKey = address(0xA11);
         newWallet.execute(

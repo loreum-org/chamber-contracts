@@ -366,11 +366,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
 
         uint256 liveAt = block.number + BoardTypes.SEATING_DELAY;
         $.directorSession[tokenId] = DirectorSession({
-            owner: owner,
-            expiry: uint64(expiry),
-            scope: scope,
-            operator: operator,
-            liveAt: uint64(liveAt)
+            owner: owner, expiry: uint64(expiry), scope: scope, operator: operator, liveAt: uint64(liveAt)
         });
         emit IChamber.DirectorOperatorSet(tokenId, owner, operator, expiry, scope);
     }

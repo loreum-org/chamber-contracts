@@ -129,9 +129,7 @@ contract ChamberSymTest is Test, SymTest {
         nft.mintWithTokenId(address(wallet), tokenId);
         wallet.execute(
             address(chamber),
-            abi.encodeCall(
-                IChamber.setDirectorOperator, (tokenId, sessionKey, type(uint64).max, type(uint32).max)
-            )
+            abi.encodeCall(IChamber.setDirectorOperator, (tokenId, sessionKey, type(uint64).max, type(uint32).max))
         );
 
         assertTrue(chamber.isTokenAuthorized(tokenId, address(wallet)));
