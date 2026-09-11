@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 import {
   getNetworkName,
   pickPreferredSupportedChainId,
+  readSimulatedChainId,
   SEPOLIA_CHAIN_ID,
   showMainnetUnsupportedBanner,
   switchToSupportedChainLabel,
@@ -30,11 +31,27 @@ function testPrefersSepoliaThenFirstConfigured() {
   assert.notEqual(pickPreferredSupportedChainId([SEPOLIA_CHAIN_ID]), 1)
 }
 
+function testDevSimulateChainId() {
+  assert.equal(readSimulatedChainId('?simulateChainId=1', true), 1)
+  assert.equal(readSimulatedChainId('simulateChainId=1', true), 1)
+  assert.equal(readSimulatedChainId('?simulateChainId=1', false), undefined)
+  assert.equal(readSimulatedChainId('?foo=1', true), undefined)
+  assert.equal(showMainnetUnsupportedBanner(readSimulatedChainId('?simulateChainId=1', true) ?? 11155111, false), true)
+}
+
 function testSwitchLabel() {
   assert.equal(switchToSupportedChainLabel(SEPOLIA_CHAIN_ID), 'Switch to Sepolia')
   assert.equal(switchToSupportedChainLabel(8453), 'Switch to Base')
   assert.equal(switchToSupportedChainLabel(undefined), 'Switch network')
   assert.equal(getNetworkName(1), 'Mainnet')
+}
+
+function testNoInventedMainnetEnv() {
+  assert.equal(process.env.VITE_MAINNET_FACTORY ?? '', '')
+  assert.equal(process.env.VITE_MAINNET_REGISTRY ?? '', '')
+  const here = dirname(fileURLToPath(import.meta.url))
+  const sepoliaTxt = readFileSync(join(here, '../../contracts/deployments/sepolia.txt'), 'utf8')
+  assert.match(sepoliaTxt, /^\s*Factory\s+0x[a-fA-F0-9]{40}/m)
 }
 
 function testDashboardWiresExistingHelpers() {
@@ -45,6 +62,7 @@ function testDashboardWiresExistingHelpers() {
   assert.match(source, /getPreferredSupportedChainId/)
   assert.match(source, /switchToSupportedChainLabel/)
   assert.match(source, /showMainnetUnsupportedBanner/)
+  assert.match(source, /readSimulatedChainId/)
   assert.match(source, /btn btn-primary/)
   assert.doesNotMatch(source, /VITE_MAINNET_FACTORY=0x[0-9a-fA-F]{40}/)
   assert.doesNotMatch(
@@ -55,6 +73,8 @@ function testDashboardWiresExistingHelpers() {
 
 testBannerVisibility()
 testPrefersSepoliaThenFirstConfigured()
+testDevSimulateChainId()
 testSwitchLabel()
+testNoInventedMainnetEnv()
 testDashboardWiresExistingHelpers()
 console.log('verify-mainnet-unsupported-banner: ok')

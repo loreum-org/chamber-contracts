@@ -42,3 +42,12 @@ export function showMainnetUnsupportedBanner(
 export function switchToSupportedChainLabel(chainId: number | undefined): string {
   return chainId == null ? 'Switch network' : `Switch to ${getNetworkName(chainId)}`
 }
+
+/** DEV-only `?simulateChainId=1` so the mainnet banner can be exercised without a mainnet wallet. */
+export function readSimulatedChainId(search: string, enabled: boolean): number | undefined {
+  if (!enabled) return undefined
+  const raw = new URLSearchParams(search.startsWith('?') ? search : `?${search}`).get('simulateChainId')
+  if (!raw) return undefined
+  const id = Number(raw)
+  return Number.isInteger(id) && id > 0 ? id : undefined
+}

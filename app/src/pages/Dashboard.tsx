@@ -22,7 +22,11 @@ import {
   getPreferredSupportedChainId,
   isMainnetConfigured,
 } from '@/lib/wagmi'
-import { showMainnetUnsupportedBanner, switchToSupportedChainLabel } from '@/lib/supportedChain'
+import {
+  readSimulatedChainId,
+  showMainnetUnsupportedBanner,
+  switchToSupportedChainLabel,
+} from '@/lib/supportedChain'
 import ChamberCard from '@/components/ChamberCard'
 
 export default function Dashboard() {
@@ -36,7 +40,8 @@ export default function Dashboard() {
   const [openAddress, setOpenAddress] = useState('')
   const [openError, setOpenError] = useState<string | null>(null)
   const preferredChainId = getPreferredSupportedChainId()
-  const showUnsupportedMainnet = showMainnetUnsupportedBanner(chainId, isMainnetConfigured)
+  const bannerChainId = readSimulatedChainId(location.search, import.meta.env.DEV) ?? chainId
+  const showUnsupportedMainnet = showMainnetUnsupportedBanner(bannerChainId, isMainnetConfigured)
   const switchLabel = switchToSupportedChainLabel(preferredChainId)
   const canSwitch = Boolean((preferredChainId && isConnected) || openChainModal)
 
