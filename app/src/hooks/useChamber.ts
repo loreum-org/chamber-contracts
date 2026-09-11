@@ -1,12 +1,13 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useSimulateContract, useAccount, useBlockNumber, usePublicClient, useChainId } from 'wagmi'
-import { isAddress } from 'viem'
+import { isAddress, zeroAddress } from 'viem'
 import { chamberAbi, erc20Abi, erc721Abi } from '@/contracts/abis'
 import { chamberVersionBytes32ToLabel } from '@/lib/utils'
 import { isSeatingMature } from '@/lib/chamberGovernance'
 import { getAlchemyApiKeyFromEnv } from '@/lib/alchemy'
 import { listOwnedErc721TokenIds } from '@/lib/ownedErc721'
+import { isOnchainContractBytecode } from '@/lib/address'
 import type { Transaction, BoardMember, SeatUpdate } from '@/types'
 
 /** Public RPC / long block times: retry eth_call simulation and refresh state after txs. */
@@ -937,6 +938,82 @@ export function useCancelSeatUpdate(chamberAddress: `0x${string}` | undefined) {
   return { cancelSeatUpdate, isPending, isConfirming, isSuccess, error, hash }
 }
 
+/**
+ * Live session key for `tokenId`, or zero if unset / stale / EOA-owned.
+ */
+export function useDirectorOperator(
+  chamberAddress: `0x${string}` | undefined,
+  tokenId: bigint | undefined,
+) {
+  const { data, refetch } = useReadContract({
+    address: chamberAddress,
+    abi: chamberAbi,
+    functionName: 'getDirectorOperator',
+    args: tokenId !== undefined ? [tokenId] : undefined,
+    query: {
+      enabled: !!chamberAddress && tokenId !== undefined,
+      staleTime: 0,
+      retry: false,
+    },
+  })
+
+  const operator = data as `0x${string}` | undefined
+  const isSet = !!operator && operator !== zeroAddress
+
+  return { operator, isSet, refetch }
+}
+
+/**
+ * `address.code.length > 0` for the connected (or given) account.
+ * Protocol rejects `setDirectorOperator` for EOA-owned NFTs.
+ */
+export function useIsContractAccount(account: `0x${string}` | undefined) {
+  const publicClient = usePublicClient()
+  const chainId = useChainId()
+
+  const { data: bytecode, isFetched, isFetching } = useQuery({
+    queryKey: ['account-bytecode', chainId, account?.toLowerCase() ?? ''],
+    enabled: !!publicClient && !!account,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const code = await publicClient!.getBytecode({ address: account! })
+      return (code ?? '0x') as `0x${string}`
+    },
+  })
+
+  return {
+    isContract: isOnchainContractBytecode(bytecode),
+    bytecode,
+    isFetched,
+    isFetching,
+  }
+}
+
+/**
+ * Register or clear the session key for a contract-owned membership NFT.
+ * Pass `address(0)` to clear. Never consults ERC-1271.
+ */
+export function useSetDirectorOperator(chamberAddress: `0x${string}` | undefined) {
+  const { writeContractAsync, data: hash, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+
+  const setDirectorOperator = async (tokenId: bigint, operator: `0x${string}`) => {
+    if (!chamberAddress) return
+    return writeContractAsync({
+      address: chamberAddress,
+      abi: chamberAbi,
+      functionName: 'setDirectorOperator',
+      args: [tokenId, operator],
+    })
+  }
+
+  const clearDirectorOperator = async (tokenId: bigint) => {
+    return setDirectorOperator(tokenId, zeroAddress)
+  }
+
+  return { setDirectorOperator, clearDirectorOperator, isPending, isConfirming, isSuccess, error, hash }
+}
+
 export function useSeatedAt(chamberAddress: `0x${string}` | undefined, tokenId: bigint | undefined) {
   const { data, refetch } = useReadContract({
     address: chamberAddress,
@@ -997,7 +1074,6 @@ export function useDirectorActionGate(
       enabled:
         !!chamberAddress &&
         !!userAddress &&
-        ownerTokenId === undefined &&
         memberTokenIds.length > 0,
       retry: false,
     },
@@ -1005,14 +1081,22 @@ export function useDirectorActionGate(
 
   let operatorTokenId: bigint | undefined
   let operatorOwner: `0x${string}` | undefined
-  if (ownerTokenId === undefined && userAddress && operatorResults && directors) {
+  let sessionOperator: `0x${string}` | undefined
+  if (userAddress && operatorResults && directors) {
     for (let i = 0; i < operatorResults.length; i++) {
       const result = operatorResults[i]
       if (result.status !== 'success' || typeof result.result !== 'string') continue
-      if (result.result.toLowerCase() === userAddress.toLowerCase()) {
+      const op = result.result as `0x${string}`
+      if (!op || op === zeroAddress) continue
+
+      if (ownerTokenId !== undefined && memberTokenIds[i] === ownerTokenId) {
+        sessionOperator = op
+      } else if (
+        ownerTokenId === undefined &&
+        op.toLowerCase() === userAddress.toLowerCase()
+      ) {
         operatorTokenId = memberTokenIds[i]
         operatorOwner = directors[i]
-        break
       }
     }
   }
@@ -1042,5 +1126,6 @@ export function useDirectorActionGate(
     seatingPending,
     role,
     nftOwner,
+    sessionOperator,
   }
 }

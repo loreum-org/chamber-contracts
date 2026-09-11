@@ -6,10 +6,12 @@ export function DirectorCallerStatus({
   role,
   tokenId,
   nftOwner,
+  sessionOperator,
 }: {
   role: DirectorCallerRole | null
   tokenId?: bigint
   nftOwner?: `0x${string}`
+  sessionOperator?: `0x${string}`
 }) {
   if (!role || tokenId === undefined) return null
 
@@ -34,6 +36,12 @@ export function DirectorCallerStatus({
           {isOwner ? (
             <>
               Connected wallet is the <span className="font-semibold">NFT owner</span> of {member}.
+              {sessionOperator ? (
+                <>
+                  {' '}
+                  Session key {shortenAddress(sessionOperator)}.
+                </>
+              ) : null}
             </>
           ) : (
             <>

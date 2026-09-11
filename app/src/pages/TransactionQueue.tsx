@@ -724,6 +724,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
           role={directorGate.role}
           tokenId={directorGate.tokenId}
           nftOwner={directorGate.nftOwner}
+          sessionOperator={directorGate.sessionOperator}
         />
         {directorGate.seatingPending && (
           <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-200">

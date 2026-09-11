@@ -261,6 +261,17 @@ export function useChamberEvents(
     enabled: watchEnabled,
   })
 
+  useWatchContractEvent({
+    address: isValidAddress ? chamberAddress : undefined,
+    abi: chamberAbi,
+    eventName: 'DirectorOperatorSet',
+    onLogs: (logs) => {
+      if (import.meta.env.DEV) console.log('Chamber DirectorOperatorSet event:', logs)
+      invalidate()
+    },
+    enabled: watchEnabled,
+  })
+
   // Watch for ETH received
   useWatchContractEvent({
     address: isValidAddress ? chamberAddress : undefined,

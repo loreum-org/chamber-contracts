@@ -41,6 +41,7 @@ import {
 } from '@/hooks'
 import BoardVisualization from '@/components/BoardVisualization'
 import { DirectorCallerStatus } from '@/components/DirectorCallerStatus'
+import { DirectorOperatorManager } from '@/components/DirectorOperatorManager'
 import TreasuryOverview from '@/components/TreasuryOverview'
 import DelegationManager from '@/components/DelegationManager'
 import SeatTheBoard from '@/components/SeatTheBoard'
@@ -388,6 +389,16 @@ function ChamberDetailContent({ chamberAddress }: { chamberAddress: `0x${string}
           role={directorGate.role}
           tokenId={directorGate.tokenId}
           nftOwner={directorGate.nftOwner}
+          sessionOperator={directorGate.sessionOperator}
+        />
+        <DirectorOperatorManager
+          chamberAddress={chamberAddress}
+          nftToken={
+            chamberInfo.nftToken && chamberInfo.nftToken !== zeroAddress
+              ? (chamberInfo.nftToken as `0x${string}`)
+              : undefined
+          }
+          preferredTokenId={directorGate.role === 'owner' ? directorGate.tokenId : undefined}
         />
 
         {/* Stats */}
