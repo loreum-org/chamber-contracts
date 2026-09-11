@@ -7,7 +7,7 @@ import {Chamber} from "src/Chamber.sol";
 import {IChamber} from "src/interfaces/IChamber.sol";
 import {MockERC20} from "test/mock/MockERC20.sol";
 import {MockERC721} from "test/mock/MockERC721.sol";
-import {DeployRegistry} from "test/utils/DeployRegistry.sol";
+import {DeployChamber} from "test/utils/DeployChamber.sol";
 
 /**
  * @title Finding 4: ERC4626 Withdraw Bypasses Delegation Locks [CRITICAL] — FIXED
@@ -27,9 +27,7 @@ contract DelegationBypassViaWithdrawTest is Test {
     function setUp() public {
         token = new MockERC20("Test Token", "TEST", 0);
         nft = new MockERC721("Mock NFT", "MNFT");
-        registry = DeployRegistry.deploy(admin);
-
-        chamberAddress = registry.createChamber(address(token), address(nft), 3, "Chamber Token", "CHMB");
+        chamberAddress = address(DeployChamber.deployViaFactory(address(token), address(nft), 3, "Chamber Token", "CHMB", admin));
         chamber = IChamber(chamberAddress);
 
         token.mint(attacker, 1000e18);

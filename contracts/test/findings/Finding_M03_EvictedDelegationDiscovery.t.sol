@@ -6,7 +6,7 @@ import {Registry} from "src/Registry.sol";
 import {IChamber} from "src/interfaces/IChamber.sol";
 import {MockERC20} from "test/mock/MockERC20.sol";
 import {MockERC721} from "test/mock/MockERC721.sol";
-import {DeployRegistry} from "test/utils/DeployRegistry.sol";
+import {DeployChamber} from "test/utils/DeployChamber.sol";
 
 /**
  * @title M-03: Evicted delegations are undiscoverable via getDelegations — FIXED
@@ -33,9 +33,7 @@ contract EvictedDelegationDiscoveryTest is Test {
     function setUp() public {
         token = new MockERC20("Test Token", "TEST", 1000000e18);
         nft = new MockERC721("Mock NFT", "MNFT");
-        registry = DeployRegistry.deploy(admin);
-
-        chamberAddress = registry.createChamber(address(token), address(nft), 20, "Chamber Token", "CHMB");
+        chamberAddress = address(DeployChamber.deployViaFactory(address(token), address(nft), 20, "Chamber Token", "CHMB", admin));
         chamber = IChamber(chamberAddress);
 
         token.mint(alice, 1000e18);

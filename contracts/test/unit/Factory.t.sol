@@ -13,6 +13,8 @@ import {ProxyAdmin} from "lib/openzeppelin-contracts/contracts/proxy/transparent
 
 /// @dev Mock chamber that returns address(0) for getProxyAdmin() to trigger defensive check
 contract ZeroProxyAdminChamber {
+    bytes32 public constant VERSION = "mock";
+
     function initialize(address, address, uint256, string calldata, string calldata) external {}
 
     function getProxyAdmin() external pure returns (address) {
@@ -61,6 +63,16 @@ contract FactoryTest is Test {
     function test_Factory_Constructor_ZeroImplementation_Reverts() public {
         vm.expectRevert(Factory.ZeroAddress.selector);
         new Factory(address(0), admin);
+    }
+
+    function test_Factory_Constructor_EoaImplementation_Reverts() public {
+        vm.expectRevert(Factory.NotContract.selector);
+        new Factory(makeAddr("eoaImpl"), admin);
+    }
+
+    function test_Factory_Constructor_NonChamberCode_Reverts() public {
+        vm.expectRevert(Factory.NotChamberImplementation.selector);
+        new Factory(address(token), admin);
     }
 
     function test_Factory_Constructor_ZeroAdmin_Reverts() public {
@@ -183,6 +195,18 @@ contract FactoryTest is Test {
         vm.prank(admin);
         vm.expectRevert(Factory.ZeroAddress.selector);
         factory.setImplementation(address(0));
+    }
+
+    function test_Factory_SetImplementation_Eoa_Reverts() public {
+        vm.prank(admin);
+        vm.expectRevert(Factory.NotContract.selector);
+        factory.setImplementation(makeAddr("eoaImpl"));
+    }
+
+    function test_Factory_SetImplementation_NonChamberCode_Reverts() public {
+        vm.prank(admin);
+        vm.expectRevert(Factory.NotChamberImplementation.selector);
+        factory.setImplementation(address(token));
     }
 
     function test_Factory_SetImplementation_NotOwner_Reverts() public {

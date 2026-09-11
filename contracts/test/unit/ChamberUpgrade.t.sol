@@ -2,17 +2,15 @@
 pragma solidity ^0.8.30;
 
 import {Test} from "forge-std/Test.sol";
-import {Registry} from "src/Registry.sol";
 import {Chamber} from "src/Chamber.sol";
 import {IChamber} from "src/interfaces/IChamber.sol";
 import {IWallet} from "src/interfaces/IWallet.sol";
 import {MockERC20} from "test/mock/MockERC20.sol";
 import {MockERC721} from "test/mock/MockERC721.sol";
-import {DeployRegistry} from "test/utils/DeployRegistry.sol";
+import {DeployChamber} from "test/utils/DeployChamber.sol";
 import {ProxyAdmin} from "lib/openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
 
 contract ChamberUpgradeTest is Test {
-    Registry public registry;
     Chamber public implementation;
     Chamber public newImplementation;
     MockERC20 public token;
@@ -35,16 +33,15 @@ contract ChamberUpgradeTest is Test {
         implementation = new Chamber();
         newImplementation = new Chamber();
 
-        // Deploy and initialize registry
-        registry = DeployRegistry.deploy(admin);
-
-        // Create a chamber
-        chamberAddress = registry.createChamber(
-            address(token),
-            address(nft),
-            5, // seats
-            "Chamber Token",
-            "CHMB"
+        chamberAddress = address(
+            DeployChamber.deployViaFactory(
+                address(token),
+                address(nft),
+                5, // seats
+                "Chamber Token",
+                "CHMB",
+                admin
+            )
         );
         chamber = IChamber(chamberAddress);
         chamberContract = Chamber(payable(chamberAddress));
@@ -100,7 +97,6 @@ contract ChamberUpgradeTest is Test {
 
         // Verify chamber owns the ProxyAdmin
         assertEq(proxyAdmin.owner(), chamberAddress);
-        assertNotEq(proxyAdmin.owner(), address(registry));
     }
 
     function test_Chamber_UpgradeViaTransaction() public {

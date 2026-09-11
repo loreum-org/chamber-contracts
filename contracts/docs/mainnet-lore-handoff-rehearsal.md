@@ -6,6 +6,12 @@ This proves the **mechanics**. It does **not** decide CCA vs Ownable production 
 
 **Never broadcast these transactions to live mainnet.**
 
+## M1 deploy checklist (PMN-M03 C)
+
+Factory owner must be a **timelock or Safe** before any mainnet broadcast. Do not deploy Factory with an EOA owner. Record the real owner address on the M1 deploy task when it exists. This document does **not** invent a mainnet Factory or owner address.
+
+`Registry.createChamber` is disabled. Ethereum creates go through `Factory.createChamber` only.
+
 ## What it does
 
 1. Forks Ethereum (`vm.createSelectFork` / `forge script --fork-url`).

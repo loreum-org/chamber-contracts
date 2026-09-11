@@ -7,7 +7,7 @@ import {IChamber} from "src/interfaces/IChamber.sol";
 import {IBoard} from "src/interfaces/IBoard.sol";
 import {MockERC20} from "test/mock/MockERC20.sol";
 import {MockERC721} from "test/mock/MockERC721.sol";
-import {DeployRegistry} from "test/utils/DeployRegistry.sol";
+import {DeployChamber} from "test/utils/DeployChamber.sol";
 
 /**
  * @title H-03: Seat-update slot has no expiry [HIGH] — FIXED
@@ -32,10 +32,8 @@ contract SeatUpdateExpiryTest is Test {
     function setUp() public {
         token = new MockERC20("Test Token", "TEST", 0);
         nft = new MockERC721("Mock NFT", "MNFT");
-        registry = DeployRegistry.deploy(admin);
-
         // 4 seats; quorum = 1 + (4 * 51) / 100 = 3
-        chamberAddress = registry.createChamber(address(token), address(nft), 4, "Chamber Token", "CHMB");
+        chamberAddress = address(DeployChamber.deployViaFactory(address(token), address(nft), 4, "Chamber Token", "CHMB", admin));
         chamber = IChamber(chamberAddress);
 
         _setupDirector(director1, 1, 1000e18);

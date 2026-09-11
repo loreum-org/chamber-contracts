@@ -269,23 +269,19 @@ contract OffensiveReviewFindingsTest is Test {
         assertEq(chamber.getTransactionCount(), 0, "promiscuous ERC1271 must not authorize a random caller");
     }
 
-    /// Finding 3: anyone can spam chamber creation (griefing / indexing bloat)
+    /// Finding 3 / PMN-M03 A: Registry create is disabled; spam cannot grow the index.
     function test_Finding3_PermissionlessCreateChamber_SpamSucceeds() public {
         Registry registry = DeployRegistry.deploy(address(this));
         MockERC20 spamToken = new MockERC20("Spam", "SPAM", 1e18);
         MockERC721 spamNft = new MockERC721("Spam NFT", "SNFT");
 
         uint256 countBefore = registry.getChamberCount();
-        uint256 spamCount = 25;
 
-        for (uint256 i = 0; i < spamCount; i++) {
-            registry.createChamber(address(spamToken), address(spamNft), 5, "Spam", "SPM");
-        }
+        vm.expectRevert(Registry.CreateDisabled.selector);
+        registry.createChamber(address(spamToken), address(spamNft), 5, "Spam", "SPM");
 
-        assertEq(registry.getChamberCount(), countBefore + spamCount);
-        assertTrue(registry.isChamber(registry.getAllChambers()[countBefore + spamCount - 1]));
-
-        address[] memory byAsset = registry.getChambersByAsset(address(spamToken));
-        assertEq(byAsset.length, spamCount);
+        assertEq(registry.getChamberCount(), countBefore);
+        assertEq(registry.getAllChambers().length, 0);
+        assertEq(registry.getChambersByAsset(address(spamToken)).length, 0);
     }
 }
