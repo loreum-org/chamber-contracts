@@ -7,7 +7,7 @@ import { isAddress, parseEventLogs, zeroAddress } from 'viem'
 import { useQueryClient } from '@tanstack/react-query'
 import { FiAlertCircle, FiCheck, FiLoader, FiArrowRight, FiArrowLeft, FiCopy } from 'react-icons/fi'
 import { useCreateChamberTarget, useCreateChamberWithStatus } from '@/hooks'
-import { getContractAddresses, isNonZeroAddress } from '@/lib/wagmi'
+import { getContractAddresses, isNonZeroAddress, LOCAL_CHAIN_ID } from '@/lib/wagmi'
 import { addRecentChamber } from '@/lib/recentChambers'
 import { factoryAbi, registryAbi } from '@/contracts/abis'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
@@ -16,6 +16,11 @@ import SeatTheBoard from '@/components/SeatTheBoard'
 import toast from 'react-hot-toast'
 
 type Step = 'form' | 'review' | 'deploying' | 'success'
+
+/** In-app getting-started guide (Docs.tsx route is `/docs/*`). */
+const GETTING_STARTED_HREF = '/docs/introduction/getting-started'
+
+type MembershipPath = 'existing' | 'need-collection'
 
 function quorumForSeats(seats: number) {
   return 1 + Math.floor((seats * 51) / 100)
@@ -35,9 +40,17 @@ export default function DeployChamber() {
   const sepoliaAddrs = getContractAddresses(sepolia.id)
   const sepoliaDemoReady =
     isNonZeroAddress(sepoliaAddrs?.mockERC20) && isNonZeroAddress(sepoliaAddrs?.mockERC721)
+  const chainAddrs = typeof chainId === 'number' ? getContractAddresses(chainId) : undefined
+  const onDemoChain =
+    typeof chainId === 'number' && (chainId === sepolia.id || chainId === LOCAL_CHAIN_ID)
+  const demoPrefillReady =
+    onDemoChain &&
+    isNonZeroAddress(chainAddrs?.mockERC20) &&
+    isNonZeroAddress(chainAddrs?.mockERC721)
   const queryClient = useQueryClient()
 
   const [step, setStep] = useState<Step>('form')
+  const [membershipPath, setMembershipPath] = useState<MembershipPath>('existing')
   const [deployedTxHash, setDeployedTxHash] = useState<string | undefined>()
   const [deployedChamber, setDeployedChamber] = useState<`0x${string}` | undefined>()
   const [formData, setFormData] = useState({
@@ -163,6 +176,7 @@ export default function DeployChamber() {
   const erc721Error = erc721Valid && !erc721Loading && !erc721Name
 
   const canProceedToReview =
+    membershipPath === 'existing' &&
     !!formData.name &&
     !!formData.symbol &&
     erc20Confirmed &&
@@ -251,7 +265,7 @@ export default function DeployChamber() {
               <FiArrowRight className="w-4 h-4" />
             </Link>
             <button
-              onClick={() => { reset(); setStep('form'); setFormData({ erc20Token: '', erc721Token: '', seats: '5', name: '', symbol: '' }) }}
+              onClick={() => { reset(); setStep('form'); setMembershipPath('existing'); setFormData({ erc20Token: '', erc721Token: '', seats: '5', name: '', symbol: '' }) }}
               className="btn btn-secondary"
             >
               Deploy Another
@@ -294,8 +308,15 @@ export default function DeployChamber() {
               <div className="flex justify-center">
                 <ConnectButton accountStatus="address" chainStatus="icon" showBalance={false} />
               </div>
+              <p className="text-slate-500 text-xs mt-6 max-w-md mx-auto leading-relaxed">
+                Deploy requires an ERC-20 and a live ERC-721 membership collection already on this chain.
+                This app does not create the membership collection.{' '}
+                <Link to={GETTING_STARTED_HREF} className="text-accent-400 hover:text-accent-300">
+                  Getting started
+                </Link>
+              </p>
               {sepoliaDemoReady && (
-                <p className="text-slate-500 text-xs mt-6 max-w-md mx-auto leading-relaxed">
+                <p className="text-slate-500 text-xs mt-3 max-w-md mx-auto leading-relaxed">
                   On Sepolia the form pre-fills demo ERC-20 {shortenAddress(sepoliaAddrs.mockERC20)} and membership
                   ERC-721 {shortenAddress(sepoliaAddrs.mockERC721)}. After connecting, mint from the header so your
                   wallet holds the membership NFT.
@@ -380,42 +401,107 @@ export default function DeployChamber() {
 
                   {/* ERC721 Token */}
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Member Contract (ERC721) *</label>
-                    <input
-                      type="text"
-                      placeholder="0x..."
-                      className={`input font-mono ${erc721Error ? 'border-red-500/60 focus:border-red-500' : erc721Confirmed ? 'border-emerald-500/60' : ''}`}
-                      value={formData.erc721Token}
-                      onChange={(e) => setFormData({ ...formData, erc721Token: e.target.value })}
-                      required
-                    />
-                    <div className="mt-1.5 min-h-[1.25rem]">
-                      {erc721Loading && erc721Valid && (
-                        <span className="text-slate-500 text-xs flex items-center gap-1">
-                          <FiLoader className="w-3 h-3 animate-spin" /> Verifying contract…
-                        </span>
-                      )}
-                      {erc721Confirmed && (
-                        <span className="text-emerald-400 text-xs flex items-center gap-1">
-                          <FiCheck className="w-3 h-3" /> {erc721Name as string}{erc721Symbol ? ` (${erc721Symbol})` : ''}
-                        </span>
-                      )}
-                      {erc721Error && (
-                        <span className="text-red-400 text-xs flex items-center gap-1">
-                          <FiAlertCircle className="w-3 h-3" /> Address is not a valid ERC721 contract
-                        </span>
-                      )}
-                      {!erc721Valid && !formData.erc721Token && (
-                        <span className="text-slate-500 text-xs">Contract holders can become board members via delegation</span>
-                      )}
-                      {chainId === sepolia.id && erc20Valid && erc721Valid && (
-                        <p className="text-slate-500 text-xs mt-2">
-                          Sepolia demo tokens are pre-filled. Use <span className="text-accent-400">Mint Test NFT</span> and{' '}
-                          <span className="text-accent-400">Mint Test ERC20</span> in the header so your wallet holds the
-                          membership NFT and demo asset.
-                        </p>
-                      )}
+                    <label className="block text-slate-300 text-sm font-medium mb-2">
+                      Existing membership collection (ERC-721) *
+                    </label>
+                    <p className="text-slate-500 text-xs mb-3">
+                      Paste an ERC-721 already deployed on this chain. Chamber does not create this collection.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                      <button
+                        type="button"
+                        aria-pressed={membershipPath === 'existing'}
+                        onClick={() => setMembershipPath('existing')}
+                        className={`rounded-lg px-3 py-2.5 text-sm text-left border transition-colors ${
+                          membershipPath === 'existing'
+                            ? 'border-accent-500/50 bg-accent-500/10 text-slate-100'
+                            : 'border-slate-700/60 bg-slate-800/40 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        Use existing collection
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={membershipPath === 'need-collection'}
+                        onClick={() => setMembershipPath('need-collection')}
+                        className={`rounded-lg px-3 py-2.5 text-sm text-left border transition-colors ${
+                          membershipPath === 'need-collection'
+                            ? 'border-accent-500/50 bg-accent-500/10 text-slate-100'
+                            : 'border-slate-700/60 bg-slate-800/40 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        I don't have a collection
+                      </button>
                     </div>
+                    {membershipPath === 'need-collection' ? (
+                      <div className="rounded-xl p-4 bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                        <FiAlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                        <div className="space-y-2 min-w-0">
+                          <p className="text-amber-200/90 text-sm font-medium">
+                            A live ERC-721 membership collection is required
+                          </p>
+                          <p className="text-slate-400 text-sm leading-relaxed">
+                            Deploy unlocks only after you paste an ERC-721 that already exists on this chain.
+                            This app does not deploy a membership collection for you.
+                          </p>
+                          {demoPrefillReady && (
+                            <p className="text-slate-400 text-sm leading-relaxed">
+                              On Sepolia or Anvil, demo collections are pre-filled — choose{' '}
+                              <span className="text-slate-200">Use existing collection</span> to continue with those
+                              addresses, then mint from the header.
+                            </p>
+                          )}
+                          <Link
+                            to={GETTING_STARTED_HREF}
+                            className="text-accent-400 text-sm hover:text-accent-300 inline-flex items-center gap-1"
+                          >
+                            Getting started
+                            <FiArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          placeholder="0x..."
+                          className={`input font-mono ${erc721Error ? 'border-red-500/60 focus:border-red-500' : erc721Confirmed ? 'border-emerald-500/60' : ''}`}
+                          value={formData.erc721Token}
+                          onChange={(e) => setFormData({ ...formData, erc721Token: e.target.value })}
+                          required
+                        />
+                        <div className="mt-1.5 min-h-[1.25rem]">
+                          {erc721Loading && erc721Valid && (
+                            <span className="text-slate-500 text-xs flex items-center gap-1">
+                              <FiLoader className="w-3 h-3 animate-spin" /> Verifying contract…
+                            </span>
+                          )}
+                          {erc721Confirmed && (
+                            <span className="text-emerald-400 text-xs flex items-center gap-1">
+                              <FiCheck className="w-3 h-3" /> {erc721Name as string}{erc721Symbol ? ` (${erc721Symbol})` : ''}
+                            </span>
+                          )}
+                          {erc721Error && (
+                            <span className="text-red-400 text-xs flex items-center gap-1">
+                              <FiAlertCircle className="w-3 h-3" /> Address is not a valid ERC721 contract
+                            </span>
+                          )}
+                          {!erc721Valid && !formData.erc721Token && (
+                            <span className="text-slate-500 text-xs">
+                              Token holders can become board members via delegation. The collection must already exist.
+                            </span>
+                          )}
+                          {demoPrefillReady && erc20Valid && erc721Valid && (
+                            <p className="text-slate-500 text-xs mt-2">
+                              {chainId === sepolia.id ? 'Sepolia' : 'Anvil'} demo tokens are pre-filled. Use{' '}
+                              <span className="text-accent-400">Mint Test NFT</span> and{' '}
+                              <span className="text-accent-400">Mint Test ERC20</span> in the header so your wallet holds
+                              the membership NFT and demo asset.
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Seats */}
@@ -448,7 +534,12 @@ export default function DeployChamber() {
                     <span>Review & Deploy</span>
                     <FiArrowRight className="w-5 h-5" />
                   </button>
-                  {!canProceedToReview && (formData.erc20Token || formData.erc721Token) && (
+                  {!canProceedToReview && membershipPath === 'need-collection' && (
+                    <p className="text-slate-500 text-xs text-center -mt-2">
+                      A live membership collection is required. See getting started, or choose "Use existing collection".
+                    </p>
+                  )}
+                  {!canProceedToReview && membershipPath === 'existing' && (formData.erc20Token || formData.erc721Token) && (
                     <p className="text-slate-500 text-xs text-center -mt-2">
                       Both token addresses must resolve to valid contracts before you can continue.
                     </p>
@@ -474,7 +565,7 @@ export default function DeployChamber() {
                         sub: formData.erc20Token,
                       },
                       {
-                        label: 'Member Contract (ERC721)',
+                        label: 'Membership collection (ERC-721)',
                         value: `${erc721Name}${erc721Symbol ? ` (${erc721Symbol})` : ''}`,
                         sub: formData.erc721Token,
                       },

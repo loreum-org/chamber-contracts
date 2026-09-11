@@ -26,7 +26,7 @@ You are launching a new treasury + governance ruleset through the **Factory** (R
 | Field | What it means |
 |--------|----------------|
 | **ERC‑20 address** | The token the vault holds (USDC, your governance token, etc.). |
-| **ERC‑721 address** | The **membership NFT** collection; each **token ID** can receive delegation. |
+| **ERC‑721 address** | An **existing** membership NFT collection on this chain. Chamber does **not** deploy this ERC‑721. Sepolia/Anvil pre-fill a demo collection. Each **token ID** can receive delegation. |
 | **Seats** | How many **top-ranked NFTs** count as directors (**1–20**). More seats → more people in leadership, higher quorum for spends. |
 | **Name / Symbol** | Labels for the Chamber **share token** (what depositors receive). |
 
