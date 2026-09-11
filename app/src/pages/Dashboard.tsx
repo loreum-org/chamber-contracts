@@ -23,6 +23,7 @@ export default function Dashboard() {
     isLoading,
     refetch: refetchMine,
     error: chambersError,
+    discoveryIncomplete,
     recents,
     remember,
     factoryAddress,
@@ -217,10 +218,17 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <form onSubmit={handleOpenAddress} className="panel p-4 flex flex-col sm:flex-row gap-3 sm:items-end">
+        <form
+          id="open-chamber-address"
+          onSubmit={handleOpenAddress}
+          className="panel p-4 flex flex-col sm:flex-row gap-3 sm:items-end"
+        >
           <div className="flex-1 min-w-0">
-            <label className="block text-slate-400 text-xs font-medium mb-1.5">Open address</label>
+            <label htmlFor="open-chamber-address-input" className="block text-slate-400 text-xs font-medium mb-1.5">
+              Open address
+            </label>
             <input
+              id="open-chamber-address-input"
               type="text"
               placeholder="0x… chamber address"
               className="input font-mono"
@@ -252,6 +260,8 @@ export default function Dashboard() {
             ))}
           </div>
         )}
+
+        {isConnected && discoveryIncomplete && <DiscoveryGapBanner />}
 
         <AnimatePresence mode="wait">
           {viewMode === 'mine' ? (
@@ -386,6 +396,33 @@ function OrganizationGroup({ nftToken, chambers, index }: { nftToken: `0x${strin
         {chambers.map((address) => (
           <ChamberCard key={address} address={address} />
         ))}
+      </div>
+    </motion.div>
+  )
+}
+
+function DiscoveryGapBanner() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="panel p-4 border-amber-500/30 bg-amber-500/5"
+      role="status"
+    >
+      <div className="flex items-start gap-3">
+        <FiAlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" aria-hidden />
+        <div>
+          <h4 className="font-medium text-amber-400 mb-1">Discovery may be incomplete</h4>
+          <p className="text-slate-400 text-sm">
+            This list can miss chambers when lookup fails. Open an address above, or use Recents.
+          </p>
+          <a
+            href="#open-chamber-address"
+            className="text-accent-400 text-sm font-medium hover:text-accent-300 mt-2 inline-block"
+          >
+            Open an address →
+          </a>
+        </div>
       </div>
     </motion.div>
   )

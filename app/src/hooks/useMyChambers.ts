@@ -3,7 +3,12 @@ import { useAccount, useChainId, usePublicClient } from 'wagmi'
 import { useQuery } from '@tanstack/react-query'
 import { multicall } from 'viem/actions'
 import { chamberAbi, factoryAbi, registryAbi } from '@/contracts/abis'
-import { discoverChambers } from '@/lib/chamberDiscovery'
+import {
+  discoverChambers,
+  EMPTY_DISCOVERY_HEALTH,
+  shouldShowDiscoveryGap,
+  type ChamberDiscoveryHealth,
+} from '@/lib/chamberDiscovery'
 import { getIndexerUrl, indexerAppliesToChain } from '@/lib/indexer'
 import { addRecentChamber, getRecentChambers } from '@/lib/recentChambers'
 import { isNonZeroAddress } from '@/lib/wagmi'
@@ -66,10 +71,12 @@ export function useMyChambers() {
       !!userAddress &&
       (factoryOk || registryOk || recents.length > 0 || !!indexerUrl),
     staleTime: 15_000,
-    queryFn: async () => {
-      if (!publicClient || !userAddress) return [] as MyChamberEntry[]
+    queryFn: async (): Promise<{ chambers: MyChamberEntry[]; health: ChamberDiscoveryHealth }> => {
+      if (!publicClient || !userAddress) {
+        return { chambers: [], health: EMPTY_DISCOVERY_HEALTH }
+      }
 
-      const { addresses: discovered, creators } = await discoverChambers({
+      const { addresses: discovered, creators, health } = await discoverChambers({
         client: publicClient,
         chainId,
         userAddress,
@@ -86,7 +93,7 @@ export function useMyChambers() {
         candidates.push(addr)
       }
 
-      if (candidates.length === 0) return [] as MyChamberEntry[]
+      if (candidates.length === 0) return { chambers: [], health }
 
       const user = userAddress.toLowerCase()
       const [dirs, bals] = await Promise.all([
@@ -125,14 +132,20 @@ export function useMyChambers() {
           mine.push({ address, isDirector, balance, isCreator })
         }
       }
-      return mine
+      return { chambers: mine, health }
     },
   })
 
   return {
-    chambers: query.data ?? [],
+    chambers: query.data?.chambers ?? [],
     isLoading: query.isLoading,
     error: query.error,
+    discoveryIncomplete: shouldShowDiscoveryGap({
+      connected: !!userAddress,
+      loading: query.isLoading,
+      queryFailed: query.isError,
+      health: query.data?.health,
+    }),
     refetch: query.refetch,
     recents,
     remember,
