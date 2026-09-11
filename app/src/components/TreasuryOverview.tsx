@@ -12,7 +12,9 @@ import {
   FiAlertCircle,
   FiCheck,
   FiUnlock,
+  FiUser,
 } from 'react-icons/fi'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import toast from 'react-hot-toast'
 import { 
   useDeposit, 
@@ -36,7 +38,7 @@ interface TreasuryOverviewProps {
 }
 
 export default function TreasuryOverview({ chamberAddress, chamberInfo, userBalance, totalDelegated = 0n }: TreasuryOverviewProps) {
-  const { address: userAddress } = useAccount()
+  const { address: userAddress, isConnected } = useAccount()
   const [depositAmount, setDepositAmount] = useState('')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [pollAllowanceAfterApprove, setPollAllowanceAfterApprove] = useState(false)
@@ -326,8 +328,7 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
                   ? parseFloat(formatUnits(userBalance, 18)).toLocaleString(undefined, {
                       maximumFractionDigits: 4,
                     })
-                  : 'Connect Wallet'
-                }
+                  : '—'}
                 {userBalance !== undefined && chamberInfo.symbol && (
                   <span className="text-lg text-slate-400 ml-2">{chamberInfo.symbol}</span>
                 )}
@@ -342,7 +343,18 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
         </motion.div>
       </div>
 
-      {/* Deposit / Withdraw — matched layout, equal-height columns */}
+      {!isConnected ? (
+        <div className="panel p-10 text-center space-y-4">
+          <FiUser className="w-8 h-8 text-slate-600 mx-auto" />
+          <div>
+            <h3 className="font-heading text-lg font-semibold text-slate-300 mb-1">Connect your wallet</h3>
+            <p className="text-slate-500 text-sm">Connect to deposit assets and withdraw shares.</p>
+          </div>
+          <div className="flex justify-center pt-2">
+            <ConnectButton accountStatus="address" chainStatus="icon" showBalance={false} />
+          </div>
+        </div>
+      ) : (
       <div className="grid md:grid-cols-2 gap-5 md:items-stretch">
         {/* Deposit */}
         <motion.div
@@ -605,6 +617,7 @@ export default function TreasuryOverview({ chamberAddress, chamberInfo, userBala
           </div>
         </motion.div>
       </div>
+      )}
 
       {/* Info Box */}
       <div className="panel p-6 bg-accent-500/5 border-accent-500/20">
