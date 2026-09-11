@@ -5,16 +5,19 @@
  * From `packages/operator`: `npm run example:anvil`
  *
  * Spawns a fresh Anvil, deploys Registry/Factory/mocks, creates a 3-seat
- * chamber, then exercises board/quorum/delegate/submit/confirm/execute and
- * the four app-mapped failure strings.
+ * chamber, then exercises board/quorum/delegate/submit/confirm/execute,
+ * session-key read + EOA reject + contract-wallet set/clear, and the four
+ * app-mapped failure strings.
  */
 import { spawn, type ChildProcess } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  type Account,
   type Address,
   type Hex,
+  type WalletClient,
   createPublicClient,
   createWalletClient,
   decodeEventLog,
@@ -100,6 +103,89 @@ function run(cmd: string, args: string[], cwd: string): Promise<void> {
       else reject(new Error(`${cmd} ${args.join(' ')} exited ${code}`))
     })
   })
+}
+
+function runCapture(cmd: string, args: string[], cwd: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] })
+    let stdout = ''
+    let stderr = ''
+    child.stdout?.on('data', (buf: Buffer) => {
+      stdout += buf.toString()
+    })
+    child.stderr?.on('data', (buf: Buffer) => {
+      stderr += buf.toString()
+    })
+    child.on('exit', (code) => {
+      if (code === 0) resolve(stdout)
+      else reject(new Error(`${cmd} ${args.join(' ')} exited ${code}\n${stderr}\n${stdout}`))
+    })
+  })
+}
+
+const execWalletAbi = [
+  {
+    type: 'function',
+    name: 'execute',
+    inputs: [
+      { name: 'target', type: 'address' },
+      { name: 'data', type: 'bytes' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+] as const
+
+/** WalletClient whose address is the contract owner; writes go through `execute`. */
+function contractOwnerClient(owner: Account, wallet: Address): WalletClient {
+  const inner = createWalletClient({ account: owner, transport: http(RPC) })
+  return {
+    account: { address: wallet, type: 'json-rpc' },
+    writeContract: async (args: {
+      address: Address
+      abi: typeof chamberAbi
+      functionName: string
+      args?: readonly unknown[]
+    }) => {
+      const data = encodeFunctionData({
+        abi: args.abi,
+        functionName: args.functionName as 'setDirectorOperator',
+        args: args.args as [bigint, Address],
+      })
+      return inner.writeContract({
+        address: wallet,
+        abi: execWalletAbi,
+        functionName: 'execute',
+        args: [args.address, data],
+        account: owner,
+        chain: null,
+      })
+    },
+  } as unknown as WalletClient
+}
+
+async function deployExecWallet(authorized: Address): Promise<Address> {
+  const output = await runCapture(
+    'forge',
+    [
+      'create',
+      'test/unit/Chamber.t.sol:MockERC1271Wallet',
+      '--rpc-url',
+      RPC,
+      '--private-key',
+      ANVIL_KEY0,
+      '--broadcast',
+      '--constructor-args',
+      authorized,
+      '--json',
+    ],
+    CONTRACTS,
+  )
+  const match = output.match(/"deployedTo"\s*:\s*"(0x[0-9a-fA-F]{40})"/)
+  if (match) return match[1] as Address
+  const line = output.match(/Deployed to:\s*(0x[0-9a-fA-F]{40})/)
+  if (line) return line[1] as Address
+  throw new Error(`forge create did not report a wallet address:\n${output}`)
 }
 
 async function readDeployments(): Promise<Deployments> {
@@ -278,6 +364,60 @@ async function main(): Promise<void> {
       })
     }
 
+    log('session key: unset read is address(0); EOA owner cannot register')
+    const unset = await opA.getDirectorOperator(1n)
+    if (unset !== '0x0000000000000000000000000000000000000000') {
+      throw new Error(`expected unset operator, got ${unset}`)
+    }
+    await expectMessage('EOA setDirectorOperator', CHAMBER_ERROR_MESSAGES.NotDirector, () =>
+      opA.setDirectorOperator(1n, outsider.address),
+    )
+    const stillUnset = await opA.getDirectorOperator(1n)
+    if (stillUnset !== '0x0000000000000000000000000000000000000000') {
+      throw new Error(`expected operator to stay unset after EOA reject, got ${stillUnset}`)
+    }
+
+    log('session key: contract-wallet owner set / read / clear')
+    const ownerWallet = await deployExecWallet(admin.address)
+    await wallet.writeContract({
+      address: deployments.mockERC721,
+      abi: mockERC721Abi,
+      functionName: 'mintWithTokenId',
+      args: [ownerWallet, 3n],
+      account: admin,
+      chain: null,
+    })
+    const opWallet = await createOperator({
+      rpcUrl: RPC,
+      chamber,
+      signer: { type: 'walletClient', walletClient: contractOwnerClient(admin, ownerWallet) },
+    })
+    await opWallet.setDirectorOperator(3n, outsider.address)
+    const live = await opWallet.getDirectorOperator(3n)
+    if (live.toLowerCase() !== outsider.address.toLowerCase()) {
+      throw new Error(`expected live operator ${outsider.address}, got ${live}`)
+    }
+    const cliRead = JSON.parse(
+      await runCapture(
+        'npx',
+        ['tsx', 'src/cli.ts', 'operator', '--rpc', RPC, '--chamber', chamber, '--token-id', '3'],
+        join(ROOT, 'packages/operator'),
+      ),
+    ) as { operator?: string }
+    if (cliRead.operator?.toLowerCase() !== outsider.address.toLowerCase()) {
+      throw new Error(`CLI operator read mismatch: ${JSON.stringify(cliRead)}`)
+    }
+    await opWallet.clearDirectorOperator(3n)
+    const cleared = await opWallet.getDirectorOperator(3n)
+    if (cleared !== '0x0000000000000000000000000000000000000000') {
+      throw new Error(`expected cleared operator, got ${cleared}`)
+    }
+    log('session key contract-wallet path', {
+      ownerWallet,
+      set: outsider.address,
+      cleared,
+    })
+
     log('delegate (both directors)')
     await opA.delegate(1n, deposit)
     await opB.delegate(2n, deposit)
@@ -370,7 +510,9 @@ async function main(): Promise<void> {
       opA.execute(1n, pausedTx.nonce, '0x'),
     )
 
-    log('done — board, quorum, delegate, submit, confirm, execute, and the four app error strings')
+    log(
+      'done — board, quorum, session-key read, EOA setDirectorOperator reject, delegate, submit, confirm, execute, and the four app error strings',
+    )
   } finally {
     if (spawned) {
       spawned.kill('SIGTERM')

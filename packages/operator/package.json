@@ -2,7 +2,7 @@
   "name": "@loreum/chamber-operator",
   "version": "0.1.0",
   "private": true,
-  "description": "Typed Chamber operator surface for agents: board, quorum, delegate, submit, confirm, execute.",
+  "description": "Typed Chamber operator surface for agents: board, quorum, delegate, submit, confirm, execute, session-key operator.",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

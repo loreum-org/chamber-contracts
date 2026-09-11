@@ -11,10 +11,13 @@ Commands:
   board                 Read board seats, quorum, pause, and seating
   quorum                Read live quorum
   tx --nonce <n>        Read one queued nonce
+  operator              Read live session-key operator for a tokenId
   delegate              Delegate vault shares to a membership tokenId
   submit                submitTransaction (director)
   confirm               confirmTransaction (director)
   execute               executeTransaction (director)
+  set-operator          setDirectorOperator (contract-wallet NFT owner)
+  clear-operator        setDirectorOperator(tokenId, address(0))
 
 Required (or env):
   --rpc <url>           RPC_URL / CHAMBER_RPC
@@ -29,6 +32,13 @@ Writes:
   --data <hex>          submit / execute calldata (default 0x)
   --deadline <unix>     optional submit deadline
   --nonce <n>           confirm / execute / tx
+  --operator <addr>     set-operator session key
+
+Session keys: only a contract-owned membership NFT can register an operator.
+EOA-owned NFTs revert (NotDirector / You are not a director). There is no
+ERC-1271 fallback — Chamber never calls isValidSignature. set-operator and
+clear-operator must be sent by the NFT owner (a 4337 / smart-account signer
+whose address is that owner). Reads return address(0) when unset or stale.
 
 A 4337 smart-account client is supported from the library API
 (createOperator({ signer: { type: 'walletClient', walletClient } })),
@@ -146,6 +156,22 @@ async function main(): Promise<void> {
     case 'tx': {
       const nonce = parseUint(requireFlag(flags, 'nonce'), 'nonce')
       printJson(await operator.getTransaction(nonce))
+      return
+    }
+    case 'operator': {
+      const tokenId = parseUint(requireFlag(flags, 'token-id'), 'token-id')
+      printJson({ tokenId, operator: await operator.getDirectorOperator(tokenId) })
+      return
+    }
+    case 'set-operator': {
+      const tokenId = parseUint(requireFlag(flags, 'token-id'), 'token-id')
+      const next = requireAddress(requireFlag(flags, 'operator'), 'operator')
+      printJson(await operator.setDirectorOperator(tokenId, next))
+      return
+    }
+    case 'clear-operator': {
+      const tokenId = parseUint(requireFlag(flags, 'token-id'), 'token-id')
+      printJson(await operator.clearDirectorOperator(tokenId))
       return
     }
     case 'delegate': {

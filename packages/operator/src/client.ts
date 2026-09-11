@@ -176,7 +176,8 @@ export class ChamberOperator {
       | 'delegate'
       | 'confirmTransaction'
       | 'executeTransaction'
-      | 'submitTransaction',
+      | 'submitTransaction'
+      | 'setDirectorOperator',
   >(
     functionName: TFunctionName,
     args: readonly unknown[],
@@ -389,6 +390,36 @@ export class ChamberOperator {
 
   async execute(tokenId: bigint, nonce: bigint, data: Hex | string = '0x'): Promise<WriteResult> {
     return this.write('executeTransaction', [tokenId, nonce, toHexData(data)])
+  }
+
+  /**
+   * Live session key for `tokenId`, or `address(0)` if unset, stale, or the
+   * NFT is EOA-owned. Chamber never consults ERC-1271.
+   */
+  async getDirectorOperator(tokenId: bigint): Promise<Address> {
+    try {
+      return await this.publicClient.readContract({
+        address: this.chamber,
+        abi: chamberAbi,
+        functionName: 'getDirectorOperator',
+        args: [tokenId],
+      })
+    } catch (error) {
+      throw wrapChamberError(error, 'Failed to read director operator')
+    }
+  }
+
+  /**
+   * Register (or replace) the session key. `msg.sender` must be the current
+   * contract owner of `tokenId`. EOA-owned NFTs revert `NotDirector`.
+   */
+  async setDirectorOperator(tokenId: bigint, operator: Address): Promise<WriteResult> {
+    return this.write('setDirectorOperator', [tokenId, assertAddress(operator, 'operator')])
+  }
+
+  /** Clear the session key (`setDirectorOperator(tokenId, address(0))`). */
+  async clearDirectorOperator(tokenId: bigint): Promise<WriteResult> {
+    return this.setDirectorOperator(tokenId, ZERO_ADDRESS)
   }
 }
 

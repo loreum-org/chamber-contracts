@@ -1,4 +1,4 @@
-export { chamberAbi, factoryAbi, mockERC20Abi, mockERC721Abi } from './abi.ts'
+export { chamberAbi, directorOperatorAbi, factoryAbi, mockERC20Abi, mockERC721Abi } from './abi.ts'
 export {
   ChamberOperator,
   createOperator,
