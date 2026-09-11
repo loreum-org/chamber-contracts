@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useParams } from 'react-router-dom';
 import Markdown from 'react-markdown';
 import { formatPostDate, getPost, posts } from './posts.ts';
+import Footer from './Footer.tsx';
 
 const FadeIn = ({ children, delay = 0, className = "" }: { children: React.ReactNode, delay?: number, className?: string }) => (
   <motion.div
@@ -103,50 +104,7 @@ function BlogChrome({ title, children }: { title: string; children: React.ReactN
 
       {children}
 
-      <footer className="relative z-10 bg-space-900 pt-20 pb-10 border-t border-white/10 w-full min-w-0 overflow-x-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-4 gap-12 mb-16 w-full min-w-0 box-border">
-          <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center gap-2 mb-6">
-              <img src="/logo.svg" alt="Loreum Logo" className="w-6 h-6" />
-              <span className="text-2xl font-display tracking-wider">LOREUM</span>
-            </div>
-            <p className="text-gray-500 max-w-xs font-light">
-              The Chamber Protocol — infrastructure for credibly neutral, agent-driven
-              Decentralized Governance Systems in the CLARITY era.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-bold tracking-widest text-sm mb-6">PLATFORM</h4>
-            <ul className="space-y-4 text-sm text-gray-400 font-light">
-              <li><Link to="/team" className="hover:text-white transition-colors">Team</Link></li>
-              <li><Link to="/blog" className="hover:text-white transition-colors">Blog</Link></li>
-              <li><a href="#" className="hover:text-white transition-colors">Agents</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Chambers</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Roadmap</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold tracking-widest text-sm mb-6">COMMUNITY</h4>
-            <ul className="space-y-4 text-sm text-gray-400 font-light">
-              <li><a href="#" className="hover:text-white transition-colors">Discord</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Twitter</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">GitHub</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-600 w-full min-w-0 box-border text-center md:text-start">
-          <div>© 2026 LOREUM DAO LLC. ALL RIGHTS RESERVED.</div>
-          <div className="flex gap-8">
-            <a href="#" className="hover:text-gray-400">PRIVACY POLICY</a>
-            <a href="#" className="hover:text-gray-400">TERMS OF SERVICE</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
