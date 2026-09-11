@@ -59,6 +59,7 @@ function testDashboardWiresExistingHelpers() {
   const source = readFileSync(join(here, '../src/pages/Dashboard.tsx'), 'utf8')
   assert.match(source, /useSwitchChain/)
   assert.match(source, /useChainModal/)
+  assert.match(source, /useConnectModal/)
   assert.match(source, /getPreferredSupportedChainId/)
   assert.match(source, /switchToSupportedChainLabel/)
   assert.match(source, /showMainnetUnsupportedBanner/)

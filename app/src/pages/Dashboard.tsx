@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAccount, useChainId, useReadContracts, useSwitchChain } from 'wagmi'
 import { formatUnits, isAddress } from 'viem'
-import { useChainModal } from '@rainbow-me/rainbowkit'
+import { useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import {
   FiLayers,
   FiPlus,
@@ -36,6 +36,7 @@ export default function Dashboard() {
   const chainId = useChainId()
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
   const { openChainModal } = useChainModal()
+  const { openConnectModal } = useConnectModal()
   const [viewMode, setViewMode] = useState<'mine' | 'organizations'>('mine')
   const [openAddress, setOpenAddress] = useState('')
   const [openError, setOpenError] = useState<string | null>(null)
@@ -43,7 +44,6 @@ export default function Dashboard() {
   const bannerChainId = readSimulatedChainId(location.search, import.meta.env.DEV) ?? chainId
   const showUnsupportedMainnet = showMainnetUnsupportedBanner(bannerChainId, isMainnetConfigured)
   const switchLabel = switchToSupportedChainLabel(preferredChainId)
-  const canSwitch = Boolean((preferredChainId && isConnected) || openChainModal)
 
   const {
     chambers: myChambers,
@@ -71,11 +71,19 @@ export default function Dashboard() {
         await switchChainAsync({ chainId: preferredChainId })
         return
       } catch {
-        openChainModal?.()
+        if (openChainModal) {
+          openChainModal()
+          return
+        }
+        openConnectModal?.()
         return
       }
     }
-    openChainModal?.()
+    if (openChainModal) {
+      openChainModal()
+      return
+    }
+    openConnectModal?.()
   }
 
   const handleOpenAddress = (e: React.FormEvent) => {
@@ -103,21 +111,19 @@ export default function Dashboard() {
               This deployment does not include <strong className="text-slate-200">Ethereum mainnet</strong>. Use your
               wallet to switch to <strong className="text-slate-200">Sepolia</strong> (or another supported network).
             </p>
-            {canSwitch ? (
-              <button
-                type="button"
-                className="btn btn-primary shrink-0 self-start sm:self-auto"
-                onClick={() => void handleSwitchToSupportedChain()}
-                disabled={isSwitching}
-              >
-                {isSwitching ? (
-                  <FiLoader className="w-4 h-4 animate-spin" aria-hidden />
-                ) : (
-                  <FiRefreshCw className="w-4 h-4" aria-hidden />
-                )}
-                {isSwitching ? 'Switching…' : switchLabel}
-              </button>
-            ) : null}
+            <button
+              type="button"
+              className="btn btn-primary shrink-0 self-start sm:self-auto"
+              onClick={() => void handleSwitchToSupportedChain()}
+              disabled={isSwitching}
+            >
+              {isSwitching ? (
+                <FiLoader className="w-4 h-4 animate-spin" aria-hidden />
+              ) : (
+                <FiRefreshCw className="w-4 h-4" aria-hidden />
+              )}
+              {isSwitching ? 'Switching…' : switchLabel}
+            </button>
           </div>
         </motion.div>
       )}
