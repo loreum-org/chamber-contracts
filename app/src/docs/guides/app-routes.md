@@ -21,7 +21,7 @@ This is a **map of screens** in the Chamber web app. Pair it with **[Getting sta
 |--------|-----|
 | Deposit, withdraw, delegate | Anyone with tokens and shares |
 | Submit / confirm / execute proposals | **Directors** only (top-seat NFT controllers) |
-| Deploy a Chamber | Anyone on a network where Registry is configured |
+| Deploy a Chamber | Anyone on a network where Factory is configured |
 
 The app checks **onchain** whether your wallet controls a seated NFT before showing director controls.
 

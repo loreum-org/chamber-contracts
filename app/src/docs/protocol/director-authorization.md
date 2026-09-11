@@ -30,7 +30,9 @@ All of the following must hold:
   it was `ownerOf(tokenId)` and `msg.sender` (the wallet must register the key
   itself).
 - The stored session is still bound to the **current** owner. Transferring the
-  NFT invalidates the key.
+  NFT invalidates the key. A newly seated token (or a control transfer of an
+  already-seated token) waits `SEATING_DELAY` (1 block) before director
+  actions apply.
 - `msg.sender == operator` and `operator != address(0)`.
 
 A session key may exercise the same **token-gated** Chamber actions as the

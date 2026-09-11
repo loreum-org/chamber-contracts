@@ -8,7 +8,7 @@ If you have used a **multisig wallet** (like Gnosis Safe), think of a Chamber as
 2. **Who actually leads day to day?** — the **top delegated membership NFTs** on a public leaderboard, not a founder’s spreadsheet.  
 3. **What exactly was approved to run?** — each outbound action is **proposed, confirmed to quorum, then executed** with calldata checked against a stored hash.
 
-Those rules live in **audited smart contracts**, not in a Discord poll or a hidden admin key.
+Those rules live in **smart contracts**, not in a Discord poll or a hidden admin key. There is no named public audit of Chamber as of this writing.
 
 ## What you can do with a Chamber
 
@@ -17,15 +17,17 @@ Those rules live in **audited smart contracts**, not in a Discord poll or a hidd
 | Pool assets | An **ERC‑4626 vault** — deposit the configured token, receive **share tokens** representing your slice. |
 | Influence leadership | **Delegation** — point your share weight at **membership NFT token IDs** you trust. |
 | See who leads | A **Board** — the highest-weight token IDs fill a fixed number of **seats** (directors). |
-| Move the treasury | A **transaction queue** — directors **submit**, **confirm**, and **execute** outbound calls only after **quorum**. |
+| Move the treasury | A **transaction queue** — directors **submit**, **confirm**, and **execute** outbound calls only after **quorum**. Directors can also **vote to cancel** a proposal at quorum. |
 
 ## Who is a “director”?
 
 A **director** is whoever controls a **membership NFT token ID** that currently sits in the **top seats** on the board. That can be:
 
-- A person with a normal wallet  
-- A **multisig contract** (still one seat on the board)  
-- Over time, **software agents** that follow the same onchain rules as everyone else  
+- A person with a normal wallet (`msg.sender` is the NFT owner)  
+- A **multisig or other contract wallet** that **holds** the NFT and calls Chamber as itself  
+- A **session key** the contract owner registered with `setDirectorOperator` (the live agent path)  
+
+Chamber **never** calls ERC-1271. See **[Director authorization](../protocol/director-authorization.md)**.
 
 There is no separate “admin bypass” for day-to-day spending — the queue is the path.
 
@@ -56,9 +58,11 @@ flowchart LR
 - **Board** — delegation ranks **NFT token IDs**; top **N** seats are directors.  
 - **Wallet** — directors queue **transactions** (send ETH, call contracts) with **quorum**.
 
-## Sub-Chambers (bigger organizations)
+Create deploys this object through the **Factory**. Registry create is leftover — not the product default.
 
-One **root Chamber** can anchor the main treasury. **Sub-Chambers** are additional Chambers with their own vault and directors for focused mandates (treasury committee, operations, experiments). See **[Chambers and Sub-Chambers](./chamber-and-sub-chambers.md)**.
+## Nested chambers (contemplated)
+
+**Sub-Chambers** — nested treasuries with Registry parent↔child wiring — are a **contemplated pattern**, not live architecture. Create deploys one standalone Factory Chamber. See **[Chambers and Sub-Chambers](./chamber-and-sub-chambers.md)**.
 
 ## Where to go next
 
