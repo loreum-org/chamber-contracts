@@ -2,16 +2,15 @@
 pragma solidity ^0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Registry} from "src/Registry.sol";
 import {Chamber} from "src/Chamber.sol";
 import {IChamber} from "src/interfaces/IChamber.sol";
 import {IERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {DeployRegistry} from "test/utils/DeployRegistry.sol";
+import {Factory} from "src/Factory.sol";
 import {MockERC20} from "test/mock/MockERC20.sol";
 import {MockERC721} from "test/mock/MockERC721.sol";
 
 contract LifecycleTest is Test {
-    Registry public registry;
+    Factory public factory;
     MockERC20 public token;
     MockERC721 public nft;
 
@@ -23,7 +22,7 @@ contract LifecycleTest is Test {
     uint256[] public directorTokenIds;
 
     function setUp() public {
-        registry = DeployRegistry.deploy(admin);
+        factory = new Factory(address(new Chamber()), admin);
 
         token = new MockERC20("Mock DAI", "mDAI", 18);
         nft = new MockERC721("Chamber Member", "MEM");
@@ -41,7 +40,7 @@ contract LifecycleTest is Test {
         console.log("Starting E2E Chamber Lifecycle Test");
 
         vm.startPrank(whale);
-        address chamberAddr = registry.createChamber(address(token), address(nft), 5, "Treasury Chamber", "TCH");
+        address chamberAddr = factory.createChamber(address(token), address(nft), 5, "Treasury Chamber", "TCH");
         Chamber chamber = Chamber(payable(chamberAddr));
         vm.stopPrank();
 

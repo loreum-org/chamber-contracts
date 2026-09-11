@@ -3,11 +3,11 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {Registry} from "src/Registry.sol";
-import {Chamber} from "src/Chamber.sol";
 import {MockERC20} from "test/mock/MockERC20.sol";
 import {MockERC721} from "test/mock/MockERC721.sol";
 import {DeployRegistry} from "test/utils/DeployRegistry.sol";
 
+/// @notice Parent/child index is historical leftover. Registry create is disabled (PMN-M03 A).
 contract SubChamberTest is Test {
     Registry public registry;
     MockERC20 public rootAsset;
@@ -21,39 +21,19 @@ contract SubChamberTest is Test {
     }
 
     function test_SubChamber_Hierarchy() public {
-        // 1. Create Root Chamber
-        address rootChamber = registry.createChamber(address(rootAsset), address(nft), 5, "Root Vault Token", "govROOT");
+        vm.expectRevert(Registry.CreateDisabled.selector);
+        registry.createChamber(address(rootAsset), address(nft), 5, "Root Vault Token", "govROOT");
 
-        // 2. Create Sub Chamber using Root Chamber as asset
-        address subChamber = registry.createChamber(rootChamber, address(nft), 5, "Sub Vault Token", "yieldROOT");
-
-        // 3. Verify Hierarchy
-        assertEq(registry.getParentChamber(subChamber), rootChamber);
-        assertEq(registry.getParentChamber(rootChamber), address(0));
-
-        address[] memory children = registry.getChildChambers(rootChamber);
-        assertEq(children.length, 1);
-        assertEq(children[0], subChamber);
-
-        address[] memory subChildren = registry.getChildChambers(subChamber);
-        assertEq(subChildren.length, 0);
+        assertEq(registry.getChamberCount(), 0);
+        assertEq(registry.getChildChamberCount(address(rootAsset)), 0);
+        assertEq(registry.getParentChamber(address(rootAsset)), address(0));
     }
 
     function test_DeepHierarchy() public {
-        // Level 0
-        address root = registry.createChamber(address(rootAsset), address(nft), 5, "L0", "L0");
+        vm.expectRevert(Registry.CreateDisabled.selector);
+        registry.createChamber(address(rootAsset), address(nft), 5, "L0", "L0");
 
-        // Level 1
-        address level1 = registry.createChamber(root, address(nft), 5, "L1", "L1");
-
-        // Level 2
-        address level2 = registry.createChamber(level1, address(nft), 5, "L2", "L2");
-
-        assertEq(registry.getParentChamber(level2), level1);
-        assertEq(registry.getParentChamber(level1), root);
-        assertEq(registry.getParentChamber(root), address(0));
-
-        assertEq(registry.getChildChambers(root)[0], level1);
-        assertEq(registry.getChildChambers(level1)[0], level2);
+        assertEq(registry.getAllChambers().length, 0);
+        assertEq(registry.getChildChambers(address(rootAsset)).length, 0);
     }
 }

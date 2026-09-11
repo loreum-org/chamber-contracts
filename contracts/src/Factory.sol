@@ -13,18 +13,23 @@ import {IFactory} from "./interfaces/IFactory.sol";
  * @title Factory
  * @author xhad, Loreum DAO LLC
  * @notice Thin, non-proxy deployer for Chamber `TransparentUpgradeableProxy` instances.
- * @dev Mirrors {Registry}`createChamber` proxy construction (current impl, initialize,
- *      transfer `ProxyAdmin` to the chamber) but does **not** store an enumerable world
- *      list, asset index, or parent/child tables. Discover chambers via `ChamberCreated`
- *      logs (indexer or `getLogs`).
+ * @dev Factory is the only Ethereum create path (PMN-M03 A). {Registry}`createChamber`
+ *      reverts. Construction still: current impl, `initialize`, transfer `ProxyAdmin`
+ *      to the chamber. Does **not** store an enumerable world list, asset index, or
+ *      parent/child tables. Discover chambers via `ChamberCreated` logs (indexer or
+ *      `getLogs`).
  *
- *      `setImplementation` is owner-gated and applies to future deploys only. Existing
- *      chambers upgrade through their own `ProxyAdmin`. Ownable (not
- *      `AccessControlDefaultAdminRules`) is enough for this non-upgradeable factory.
+ *      `setImplementation` is owner-gated, requires contract code, and probes the
+ *      existing Chamber `VERSION()` getter (not a new selector). It applies to future
+ *      deploys only. Existing chambers upgrade through their own `ProxyAdmin`. Ownable
+ *      (not `AccessControlDefaultAdminRules`) is enough for this non-upgradeable factory.
  */
 contract Factory is Ownable, IFactory {
     /// @notice Chamber implementation used for the next `createChamber`
     address private _implementation;
+
+    /// @dev `Chamber.VERSION()` getter. Real implementation selector, not an added probe API.
+    bytes4 private constant _VERSION_SELECTOR = bytes4(keccak256("VERSION()"));
 
     /// @notice Thrown when address is zero
     error ZeroAddress();
@@ -32,13 +37,18 @@ contract Factory is Ownable, IFactory {
     /// @notice Thrown when seats value is invalid (0 or > 20)
     error InvalidSeats();
 
+    /// @notice Thrown when `setImplementation` / constructor is given an EOA or empty code
+    error NotContract();
+
+    /// @notice Thrown when the address has code but `VERSION()` does not return `bytes32`
+    error NotChamberImplementation();
+
     /**
-     * @param implementation_ Chamber implementation for new proxies (non-zero)
+     * @param implementation_ Chamber implementation for new proxies (non-zero contract with `VERSION()`)
      * @param admin Owner that may call `setImplementation` (non-zero; Ownable reverts otherwise)
      */
     constructor(address implementation_, address admin) Ownable(admin) {
-        if (implementation_ == address(0)) revert ZeroAddress();
-        _implementation = implementation_;
+        _implementation = _requireValidImplementation(implementation_);
     }
 
     /// @inheritdoc IFactory
@@ -49,15 +59,29 @@ contract Factory is Ownable, IFactory {
     /**
      * @inheritdoc IFactory
      * @dev Same-address updates are a no-op (no event), matching {Registry}`setChamberImplementation`.
+     *      Rejects EOAs / empty code, then probes `VERSION()`. `onlyOwner` runs first.
      */
     function setImplementation(address newImplementation) external onlyOwner {
-        if (newImplementation == address(0)) revert ZeroAddress();
+        address next = _requireValidImplementation(newImplementation);
         address previous = _implementation;
-        if (previous == newImplementation) {
+        if (previous == next) {
             return;
         }
-        _implementation = newImplementation;
-        emit ChamberImplementationUpdated(previous, newImplementation);
+        _implementation = next;
+        emit ChamberImplementationUpdated(previous, next);
+    }
+
+    /**
+     * @notice Requires a deployed Chamber implementation (code + `VERSION()` getter).
+     * @dev `VERSION()` is `bytes32 public constant` on {Chamber}. Success + 32-byte return
+     *      is enough; the version string is not pinned so upgrades can bump it.
+     */
+    function _requireValidImplementation(address impl) internal view returns (address) {
+        if (impl == address(0)) revert ZeroAddress();
+        if (impl.code.length == 0) revert NotContract();
+        (bool ok, bytes memory ret) = impl.staticcall(abi.encodeWithSelector(_VERSION_SELECTOR));
+        if (!ok || ret.length != 32) revert NotChamberImplementation();
+        return impl;
     }
 
     /**

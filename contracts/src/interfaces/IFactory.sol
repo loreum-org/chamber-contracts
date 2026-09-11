@@ -51,8 +51,9 @@ interface IFactory {
 
     /**
      * @notice Updates the Chamber implementation used for *future* `createChamber` calls only.
-     * @dev Does not upgrade existing chamber proxies.
-     * @param newImplementation The new Chamber implementation contract (non-zero)
+     * @dev Does not upgrade existing chamber proxies. Requires contract code and the
+     *      existing Chamber `VERSION()` getter (PMN-M03 B).
+     * @param newImplementation Chamber implementation (non-zero, has code, `VERSION()` returns bytes32)
      */
     function setImplementation(address newImplementation) external;
 

@@ -5,12 +5,11 @@ import {Test} from "forge-std/Test.sol";
 import {SymTest} from "halmos-cheatcodes/SymTest.sol";
 import {Registry} from "src/Registry.sol";
 import {Chamber} from "src/Chamber.sol";
-import {IChamber} from "src/interfaces/IChamber.sol";
 import {MockERC20} from "test/mock/MockERC20.sol";
 import {MockERC721} from "test/mock/MockERC721.sol";
 import {DeployRegistry} from "test/utils/DeployRegistry.sol";
 
-/// @notice Symbolic verification of Registry access control and chamber lifecycle via Halmos
+/// @notice Symbolic verification of Registry access control. Create is disabled (PMN-M03 A).
 contract RegistrySymTest is Test, SymTest {
     Registry internal registry;
     Chamber internal alternateImpl;
@@ -26,22 +25,22 @@ contract RegistrySymTest is Test, SymTest {
         alternateImpl = new Chamber();
     }
 
-    /// @dev Valid seat counts register a new chamber and increment the chamber count
+    /// @dev Valid seats still cannot create; Factory is the Ethereum create path
     function symbolicCreateChamberValidSeats() public {
         uint256 seats = svm.createUint(5, "seats");
         vm.assume(seats >= 1 && seats <= 20);
 
         uint256 countBefore = registry.getChamberCount();
 
-        address payable chamber = registry.createChamber(address(token), address(nft), seats, "Chamber", "CHMB");
+        (bool success,) = address(registry).call(
+            abi.encodeCall(Registry.createChamber, (address(token), address(nft), seats, "Chamber", "CHMB"))
+        );
 
-        assertTrue(registry.isChamber(chamber));
-        assertEq(registry.getChamberCount(), countBefore + 1);
-        assertEq(IChamber(chamber).getSeats(), seats);
-        assertEq(IChamber(chamber).asset(), address(token));
+        assertFalse(success);
+        assertEq(registry.getChamberCount(), countBefore);
     }
 
-    /// @dev Zero or excessive seat counts cannot create a chamber
+    /// @dev Invalid seats also revert (create is unconditionally disabled)
     function symbolicCreateChamberInvalidSeatsReverts() public {
         uint256 seats = svm.createUint256("seats");
         vm.assume(seats == 0 || seats > 20);
@@ -72,7 +71,7 @@ contract RegistrySymTest is Test, SymTest {
         assertEq(registry.implementation(), implBefore);
     }
 
-    /// @dev Admin can update the implementation pointer used for future chamber deploys
+    /// @dev Admin can update the leftover implementation pointer (unused after create disable)
     function symbolicSetImplementationAdminUpdates() public {
         address implBefore = registry.implementation();
         vm.assume(address(alternateImpl) != implBefore);
@@ -83,21 +82,19 @@ contract RegistrySymTest is Test, SymTest {
         assertEq(registry.implementation(), address(alternateImpl));
     }
 
-    /// @dev First chamber for an asset registers it in the asset index without duplicates
+    /// @dev Create cannot register an asset in the leftover index
     function symbolicCreateChamberRegistersAsset() public {
         uint256 seats = svm.createUint(5, "seats");
         vm.assume(seats >= 1 && seats <= 20);
 
         assertEq(registry.getAssets().length, 0);
 
-        registry.createChamber(address(token), address(nft), seats, "Chamber", "CHMB");
+        (bool success,) = address(registry).call(
+            abi.encodeCall(Registry.createChamber, (address(token), address(nft), seats, "Chamber", "CHMB"))
+        );
 
-        address[] memory assets = registry.getAssets();
-        assertEq(assets.length, 1);
-        assertEq(assets[0], address(token));
-
-        address[] memory byAsset = registry.getChambersByAsset(address(token));
-        assertEq(byAsset.length, 1);
-        assertTrue(registry.isChamber(byAsset[0]));
+        assertFalse(success);
+        assertEq(registry.getAssets().length, 0);
+        assertEq(registry.getChambersByAsset(address(token)).length, 0);
     }
 }

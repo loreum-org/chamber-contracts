@@ -4,25 +4,17 @@ pragma solidity ^0.8.30;
 import {
     AccessControlUpgradeable
 } from "lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
-import {
-    TransparentUpgradeableProxy
-} from "lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {ProxyAdmin} from "lib/openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
-import {IChamber} from "./interfaces/IChamber.sol";
 import {IRegistry} from "./interfaces/IRegistry.sol";
 
 /**
  * @title Registry
  * @author xhad, Loreum DAO LLC
  * @notice DEPRECATED as a world directory and create path. Historical index of chambers
- *         deployed through this contract, plus the original `createChamber` entrypoint.
- * @dev Prefer {Factory} for new deploys. Existing chambers stay valid. This contract is
- *      not migrated and must not be in-place-upgraded as part of the Factory cut.
- *      Enumerable getters (`getAllChambers`, `getChambersByAsset`, parent/child tables)
- *      remain for already-indexed addresses only.
- *
- *      Uses OpenZeppelin `TransparentUpgradeableProxy`; registry is proxy admin until
- *      `ProxyAdmin` ownership is transferred to each chamber.
+ *         deployed through this contract. `createChamber` reverts (PMN-M03 A).
+ * @dev {Factory} is the only Ethereum create path. Existing chambers stay valid. This
+ *      contract is not migrated and must not be in-place-upgraded as part of the Factory
+ *      cut. Enumerable getters (`getAllChambers`, `getChambersByAsset`, parent/child
+ *      tables) remain for already-indexed addresses only.
  *
  *      Roles use OpenZeppelin 5.1.0 `AccessControlUpgradeable` (ERC-7201 namespace
  *      `openzeppelin.storage.AccessControl`). Registry application state is separately
@@ -38,7 +30,7 @@ import {IRegistry} from "./interfaces/IRegistry.sol";
  *      `AccessControlDefaultAdminRules` was not adopted: it changes
  *      `grantRole`/`revokeRole` for `DEFAULT_ADMIN_ROLE`, needs a product delay, and
  *      does not change TransparentUpgradeableProxy admin (still a separate EOA-owned
- *      `ProxyAdmin`).
+ *      `ProxyAdmin` on historically created chambers).
  */
 contract Registry is AccessControlUpgradeable, IRegistry {
     /// @notice Role for managing the registry configuration
@@ -111,8 +103,11 @@ contract Registry is AccessControlUpgradeable, IRegistry {
     /// @notice Thrown when address is zero
     error ZeroAddress();
 
-    /// @notice Thrown when seats value is invalid (0 or > 20)
+    /// @notice Thrown when seats value is invalid (0 or > 20). Unused after create disable; kept for ABI.
     error InvalidSeats();
+
+    /// @notice Registry is not an Ethereum create path. Use {Factory}.
+    error CreateDisabled();
 
     /// @notice Disables initializers in the implementation contract
     constructor() {
@@ -138,8 +133,8 @@ contract Registry is AccessControlUpgradeable, IRegistry {
     }
 
     /**
-     * @notice Updates the Chamber implementation address used for future `createChamber` deploys
-     * @dev Does not upgrade existing chamber proxies; each chamber upgrades via its own `ProxyAdmin`.
+     * @notice Updates the leftover Chamber implementation pointer on this index
+     * @dev Does not upgrade existing chamber proxies. Does not re-enable {createChamber}.
      * @param newImplementation The new Chamber implementation contract (non-zero)
      */
     function setChamberImplementation(address newImplementation) external onlyRole(ADMIN_ROLE) {
@@ -154,55 +149,17 @@ contract Registry is AccessControlUpgradeable, IRegistry {
     }
 
     /**
-     * @notice Deploys a new Chamber instance using TransparentUpgradeableProxy
-     * @dev `erc20Token` must be a standard ERC-20. There is no factory allowlist; Chamber
-     *      deposit/mint revert with `AssetAmountMismatch` if the vault receives less (or more)
-     *      than the requested amount (fee-on-transfer). Rebasing/elastic tokens are unsupported
-     *      and are not fully detectable at deposit time.
-     * @param erc20Token Standard ERC-20 vault asset (not fee-on-transfer or rebasing)
-     * @param erc721Token The ERC721 token to be used for membership
-     * @param seats The initial number of board seats
-     * @param name The name of the chamber's ERC20 token
-     * @param symbol The symbol of the chamber's ERC20 token
-     * @return chamber The address of the newly deployed chamber proxy
+     * @notice Disabled Ethereum create path (PMN-M03 A). Always reverts.
+     * @dev Use {Factory}`createChamber`. Signature kept so existing callers revert onchain
+     *      instead of disappearing from the ABI. Historical index getters are unchanged.
+     * @return Never returns; always reverts with {CreateDisabled}
      */
-    function createChamber(
-        address erc20Token,
-        address erc721Token,
-        uint256 seats,
-        string memory name,
-        string memory symbol
-    ) external returns (address payable chamber) {
-        RegistryStorage storage $ = _getRegistryStorage();
-
-        if (erc20Token == address(0) || erc721Token == address(0)) revert ZeroAddress();
-        if (seats == 0 || seats > 20) revert InvalidSeats();
-        if ($.implementation == address(0)) revert ZeroAddress();
-
-        bytes memory initData =
-            abi.encodeWithSelector(IChamber.initialize.selector, erc20Token, erc721Token, seats, name, symbol);
-
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy($.implementation, address(this), initData);
-
-        chamber = payable(address(proxy));
-
-        _transferChamberAdmin(chamber);
-
-        $.chambers.push(chamber);
-        $.isChamber[chamber] = true;
-
-        if (!$.isAsset[erc20Token]) {
-            $.isAsset[erc20Token] = true;
-            $.assets.push(erc20Token);
-        }
-        $.chambersByAsset[erc20Token].push(chamber);
-
-        if ($.isChamber[erc20Token]) {
-            $.parentChamber[chamber] = erc20Token;
-            $.childChambers[erc20Token].push(chamber);
-        }
-
-        emit ChamberCreated(chamber, seats, name, symbol, erc20Token, erc721Token);
+    function createChamber(address, address, uint256, string memory, string memory)
+        external
+        pure
+        returns (address payable)
+    {
+        revert CreateDisabled();
     }
 
     /**
@@ -373,15 +330,4 @@ contract Registry is AccessControlUpgradeable, IRegistry {
         }
     }
 
-    /**
-     * @notice Transfers ProxyAdmin ownership to the chamber itself
-     * @param chamber The chamber proxy address
-     */
-    function _transferChamberAdmin(address chamber) internal {
-        address proxyAdminAddress = IChamber(chamber).getProxyAdmin();
-        if (proxyAdminAddress == address(0)) revert ZeroAddress();
-
-        ProxyAdmin proxyAdminInstance = ProxyAdmin(proxyAdminAddress);
-        proxyAdminInstance.transferOwnership(chamber);
-    }
 }

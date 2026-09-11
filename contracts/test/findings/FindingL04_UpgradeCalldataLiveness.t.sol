@@ -8,7 +8,7 @@ import {IChamber} from "src/interfaces/IChamber.sol";
 import {IWallet} from "src/interfaces/IWallet.sol";
 import {MockERC20} from "test/mock/MockERC20.sol";
 import {MockERC721} from "test/mock/MockERC721.sol";
-import {DeployRegistry} from "test/utils/DeployRegistry.sol";
+import {DeployChamber} from "test/utils/DeployChamber.sol";
 
 /// @notice L-04: self-call / upgrade calldata is stored onchain so execution does not depend on logs.
 contract FindingL04UpgradeCalldataLivenessTest is Test {
@@ -29,9 +29,7 @@ contract FindingL04UpgradeCalldataLivenessTest is Test {
         token = new MockERC20("Test Token", "TEST", 1000000e18);
         nft = new MockERC721("Mock NFT", "MNFT");
         newImplementation = new Chamber();
-        registry = DeployRegistry.deploy(admin);
-
-        chamberAddress = registry.createChamber(address(token), address(nft), 5, "Chamber Token", "CHMB");
+        chamberAddress = address(DeployChamber.deployViaFactory(address(token), address(nft), 5, "Chamber Token", "CHMB", admin));
         chamber = IChamber(chamberAddress);
 
         _setupDirectors();

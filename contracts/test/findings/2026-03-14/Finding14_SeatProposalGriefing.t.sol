@@ -8,7 +8,7 @@ import {IChamber} from "src/interfaces/IChamber.sol";
 import {IBoard} from "src/interfaces/IBoard.sol";
 import {MockERC20} from "test/mock/MockERC20.sol";
 import {MockERC721} from "test/mock/MockERC721.sol";
-import {DeployRegistry} from "test/utils/DeployRegistry.sol";
+import {DeployChamber} from "test/utils/DeployChamber.sol";
 
 /**
  * @title Finding 14: Seat Update Proposal Griefing by Minority Director [LOW] — FIXED
@@ -33,10 +33,8 @@ contract SeatProposalGriefingTest is Test {
     function setUp() public {
         token = new MockERC20("Test Token", "TEST", 0);
         nft = new MockERC721("Mock NFT", "MNFT");
-        registry = DeployRegistry.deploy(admin);
-
         // 4 seats chamber; quorum = 1 + (4 * 51) / 100 = 1 + 2 = 3
-        chamberAddress = registry.createChamber(address(token), address(nft), 4, "Chamber Token", "CHMB");
+        chamberAddress = address(DeployChamber.deployViaFactory(address(token), address(nft), 4, "Chamber Token", "CHMB", admin));
         chamber = IChamber(chamberAddress);
 
         // Directors 1-3 have large stake; griefer has minimal stake
