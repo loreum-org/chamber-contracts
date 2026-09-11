@@ -76,7 +76,11 @@ export function WrongNetworkPanel({
         return
       }
     }
-    openChainModal?.() ?? openConnectModal?.()
+    if (openChainModal) {
+      openChainModal()
+      return
+    }
+    openConnectModal?.()
   }
 
   const canSwitch = Boolean(
