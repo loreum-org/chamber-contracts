@@ -62,6 +62,17 @@ library MainnetLoreHandoff {
     }
 
     /**
+     * @notice Factory + linked Chamber implementation only. Does **not** call `createChamber`
+     *         or `transferOwnership`. Chamber address stays zero until Factory exists (CREATE).
+     */
+    function deployFactoryLinked(address factoryAdmin) internal returns (Deployment memory d) {
+        d.boardLib = address(new BoardLib());
+        d.walletLib = address(new WalletLib());
+        d.chamberImplementation = _deployLinkedChamber(d.boardLib, d.walletLib);
+        d.factory = new Factory(d.chamberImplementation, factoryAdmin);
+    }
+
+    /**
      * @notice Script dry-run path: deploy libs, link Chamber artifact, then Factory + create.
      * @dev `vm.deployCode("Chamber")` reverts when unlinked. Production `forge script --broadcast`
      *      (`DeployFactory.s.sol`) auto-deploys libs; this mirrors that pairing for a fork dry-run.

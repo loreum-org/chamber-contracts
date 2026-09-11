@@ -85,6 +85,11 @@ are read from **`contracts/deployments/sepolia.txt`**. Optional env overrides:
 `VITE_SEPOLIA_REGISTRY`, `VITE_SEPOLIA_FACTORY`, `VITE_SEPOLIA_CHAMBER_IMPL`,
 `VITE_SEPOLIA_MOCK_ERC20`, `VITE_SEPOLIA_MOCK_ERC721`.
 
+Ethereum mainnet Factory / impl come from **`contracts/deployments/mainnet.txt`**
+(TBD until a verified chain-id-1 receipt) or `VITE_MAINNET_FACTORY` /
+`VITE_MAINNET_CHAMBER_IMPL`. `getContractAddresses(1)` does not invent addresses
+and does not use Sepolia. See `contracts/docs/mainnet-verified-deploy.md`.
+
 Optional **My chambers** indexer: `VITE_INDEXER_URL` → [loreum-org/chamber-indexer](https://github.com/loreum-org/chamber-indexer) GraphQL. Unset → chunked Factory/Registry `getLogs`.
 
 See **`app/README.md`** and repo deployment docs under **`docs/guides/deployment.md`**.

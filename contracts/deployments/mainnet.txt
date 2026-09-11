@@ -1,0 +1,48 @@
+  Ethereum mainnet — Factory path
+  ====================================================================
+  NOT DEPLOYED. Do not treat TBD as live. Do not copy Sepolia Factory
+  0x43aA92c8A26392f21F63cdA88B6BaB5031C40550 (or any Sepolia address)
+  onto chain id 1. Chamber uses CREATE (no salt): the Chamber proxy
+  cannot be pre-committed until Factory exists.
+
+  Live tokens already on Ethereum (not Chamber / Factory)
+  ====================================================================
+  LORE (erc20)              0x7756D245527F5f8925A537be509BF54feb2FdC99
+  Membership NFT            0xB99DEdbDe082B8Be86f06449f2fC7b9FED044E15
+  Team Safe (LORE owner)    0x5d45A213B2B6259F0b3c116a8907B56AB5E22095
+
+  createChamber args (after Factory exists)
+  ====================================================================
+  erc20Token                LORE (above)
+  erc721Token               Membership NFT (above)
+  seats                     5
+  name                      Chamber LORE
+  symbol                    cLORE
+  Factory constructor       (chamberImplementation, Team Safe)
+
+  Paste ONLY after a verified chain-id-1 broadcast receipt
+  ====================================================================
+  Factory                   TBD
+  Chamber implementation    TBD
+  BoardLib                  TBD
+  WalletLib                 TBD
+  Chamber (proxy)           TBD
+  Registry (proxy)          TBD
+
+  Checklist (human, after #208 accepted or fixed)
+  ====================================================================
+  [ ] PMN-H01 (#208) accepted or fixed — broadcast still blocked until then
+  [ ] #209–#212 reviewed (open mediums; do not claim deploy is unblocked)
+  [ ] PRs #213 (1.1.7 eviction) and #206 (Halmos harness) merged or waived
+  [ ] DeployMainnetFactory broadcast on chain id 1 (MAINNET_DEPLOY_UNBLOCKED=1)
+  [ ] Paste Factory, Chamber implementation, BoardLib, WalletLib from receipt
+  [ ] make verify-mainnet-factory (libs first, then Chamber impl, then Factory)
+  [ ] CreateMainnetLoreChamber broadcast (FACTORY=<verified Factory>)
+  [ ] Paste Chamber (proxy) from that receipt — not before
+  [ ] App: VITE_MAINNET_FACTORY only after verify; never Sepolia addresses
+  [ ] Safe transferOwnership(LORE → Chamber proxy) is human-only — not a script
+
+  Re-run verify (from contracts/): make verify-mainnet-factory
+  Print deploy commands only: make print-mainnet-factory-deploy
+  Requires MAINNET_RPC_URL (or ETH_RPC_URL) and ETHERSCAN_API_KEY.
+  See docs/mainnet-verified-deploy.md.
