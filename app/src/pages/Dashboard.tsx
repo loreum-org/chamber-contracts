@@ -1,12 +1,32 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAccount, useChainId, useReadContracts } from 'wagmi'
+import { useAccount, useChainId, useReadContracts, useSwitchChain } from 'wagmi'
 import { formatUnits, isAddress } from 'viem'
-import { FiLayers, FiPlus, FiAlertTriangle, FiUser, FiBriefcase, FiShield, FiArrowRight } from 'react-icons/fi'
+import { useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
+import {
+  FiLayers,
+  FiPlus,
+  FiAlertTriangle,
+  FiUser,
+  FiBriefcase,
+  FiShield,
+  FiArrowRight,
+  FiRefreshCw,
+  FiLoader,
+} from 'react-icons/fi'
 import { useHasValidConfig, useMyChambers, useOrganizationsByNFT } from '@/hooks'
 import { erc721Abi } from '@/contracts'
-import { getNetworkName, isMainnetConfigured } from '@/lib/wagmi'
+import {
+  getNetworkName,
+  getPreferredSupportedChainId,
+  isMainnetConfigured,
+} from '@/lib/wagmi'
+import {
+  readSimulatedChainId,
+  showMainnetUnsupportedBanner,
+  switchToSupportedChainLabel,
+} from '@/lib/supportedChain'
 import ChamberCard from '@/components/ChamberCard'
 
 export default function Dashboard() {
@@ -14,9 +34,16 @@ export default function Dashboard() {
   const location = useLocation()
   const navigate = useNavigate()
   const chainId = useChainId()
+  const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
+  const { openChainModal } = useChainModal()
+  const { openConnectModal } = useConnectModal()
   const [viewMode, setViewMode] = useState<'mine' | 'organizations'>('mine')
   const [openAddress, setOpenAddress] = useState('')
   const [openError, setOpenError] = useState<string | null>(null)
+  const preferredChainId = getPreferredSupportedChainId()
+  const bannerChainId = readSimulatedChainId(location.search, import.meta.env.DEV) ?? chainId
+  const showUnsupportedMainnet = showMainnetUnsupportedBanner(bannerChainId, isMainnetConfigured)
+  const switchLabel = switchToSupportedChainLabel(preferredChainId)
 
   const {
     chambers: myChambers,
@@ -38,6 +65,27 @@ export default function Dashboard() {
     }
   }, [location.pathname, refetchMine])
 
+  const handleSwitchToSupportedChain = async () => {
+    if (!isConnected) {
+      openConnectModal?.()
+      return
+    }
+    if (preferredChainId && switchChainAsync) {
+      try {
+        await switchChainAsync({ chainId: preferredChainId })
+        return
+      } catch {
+        openChainModal?.()
+        return
+      }
+    }
+    if (openChainModal) {
+      openChainModal()
+      return
+    }
+    openConnectModal?.()
+  }
+
   const handleOpenAddress = (e: React.FormEvent) => {
     e.preventDefault()
     const value = openAddress.trim()
@@ -52,20 +100,35 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-10">
-      {chainId === 1 && !isMainnetConfigured && (
+      {showUnsupportedMainnet && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="panel p-4 border-slate-600/40 bg-slate-800/20"
         >
-          <p className="text-slate-300 text-sm">
-            This deployment does not include <strong className="text-slate-200">Ethereum mainnet</strong>. Use your
-            wallet to switch to <strong className="text-slate-200">Sepolia</strong> (or another supported network).
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-slate-300 text-sm">
+              This deployment does not include <strong className="text-slate-200">Ethereum mainnet</strong>. Use your
+              wallet to switch to <strong className="text-slate-200">Sepolia</strong> (or another supported network).
+            </p>
+            <button
+              type="button"
+              className="btn btn-primary shrink-0 self-start sm:self-auto"
+              onClick={() => void handleSwitchToSupportedChain()}
+              disabled={isSwitching}
+            >
+              {isSwitching ? (
+                <FiLoader className="w-4 h-4 animate-spin" aria-hidden />
+              ) : (
+                <FiRefreshCw className="w-4 h-4" aria-hidden />
+              )}
+              {isSwitching ? 'Switching…' : switchLabel}
+            </button>
+          </div>
         </motion.div>
       )}
 
-      {!isValid && !(chainId === 1 && !isMainnetConfigured) && (
+      {!isValid && !showUnsupportedMainnet && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}

@@ -5,6 +5,9 @@ import localDeployments from '@/contracts/deployments.json'
 import { alchemySupportsChain, getAlchemyApiKeyFromEnv, getAlchemyV2RpcUrl } from '@/lib/alchemy'
 import { ZERO_ADDRESS, isNonZeroAddress } from '@/lib/address'
 import { sepoliaDeploymentAddresses } from '@/lib/sepoliaDeployments'
+import { getNetworkName as networkNameFromId, pickPreferredSupportedChainId } from '@/lib/supportedChain'
+
+export { pickPreferredSupportedChainId } from '@/lib/supportedChain'
 
 export { isNonZeroAddress, ZERO_ADDRESS }
 
@@ -243,20 +246,7 @@ export function hasValidAddresses(chainId: number): boolean {
 
 /** Display name for wallet/config banners. Matches Dashboard copy. */
 export function getNetworkName(chainId: number): string {
-  switch (chainId) {
-    case 1:
-      return 'Mainnet'
-    case 11155111:
-      return 'Sepolia'
-    case 8453:
-      return 'Base'
-    case 42161:
-      return 'Arbitrum'
-    case 31337:
-      return 'Localhost'
-    default:
-      return config.chains.find((chain) => chain.id === chainId)?.name ?? `Chain ${chainId}`
-  }
+  return networkNameFromId(chainId, config.chains.find((chain) => chain.id === chainId)?.name)
 }
 
 /** RainbowKit/wagmi chains that already have a Factory or Registry address. */
@@ -269,4 +259,12 @@ export function getConfiguredChainIds(): number[] {
     ids.push(chain.id)
   }
   return ids
+}
+
+/**
+ * Prefer Sepolia when it has a Factory or Registry, otherwise the first wagmi
+ * chain that does. Does not invent addresses — only reads configured maps.
+ */
+export function getPreferredSupportedChainId(): number | undefined {
+  return pickPreferredSupportedChainId(getConfiguredChainIds())
 }
