@@ -388,13 +388,13 @@ function App() {
             <FadeIn>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-display mb-8 break-words text-balance">
                 Command Your <br />
-                <span className="text-gradient">Digital Fleet</span>
+                <span className="text-gradient">Chamber</span>
               </h2>
               <div className="space-y-6">
                 {[
-                  "Deploy fleets of autonomous agents.",
-                  "Monitor real-time treasury analytics.",
-                  "Execute complex cross-chain strategies."
+                  "Deploy a Chamber from the Factory.",
+                  "Hold treasury in an ERC-4626 vault.",
+                  "Execute through a ranked board and quorum."
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-4 text-gray-300">
                     <div className="w-2 h-2 bg-space-accent rounded-full" />
@@ -430,8 +430,8 @@ function App() {
                 </div>
               </div>
               
-              {/* Floating Elements - Fleet Agents (Desktop Only) */}
-              {/* Yield Miner */}
+              {/* Floating Elements - Chamber primitives (Desktop Only) */}
+              {/* Vault */}
               <motion.div 
                 animate={{ y: [0, -15, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -441,12 +441,12 @@ function App() {
                   <TrendingUp className="w-4 h-4 text-blue-400" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400">Yield Miner</div>
-                  <div className="text-white text-xs font-mono">+12.4% APY</div>
+                  <div className="text-xs text-gray-400">Vault</div>
+                  <div className="text-white text-xs font-mono">ERC-4626</div>
                 </div>
               </motion.div>
 
-              {/* Risk Agent */}
+              {/* Board */}
               <motion.div 
                 animate={{ y: [0, 20, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
@@ -456,12 +456,12 @@ function App() {
                    <ShieldAlert className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400">Risk Agent</div>
-                  <div className="text-white text-xs font-mono">Auditing...</div>
+                  <div className="text-xs text-gray-400">Board</div>
+                  <div className="text-white text-xs font-mono">Ranked NFTs</div>
                 </div>
               </motion.div>
 
-              {/* Research Agent */}
+              {/* Factory */}
               <motion.div 
                 animate={{ x: [0, 10, 0], y: [0, -10, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
@@ -471,12 +471,12 @@ function App() {
                    <Search className="w-4 h-4 text-purple-400" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400">Research Agent</div>
-                  <div className="text-white text-xs font-mono">Analyzing Proposals</div>
+                  <div className="text-xs text-gray-400">Factory</div>
+                  <div className="text-white text-xs font-mono">Deploy</div>
                 </div>
               </motion.div>
 
-              {/* Media Agent */}
+              {/* Wallet */}
               <motion.div 
                 animate={{ x: [0, -10, 0], y: [0, 10, 0] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 3 }}
@@ -486,14 +486,14 @@ function App() {
                    <Radio className="w-4 h-4 text-pink-400" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400">Media Agent</div>
-                  <div className="text-white text-xs font-mono">Broadcasting</div>
+                  <div className="text-xs text-gray-400">Wallet</div>
+                  <div className="text-white text-xs font-mono">Quorum</div>
                 </div>
               </motion.div>
 
             </motion.div>
 
-            {/* Mobile Agent Cards Grid */}
+            {/* Mobile Chamber primitive cards */}
             <div className="grid grid-cols-2 gap-4 md:hidden mt-8">
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -506,8 +506,8 @@ function App() {
                   <TrendingUp className="w-4 h-4 text-blue-400" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400">Yield Miner</div>
-                  <div className="text-white text-xs font-mono">+12.4% APY</div>
+                  <div className="text-xs text-gray-400">Vault</div>
+                  <div className="text-white text-xs font-mono">ERC-4626</div>
                 </div>
               </motion.div>
 
@@ -522,8 +522,8 @@ function App() {
                   <ShieldAlert className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400">Risk Agent</div>
-                  <div className="text-white text-xs font-mono">Auditing...</div>
+                  <div className="text-xs text-gray-400">Board</div>
+                  <div className="text-white text-xs font-mono">Ranked NFTs</div>
                 </div>
               </motion.div>
 
@@ -538,8 +538,8 @@ function App() {
                   <Search className="w-4 h-4 text-purple-400" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400">Research Agent</div>
-                  <div className="text-white text-xs font-mono">Analyzing</div>
+                  <div className="text-xs text-gray-400">Factory</div>
+                  <div className="text-white text-xs font-mono">Deploy</div>
                 </div>
               </motion.div>
 
@@ -554,8 +554,8 @@ function App() {
                   <Radio className="w-4 h-4 text-pink-400" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400">Media Agent</div>
-                  <div className="text-white text-xs font-mono">Broadcasting</div>
+                  <div className="text-xs text-gray-400">Wallet</div>
+                  <div className="text-white text-xs font-mono">Quorum</div>
                 </div>
               </motion.div>
             </div>
