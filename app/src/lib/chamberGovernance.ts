@@ -16,6 +16,17 @@ export const SEATING_DELAY_BLOCKS = 1n
 export const SEAT_UPDATE_TIMELOCK_SEC = 7n * 24n * 60n * 60n
 /** H-03 `SEAT_UPDATE_EXPIRY` (internal, 14 days) */
 export const SEAT_UPDATE_EXPIRY_SEC = 14n * 24n * 60n * 60n
+/** M-06 `WalletTypes.DEFAULT_TRANSACTION_MAX_AGE` (internal, 30 days) */
+export const DEFAULT_TRANSACTION_MAX_AGE_SEC = 30 * 24 * 60 * 60
+
+/** Amber when remaining time is under 1 hour or the last 10% of the default max age. */
+export function isProposalDeadlineUrgent(
+  remainingSec: number,
+  maxAgeSec = DEFAULT_TRANSACTION_MAX_AGE_SEC,
+): boolean {
+  if (remainingSec <= 0) return false
+  return remainingSec < 60 * 60 || remainingSec < maxAgeSec * 0.1
+}
 
 /** L-01 `Registry.MAX_PAGE_SIZE` */
 export const REGISTRY_PAGE_SIZE = 256n
