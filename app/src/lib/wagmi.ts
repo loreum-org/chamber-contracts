@@ -240,3 +240,33 @@ export function hasValidAddresses(chainId: number): boolean {
   if (!addresses) return false
   return isNonZeroAddress(addresses.factory) || isNonZeroAddress(addresses.registry)
 }
+
+/** Display name for wallet/config banners. Matches Dashboard copy. */
+export function getNetworkName(chainId: number): string {
+  switch (chainId) {
+    case 1:
+      return 'Mainnet'
+    case 11155111:
+      return 'Sepolia'
+    case 8453:
+      return 'Base'
+    case 42161:
+      return 'Arbitrum'
+    case 31337:
+      return 'Localhost'
+    default:
+      return config.chains.find((chain) => chain.id === chainId)?.name ?? `Chain ${chainId}`
+  }
+}
+
+/** RainbowKit/wagmi chains that already have a Factory or Registry address. */
+export function getConfiguredChainIds(): number[] {
+  const seen = new Set<number>()
+  const ids: number[] = []
+  for (const chain of config.chains) {
+    if (seen.has(chain.id) || !hasValidAddresses(chain.id)) continue
+    seen.add(chain.id)
+    ids.push(chain.id)
+  }
+  return ids
+}

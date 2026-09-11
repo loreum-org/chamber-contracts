@@ -6,7 +6,7 @@ import { formatUnits, isAddress } from 'viem'
 import { FiLayers, FiPlus, FiAlertTriangle, FiUser, FiBriefcase, FiShield, FiArrowRight } from 'react-icons/fi'
 import { useHasValidConfig, useMyChambers, useOrganizationsByNFT } from '@/hooks'
 import { erc721Abi } from '@/contracts'
-import { isMainnetConfigured } from '@/lib/wagmi'
+import { getNetworkName, isMainnetConfigured } from '@/lib/wagmi'
 import ChamberCard from '@/components/ChamberCard'
 
 export default function Dashboard() {
@@ -37,15 +37,6 @@ export default function Dashboard() {
       refetchMine()
     }
   }, [location.pathname, refetchMine])
-
-  const getNetworkName = (id: number) => {
-    switch (id) {
-      case 1: return 'Mainnet'
-      case 11155111: return 'Sepolia'
-      case 31337: return 'Localhost'
-      default: return `Chain ${id}`
-    }
-  }
 
   const handleOpenAddress = (e: React.FormEvent) => {
     e.preventDefault()

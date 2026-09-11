@@ -33,7 +33,6 @@ import {
   useTransactionCancelConfirmation,
   useChamberEvents,
   useReceiptRefresh,
-  useIsChamber,
   useSeatUpdate,
   useUpdateSeats,
   useExecuteSeatsUpdate,
@@ -55,6 +54,7 @@ import {
   hasProposalCalldata,
   shortenAddress,
 } from '@/lib/utils'
+import { ChamberRouteGate } from '@/components/ChamberRouteGate'
 import { DirectorCallerStatus } from '@/components/DirectorCallerStatus'
 import {
   UPGRADE_SELECTOR,
@@ -257,42 +257,11 @@ function classifyTransactionRiskFromDataHash(
 
 export default function TransactionQueue() {
   const { address } = useParams<{ address: string }>()
-  const validAddress = address && isAddress(address)
-  const chamberAddr = validAddress ? (address as `0x${string}`) : undefined
-  const isChamber = useIsChamber(chamberAddr)
-
-  if (!validAddress) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-64 gap-4 text-center">
-        <FiAlertCircle className="w-12 h-12 text-red-400" />
-        <h2 className="font-heading text-xl font-bold text-slate-100">Invalid Address</h2>
-        <p className="text-slate-400">The address in this URL is not a valid Ethereum address.</p>
-        <Link to="/" className="btn btn-primary">Back to Dashboard</Link>
-      </div>
-    )
-  }
-
-  if (isChamber === undefined) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-64 gap-4 text-center">
-        <FiLoader className="w-10 h-10 text-accent-400 animate-spin" />
-        <p className="text-slate-400 text-sm">Verifying chamber…</p>
-      </div>
-    )
-  }
-
-  if (isChamber === false) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-64 gap-4 text-center">
-        <FiAlertCircle className="w-12 h-12 text-red-400" />
-        <h2 className="font-heading text-xl font-bold text-slate-100">Not a Chamber</h2>
-        <p className="text-slate-400">This address does not look like a Chamber contract.</p>
-        <Link to="/" className="btn btn-primary">Back to Dashboard</Link>
-      </div>
-    )
-  }
-
-  return <TransactionQueueContent chamberAddress={chamberAddr!} />
+  return (
+    <ChamberRouteGate address={address}>
+      {(chamberAddress) => <TransactionQueueContent chamberAddress={chamberAddress} />}
+    </ChamberRouteGate>
+  )
 }
 
 function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${string}` }) {
