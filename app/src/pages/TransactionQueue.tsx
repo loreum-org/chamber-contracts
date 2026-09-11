@@ -1065,6 +1065,7 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                 nextTransactionId={transactionCount}
                 currentSeats={chamberInfo.seats ?? 5}
                 hasSeatProposal={hasSeatProposal}
+                boardEmpty={boardEmpty}
                 registryUpgradeDraft={registryUpgradeDraft}
                 {...writeReporters}
               />
@@ -1112,22 +1113,10 @@ function TransactionQueueContent({ chamberAddress }: { chamberAddress: `0x${stri
                     </div>
                   </div>
                 )}
-                <div className="panel p-10 text-center space-y-4">
-                  <FiShield className="w-8 h-8 text-slate-600 mx-auto" />
-                  <div>
-                    <h3 className="font-heading text-lg font-semibold text-slate-300 mb-1">Directors only</h3>
-                    <p className="text-slate-500 text-sm max-w-sm mx-auto">
-                      Only active board directors can submit governance proposals. Delegate shares to a member to earn a board seat.
-                    </p>
-                  </div>
-                  <Link
-                    to={`/chamber/${chamberAddress}/delegation`}
-                    className="btn btn-secondary inline-flex"
-                  >
-                    Go to Delegation
-                    <FiArrowLeft className="w-4 h-4 rotate-180" />
-                  </Link>
-                </div>
+                <NewProposalDirectorGate
+                  chamberAddress={chamberAddress}
+                  boardEmpty={boardEmpty}
+                />
               </div>
             )}
           </motion.div>
@@ -1915,6 +1904,56 @@ function BoardProposalCard({
   )
 }
 
+/** New Proposal tab gate: director explanation + Delegation / SeatTheBoard next action. */
+function NewProposalDirectorGate({
+  chamberAddress,
+  boardEmpty,
+}: {
+  chamberAddress: `0x${string}`
+  boardEmpty: boolean
+}) {
+  const { address: userAddress } = useAccount()
+  const nextHref = `/chamber/${chamberAddress}/delegation`
+
+  return (
+    <div className="panel p-10 text-center space-y-4">
+      <FiShield className="w-8 h-8 text-slate-600 mx-auto" />
+      <div>
+        <h3 className="font-heading text-lg font-semibold text-slate-300 mb-1">
+          {boardEmpty ? 'Seat the board first' : 'Director access required'}
+        </h3>
+        <p className="text-slate-500 text-sm max-w-sm mx-auto">
+          {boardEmpty
+            ? 'There are no directors, so new proposals stay locked. Hold a membership NFT and delegate shares to it.'
+            : 'You must be a board director to submit transactions. Delegate shares to a member token to earn a board seat.'}
+        </p>
+      </div>
+      <Link
+        to={nextHref}
+        className={`${boardEmpty ? 'btn btn-primary' : 'btn btn-secondary'} inline-flex`}
+      >
+        {boardEmpty ? 'Seat the board' : 'Go to Delegation'}
+        <FiArrowLeft className="w-4 h-4 rotate-180" />
+      </Link>
+      {boardEmpty && (
+        <p>
+          <Link
+            to="/docs/introduction/getting-started"
+            className="text-accent-400 text-sm hover:underline"
+          >
+            Getting started →
+          </Link>
+        </p>
+      )}
+      {import.meta.env.DEV && (
+        <p className="font-mono text-xs text-slate-600 break-all">
+          {userAddress || 'Not connected'}
+        </p>
+      )}
+    </div>
+  )
+}
+
 // New Transaction Form
 interface NewTransactionFormProps extends QueueWriteReporters {
   chamberAddress: `0x${string}`
@@ -1922,6 +1961,7 @@ interface NewTransactionFormProps extends QueueWriteReporters {
   nextTransactionId: number
   currentSeats: number
   hasSeatProposal: boolean
+  boardEmpty: boolean
   registryUpgradeDraft?: {
     newImplementation: `0x${string}`
     chamberVersionLabel?: string
@@ -2011,12 +2051,12 @@ function NewTransactionForm({
   nextTransactionId,
   currentSeats,
   hasSeatProposal,
+  boardEmpty,
   registryUpgradeDraft,
   onWriteStart,
   onWriteSent,
   onWriteClear,
 }: NewTransactionFormProps) {
-  const { address: userAddress } = useAccount()
   const chainId = useChainId()
   const [proposalType, setProposalType] = useState<'transaction' | 'seats'>('transaction')
   const [txType, setTxType] = useState<'eth' | 'token' | 'custom'>('eth')
@@ -2164,7 +2204,7 @@ function NewTransactionForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!userTokenId) {
+    if (userTokenId === undefined) {
       toast.error('You must be a director to submit transactions')
       return
     }
@@ -2310,24 +2350,12 @@ function NewTransactionForm({
     }
   }
 
-  if (!userTokenId) {
+  if (userTokenId === undefined) {
     return (
-      <div className="panel p-8 text-center">
-        <FiAlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-        <h3 className="font-heading text-xl font-semibold text-slate-100 mb-2">
-          Director Access Required
-        </h3>
-        <p className="text-slate-400 mb-4">
-          You must be a board director to submit transactions.
-          Delegate shares to your member token to become a director.
-        </p>
-        <div className="text-left bg-slate-800/50 rounded-lg p-4 mt-4 text-xs">
-          <div className="text-slate-500 mb-2">Debug Info:</div>
-          <div className="font-mono text-slate-400 space-y-1">
-            <div>Your Address: {userAddress || 'Not connected'}</div>
-          </div>
-        </div>
-      </div>
+      <NewProposalDirectorGate
+        chamberAddress={chamberAddress}
+        boardEmpty={boardEmpty}
+      />
     )
   }
 
