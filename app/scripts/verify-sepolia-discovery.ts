@@ -61,6 +61,7 @@ assert.ok(
   registryOnly.addresses.includes(KNOWN_OLD),
   'Factory-unset / Registry-only still lists Registry-created chambers',
 )
+assert.equal(registryOnly.health.rpcErrored, false, 'live getLogs should not mark rpcErrored')
 
 const factorySet = await discoverChambers({
   client: inner as PublicClient,

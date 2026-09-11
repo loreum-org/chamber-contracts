@@ -8,9 +8,13 @@ import {
   INDEXER_CATCHUP_BLOCKS,
   UNBOUNDED_LOOKBACK_BLOCKS,
   clampDiscoveryFromBlock,
+  discoverChambers,
+  EMPTY_DISCOVERY_HEALTH,
   getEventLogsPaged,
+  isChamberDiscoveryIncomplete,
   parseStartBlock,
   SEPOLIA_DISCOVERY_START_BLOCK,
+  shouldShowDiscoveryGap,
   factoryCreatedEvent,
 } from '../src/lib/chamberDiscovery.ts'
 import type { PublicClient } from 'viem'
@@ -110,7 +114,176 @@ async function testPagedLogs() {
   )
 }
 
+function testDiscoveryGapRules() {
+  assert.equal(isChamberDiscoveryIncomplete(EMPTY_DISCOVERY_HEALTH), false)
+  assert.equal(
+    isChamberDiscoveryIncomplete({ ...EMPTY_DISCOVERY_HEALTH, catchupOnly: true }),
+    false,
+    'indexer success + catch-up getLogs is not a gap by itself',
+  )
+  assert.equal(isChamberDiscoveryIncomplete({ ...EMPTY_DISCOVERY_HEALTH, indexerFailed: true }), true)
+  assert.equal(isChamberDiscoveryIncomplete({ ...EMPTY_DISCOVERY_HEALTH, rpcErrored: true }), true)
+  assert.equal(
+    isChamberDiscoveryIncomplete({
+      ...EMPTY_DISCOVERY_HEALTH,
+      catchupOnly: true,
+      rpcErrored: true,
+    }),
+    true,
+    'catch-up getLogs that errors is a gap',
+  )
+
+  assert.equal(
+    shouldShowDiscoveryGap({ connected: false, loading: false, queryFailed: false }),
+    false,
+  )
+  assert.equal(
+    shouldShowDiscoveryGap({ connected: true, loading: true, queryFailed: false }),
+    false,
+  )
+  assert.equal(
+    shouldShowDiscoveryGap({
+      connected: true,
+      loading: false,
+      queryFailed: false,
+      health: EMPTY_DISCOVERY_HEALTH,
+    }),
+    false,
+    'true empty wallet: no banner',
+  )
+  assert.equal(
+    shouldShowDiscoveryGap({
+      connected: true,
+      loading: false,
+      queryFailed: false,
+      health: { ...EMPTY_DISCOVERY_HEALTH, indexerFailed: true },
+    }),
+    true,
+    'indexer configured but failed: banner',
+  )
+  assert.equal(
+    shouldShowDiscoveryGap({ connected: true, loading: false, queryFailed: true }),
+    true,
+    'query died (e.g. getBlockNumber): banner without raw RPC text',
+  )
+}
+
+function fakeClient(options: {
+  latest?: bigint
+  getLogs?: PublicClient['getLogs']
+}): PublicClient {
+  return {
+    getBlockNumber: async () => options.latest ?? 8_000_000n,
+    getLogs:
+      options.getLogs ??
+      (async () => [] as never),
+    getTransaction: async () => {
+      throw new Error('unused')
+    },
+  } as unknown as PublicClient
+}
+
+const FACTORY = '0x43aa92c8a26392f21f63cda88b6bab5031c40550' as const
+const USER = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as const
+
+async function testIndexerFailHealth() {
+  const prev = globalThis.fetch
+  globalThis.fetch = (async () => {
+    throw new Error('Indexer GraphQL ECONNRESET boom')
+  }) as typeof fetch
+
+  try {
+    const result = await discoverChambers({
+      client: fakeClient({}),
+      chainId: 11155111,
+      userAddress: USER,
+      factoryAddress: FACTORY,
+      indexerUrl: 'https://indexer.example.test',
+    })
+    assert.equal(result.health.indexerConfigured, true)
+    assert.equal(result.health.indexerFailed, true)
+    assert.equal(result.health.catchupOnly, false)
+    assert.equal(result.health.rpcErrored, false)
+    assert.equal(isChamberDiscoveryIncomplete(result.health), true)
+    assert.equal(
+      JSON.stringify(result.health).includes('ECONNRESET'),
+      false,
+      'health must not carry raw GraphQL/RPC text',
+    )
+  } finally {
+    globalThis.fetch = prev
+  }
+}
+
+async function testEmptyWalletHealth() {
+  const result = await discoverChambers({
+    client: fakeClient({}),
+    chainId: 11155111,
+    userAddress: USER,
+    factoryAddress: FACTORY,
+    indexerUrl: '',
+  })
+  assert.equal(result.addresses.length, 0)
+  assert.equal(result.health.indexerConfigured, false)
+  assert.equal(result.health.indexerFailed, false)
+  assert.equal(result.health.rpcErrored, false)
+  assert.equal(isChamberDiscoveryIncomplete(result.health), false)
+}
+
+async function testRpcErroredHealth() {
+  const result = await discoverChambers({
+    client: fakeClient({
+      latest: 7_453_900n,
+      getLogs: async () => {
+        throw new Error('eth_getLogs filter not found query returned more than 10000 results')
+      },
+    }),
+    chainId: 11155111,
+    userAddress: USER,
+    factoryAddress: FACTORY,
+    indexerUrl: '',
+  })
+  assert.equal(result.health.rpcErrored, true)
+  assert.equal(isChamberDiscoveryIncomplete(result.health), true)
+}
+
+async function testCatchupOnlyErroredHealth() {
+  const prev = globalThis.fetch
+  globalThis.fetch = (async () =>
+    ({
+      ok: true,
+      json: async () => ({
+        data: { created: { items: [] }, held: { items: [] } },
+      }),
+    }) as Response) as typeof fetch
+
+  try {
+    const result = await discoverChambers({
+      client: fakeClient({
+        getLogs: async () => {
+          throw new Error('block range too large')
+        },
+      }),
+      chainId: 11155111,
+      userAddress: USER,
+      factoryAddress: FACTORY,
+      indexerUrl: 'https://indexer.example.test',
+    })
+    assert.equal(result.health.indexerFailed, false)
+    assert.equal(result.health.catchupOnly, true)
+    assert.equal(result.health.rpcErrored, true)
+    assert.equal(isChamberDiscoveryIncomplete(result.health), true)
+  } finally {
+    globalThis.fetch = prev
+  }
+}
+
 testParseIndexer()
 testStartBlocks()
+testDiscoveryGapRules()
 await testPagedLogs()
+await testIndexerFailHealth()
+await testEmptyWalletHealth()
+await testRpcErroredHealth()
+await testCatchupOnlyErroredHealth()
 console.log('verify-chamber-discovery: ok')

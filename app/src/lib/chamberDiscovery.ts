@@ -11,6 +11,9 @@
  * Public Sepolia RPCs often reject or truncate a single from-0 `getLogs`.
  * Production RPC (Alchemy when `VITE_ALCHEMY_API_KEY` is set) can page history
  * older than 48h. A live Ponder host is optional.
+ *
+ * Failures are recorded on `health` (no raw GraphQL/RPC strings) so the
+ * Dashboard can tell incomplete discovery from a truly empty wallet.
  */
 
 import { parseAbiItem, type AbiEvent, type Address, type GetLogsReturnType, type PublicClient } from 'viem'
@@ -44,9 +47,42 @@ const MIN_LOG_CHUNK = 200n
 const LOG_CONCURRENCY = 4
 const TX_CONCURRENCY = 4
 
+export type ChamberDiscoveryHealth = {
+  indexerConfigured: boolean
+  indexerFailed: boolean
+  /** Indexer answered; getLogs only covers the recent catch-up window. */
+  catchupOnly: boolean
+  /** A getLogs window was abandoned or Factory/Registry collection threw. */
+  rpcErrored: boolean
+}
+
+export const EMPTY_DISCOVERY_HEALTH: ChamberDiscoveryHealth = {
+  indexerConfigured: false,
+  indexerFailed: false,
+  catchupOnly: false,
+  rpcErrored: false,
+}
+
+export function isChamberDiscoveryIncomplete(health: ChamberDiscoveryHealth): boolean {
+  return health.indexerFailed || health.rpcErrored
+}
+
+/** Production banner: connected, settled, and discovery is degraded or the query died. */
+export function shouldShowDiscoveryGap(options: {
+  connected: boolean
+  loading: boolean
+  queryFailed: boolean
+  health?: ChamberDiscoveryHealth
+}): boolean {
+  if (!options.connected || options.loading) return false
+  if (options.queryFailed) return true
+  return !!options.health && isChamberDiscoveryIncomplete(options.health)
+}
+
 export type DiscoveredChambers = {
   addresses: `0x${string}`[]
   creators: Map<string, `0x${string}`>
+  health: ChamberDiscoveryHealth
 }
 
 export function parseStartBlock(raw: string | undefined): bigint | undefined {
@@ -162,9 +198,12 @@ async function probeLogChunk<TEvent extends AbiEvent>(
   return MIN_LOG_CHUNK
 }
 
+export type LogPageSink = { errored?: boolean }
+
 export async function getEventLogsPaged<TEvent extends AbiEvent>(
   client: PublicClient,
   args: { address: `0x${string}`; event: TEvent; fromBlock: bigint; toBlock: bigint },
+  sink?: LogPageSink,
 ): Promise<EventLogs<TEvent>> {
   try {
     return await client.getLogs({
@@ -175,7 +214,7 @@ export async function getEventLogsPaged<TEvent extends AbiEvent>(
     })
   } catch {
     const chunk = await probeLogChunk(client, args, args.fromBlock, args.toBlock)
-    return collectLogs(client, args, args.fromBlock, args.toBlock, chunk)
+    return collectLogs(client, args, args.fromBlock, args.toBlock, chunk, sink)
   }
 }
 
@@ -185,6 +224,7 @@ async function collectLogs<TEvent extends AbiEvent>(
   fromBlock: bigint,
   toBlock: bigint,
   chunk: bigint,
+  sink?: LogPageSink,
 ): Promise<EventLogs<TEvent>> {
   if (toBlock < fromBlock) return [] as EventLogs<TEvent>
 
@@ -198,11 +238,14 @@ async function collectLogs<TEvent extends AbiEvent>(
         toBlock,
       })
     } catch {
-      if (span <= MIN_LOG_CHUNK) return [] as EventLogs<TEvent>
+      if (span <= MIN_LOG_CHUNK) {
+        if (sink) sink.errored = true
+        return [] as EventLogs<TEvent>
+      }
       const mid = fromBlock + span / 2n - 1n
       const [left, right] = await Promise.all([
-        collectLogs(client, args, fromBlock, mid, chunk),
-        collectLogs(client, args, mid + 1n, toBlock, chunk),
+        collectLogs(client, args, fromBlock, mid, chunk, sink),
+        collectLogs(client, args, mid + 1n, toBlock, chunk, sink),
       ])
       return [...left, ...right]
     }
@@ -215,7 +258,7 @@ async function collectLogs<TEvent extends AbiEvent>(
   }
 
   const batches = await mapPool(windows, LOG_CONCURRENCY, ([start, end]) =>
-    collectLogs(client, args, start, end, chunk),
+    collectLogs(client, args, start, end, chunk, sink),
   )
   return batches.flat()
 }
@@ -255,6 +298,8 @@ export async function discoverChambers(options: {
   userAddress: Address
   factoryAddress?: `0x${string}`
   registryAddress?: `0x${string}`
+  /** Test override. Unset uses `VITE_INDEXER_URL` when the chain matches. */
+  indexerUrl?: string
 }): Promise<DiscoveredChambers> {
   const { client, chainId, userAddress, factoryAddress, registryAddress } = options
   const addresses: `0x${string}`[] = []
@@ -263,7 +308,19 @@ export async function discoverChambers(options: {
 
   const factoryOk = isNonZeroAddress(factoryAddress)
   const registryOk = isNonZeroAddress(registryAddress)
-  const indexerUrl = indexerAppliesToChain(chainId) ? getIndexerUrl() : undefined
+  const indexerUrl =
+    options.indexerUrl !== undefined
+      ? options.indexerUrl.trim().replace(/\/+$/, '') || undefined
+      : indexerAppliesToChain(chainId)
+        ? getIndexerUrl()
+        : undefined
+
+  const health: ChamberDiscoveryHealth = {
+    indexerConfigured: !!indexerUrl,
+    indexerFailed: false,
+    catchupOnly: false,
+    rpcErrored: false,
+  }
 
   let indexerOk = false
   if (indexerUrl) {
@@ -272,53 +329,65 @@ export async function discoverChambers(options: {
       mergeIndexerRows(addresses, seen, creators, mine.created)
       mergeIndexerRows(addresses, seen, creators, mine.held)
       indexerOk = true
+      health.catchupOnly = true
     } catch {
-      // fall through to chunked getLogs
+      health.indexerFailed = true
     }
   }
 
   if (!factoryOk && !registryOk) {
-    return { addresses, creators }
+    return { addresses, creators, health }
   }
 
   const latest = await client.getBlockNumber()
 
   const collectFactory = async () => {
     if (!factoryOk || !factoryAddress) return
+    const sink: LogPageSink = {}
     try {
       const fromBlock = clampDiscoveryFromBlock(
         discoveryStartBlock(chainId, 'factory'),
         latest,
         indexerOk,
       )
-      const logs = await getEventLogsPaged(client, {
-        address: factoryAddress,
-        event: factoryCreatedEvent,
-        fromBlock,
-        toBlock: latest,
-      })
+      const logs = await getEventLogsPaged(
+        client,
+        {
+          address: factoryAddress,
+          event: factoryCreatedEvent,
+          fromBlock,
+          toBlock: latest,
+        },
+        sink,
+      )
       for (const log of logs) {
         pushChamber(addresses, seen, creators, log.args.chamber, log.args.creator)
       }
     } catch {
-      // RPC getLogs limits — indexer / recents / open-address still work
+      health.rpcErrored = true
     }
+    if (sink.errored) health.rpcErrored = true
   }
 
   const collectRegistry = async () => {
     if (!registryOk || !registryAddress) return
+    const sink: LogPageSink = {}
     try {
       const fromBlock = clampDiscoveryFromBlock(
         discoveryStartBlock(chainId, 'registry'),
         latest,
         indexerOk,
       )
-      const logs = await getEventLogsPaged(client, {
-        address: registryAddress,
-        event: registryCreatedEvent,
-        fromBlock,
-        toBlock: latest,
-      })
+      const logs = await getEventLogsPaged(
+        client,
+        {
+          address: registryAddress,
+          event: registryCreatedEvent,
+          fromBlock,
+          toBlock: latest,
+        },
+        sink,
+      )
       for (const log of logs) {
         pushChamber(addresses, seen, creators, log.args.chamber)
       }
@@ -326,10 +395,11 @@ export async function discoverChambers(options: {
         await recoverRegistryCreators(client, logs, creators)
       }
     } catch {
-      // leftover Registry index is best-effort
+      health.rpcErrored = true
     }
+    if (sink.errored) health.rpcErrored = true
   }
 
   await Promise.all([collectFactory(), collectRegistry()])
-  return { addresses, creators }
+  return { addresses, creators, health }
 }
