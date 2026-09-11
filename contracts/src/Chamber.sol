@@ -79,7 +79,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
      *      (length word + data word) and incurs an SLOAD on every read. A bytes32 constant is
      *      inlined at compile time: zero runtime gas, zero storage slots.
      */
-    bytes32 public constant VERSION = "1.1.7";
+    bytes32 public constant VERSION = "1.1.8";
 
     /// @notice Function selector for upgradeImplementation(address,bytes)
     bytes4 private constant UPGRADE_SELECTOR = 0xc89311b6;
@@ -233,14 +233,25 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
 
     /**
      * @notice Retrieves the current quorum (minimum distinct director-token confirmations to execute)
-     * @dev Integer formula `1 + (seats * 51) / 100`. One- and two-seat chambers require all seats.
-     *      Quorum is token-weighted: it counts distinct top-seat `tokenId`s, not unique addresses.
-     *      One owner of `quorum` membership NFTs in the top seats can submit, self-confirm, and
-     *      execute — a single-actor treasury. Confirmations are not capped per owner.
+     * @dev Integer formula `1 + (n * 51) / 100` where `n` is {getReachableDirectorCount} (PMN-M01).
+     *      Empty seats and burned, uncallable, or chamber-held tokenIds do not inflate `n`.
+     *      One- and two-director boards require all reachable directors. Quorum is token-weighted:
+     *      it counts distinct top-seat `tokenId`s, not unique addresses. One owner of `quorum`
+     *      membership NFTs in the top seats can submit, self-confirm, and execute — a single-actor
+     *      treasury. Confirmations are not capped per owner.
      * @return The current quorum value
      */
     function getQuorum() public view override returns (uint256) {
-        return _getQuorum();
+        return _liveQuorum(_getChamberStorage().nft, address(this));
+    }
+
+    /**
+     * @notice Top-seat tokenIds that can still authorize a caller (PMN-M01).
+     * @dev `ownerOf` succeeds and the owner is not this chamber. Session keys do not add extra
+     *      tokenIds: if `ownerOf` fails the session is stale. Rank occupancy is unchanged (#210).
+     */
+    function getReachableDirectorCount() public view override returns (uint256) {
+        return _countReachableAuthorized(_getChamberStorage().nft, address(this));
     }
 
     /**
@@ -367,7 +378,26 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     function updateSeats(uint256 tokenId, uint256 numOfSeats) public override nonReentrant isDirector(tokenId) {
         if (numOfSeats == 0) revert IChamber.ZeroSeats();
         if (numOfSeats > MAX_SEATS) revert IChamber.TooManySeats();
-        _setSeats(tokenId, numOfSeats);
+        _setSeats(tokenId, numOfSeats, getQuorum());
+    }
+
+    /**
+     * @notice Lowers `seats` when filled authorized directors are below the configured-seat quorum.
+     * @dev PMN-M01 Solution C. Not a wallet self-call; ordinary spend cannot use this path.
+     *      `newSeats` must be in `[1, filled]` and strictly less than the current seat count.
+     * @param tokenId Director token authorizing the recovery
+     * @param newSeats Seat count after recovery
+     */
+    function recoverSeats(uint256 tokenId, uint256 newSeats) public override nonReentrant isDirector(tokenId) {
+        ChamberStorage storage $ = _getChamberStorage();
+        uint256 currentSeats = _getSeats();
+        uint256 filled = _countReachableAuthorized($.nft, address(this));
+        if (filled >= _getQuorum()) revert IChamber.SeatRecoveryUnavailable();
+        if (newSeats == 0) revert IChamber.ZeroSeats();
+        if (newSeats > MAX_SEATS) revert IChamber.TooManySeats();
+        if (newSeats >= currentSeats || newSeats > filled) revert IChamber.SeatRecoveryUnavailable();
+        _recoverSeats(tokenId, newSeats, $.nft);
+        emit IChamber.SeatsRecovered(tokenId, currentSeats, newSeats);
     }
 
     /**
@@ -602,7 +632,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
 
     /// @dev Snapshot live quorum onto each newly submitted wallet transaction (M-04).
     function _submitQuorum() internal view override returns (uint256) {
-        return _getQuorum();
+        return getQuorum();
     }
 
     /**
@@ -612,7 +642,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
      */
     function _requiredConfirmations(uint256 nonce) internal view returns (uint256) {
         uint256 submitQuorum = _getWalletStorage().transactionRequiredQuorum[nonce];
-        uint256 liveQuorum = _getQuorum();
+        uint256 liveQuorum = getQuorum();
         return submitQuorum > liveQuorum ? submitQuorum : liveQuorum;
     }
 
@@ -813,6 +843,7 @@ contract Chamber is ERC4626Upgradeable, PausableUpgradeable, Board, Wallet, ICha
     }
 
     /// @dev True when `tokenId` is among the current top `_getSeats()` nodes.
+    ///      Inert ids still occupy a slot if weight remains; quorum uses reachable count (PMN-M01).
     function _isInTopSeats(uint256 tokenId) internal view returns (bool) {
         BoardTypes.BoardStorage storage $b = _getBoardStorage();
         uint256 current = $b.head;

@@ -76,8 +76,8 @@ contract OffensiveReviewFindingsTest is Test {
         assertTrue(_isDirectorToken(2));
         assertTrue(_isDirectorToken(3));
 
-        uint256 quorum = chamber.getQuorum(); // seats=5 => 1 + 255/100 = 3
-        assertEq(quorum, 3);
+        uint256 quorum = chamber.getQuorum(); // 3 reachable directors → 1 + (3 * 51) / 100 = 2
+        assertEq(quorum, 2);
 
         deal(address(chamber), 1 ether);
 
@@ -178,8 +178,6 @@ contract OffensiveReviewFindingsTest is Test {
 
         vm.prank(user1);
         chamber.cancelTransaction(1, 0);
-        vm.prank(user2);
-        chamber.cancelTransaction(2, 0);
         assertFalse(chamber.getCancelled(0));
 
         _evictInitialDirectors();
@@ -190,6 +188,8 @@ contract OffensiveReviewFindingsTest is Test {
 
         vm.prank(address(0x5));
         chamber.cancelTransaction(5, 0);
+        assertFalse(chamber.getCancelled(0), "two live cancel votes are below reachable quorum of 3");
+
         vm.prank(address(0x6));
         chamber.cancelTransaction(6, 0);
         assertTrue(chamber.getCancelled(0), "current director cancel quorum must still cancel");

@@ -159,8 +159,46 @@ library BoardLib {
         }
     }
 
+    /// @dev Integer formula used for both configured seats and reachable-director counts (PMN-M01).
+    function quorumFor(uint256 n) public pure returns (uint256) {
+        return 1 + (n * 51) / 100;
+    }
+
+    /// @notice Configured-seat quorum. Board unit tests and first-time `setSeats` use this.
+    /// @dev Chamber wallet confirm/execute uses {getQuorum(BoardStorage, IERC721, address)} instead.
     function getQuorum(BoardTypes.BoardStorage storage $) public view returns (uint256) {
-        return 1 + ($.seats * 51) / 100;
+        return quorumFor($.seats);
+    }
+
+    /// @notice Quorum over reachable authorized top-seat tokenIds (PMN-M01 Solution A).
+    /// @dev `ownerOf` succeeds and the owner is not `excludeOwner` (Chamber itself: chamber-held).
+    ///      Empty slots and burned/inert ids do not inflate the denominator.
+    function getQuorum(BoardTypes.BoardStorage storage $, IERC721 nft, address excludeOwner)
+        public
+        view
+        returns (uint256)
+    {
+        return quorumFor(countReachableAuthorized($, nft, excludeOwner));
+    }
+
+    /// @dev Top-`seats` nodes whose `ownerOf` succeeds and is not `excludeOwner`.
+    function countReachableAuthorized(BoardTypes.BoardStorage storage $, IERC721 nft, address excludeOwner)
+        public
+        view
+        returns (uint256 n)
+    {
+        uint256 current = $.head;
+        uint256 remaining = $.seats;
+        unchecked {
+            while (current != 0 && remaining != 0) {
+                address owner = tryOwnerOf(nft, current);
+                if (owner != address(0) && owner != excludeOwner) {
+                    ++n;
+                }
+                current = uint256($.nodes[current].next);
+                --remaining;
+            }
+        }
     }
 
     function getSeats(BoardTypes.BoardStorage storage $) external view returns (uint256) {
@@ -168,6 +206,12 @@ library BoardLib {
     }
 
     function setSeats(BoardTypes.BoardStorage storage $, uint256 tokenId, uint256 numOfSeats) external {
+        setSeats($, tokenId, numOfSeats, getQuorum($));
+    }
+
+    function setSeats(BoardTypes.BoardStorage storage $, uint256 tokenId, uint256 numOfSeats, uint256 liveQuorum)
+        public
+    {
         if (numOfSeats <= 0) revert IBoard.InvalidNumSeats();
 
         if ($.seats == 0) {
@@ -181,7 +225,7 @@ library BoardLib {
         if (proposal.timestamp == 0) {
             proposal.proposedSeats = numOfSeats;
             proposal.timestamp = block.timestamp;
-            proposal.requiredQuorum = getQuorum($);
+            proposal.requiredQuorum = liveQuorum;
         } else {
             if (proposal.proposedSeats != numOfSeats) {
                 authorizeSeatUpdateCancel(proposal, tokenId);
@@ -225,9 +269,14 @@ library BoardLib {
 
         uint256 validSupport;
         uint256 supportersLen = proposal.supporters.length;
+        bool checkOwner = address(nft) != address(0) && address(nft).code.length != 0;
         unchecked {
             for (uint256 i; i < supportersLen; ++i) {
                 uint256 sup = proposal.supporters[i];
+                // PMN-M01: burned / inert supporters do not count toward seat-change quorum.
+                if (checkOwner && tryOwnerOf(nft, sup) == address(0)) {
+                    continue;
+                }
                 for (uint256 j; j < filled; ++j) {
                     if (topIds[j] == sup) {
                         ++validSupport;
@@ -242,6 +291,19 @@ library BoardLib {
         }
 
         uint256 newSeats = proposal.proposedSeats;
+        $.seats = uint32(newSeats);
+        delete $.seatUpdate;
+        refreshSeating($, prevTop);
+        syncTopSeatControl($, nft);
+        emit IBoard.ExecuteSetSeats(tokenId, newSeats);
+    }
+
+    /// @dev Immediate seat decrease for PMN-M01 Solution C. Caller enforces recovery preconditions.
+    function recoverSeats(BoardTypes.BoardStorage storage $, uint256 tokenId, uint256 newSeats, IERC721 nft)
+        external
+    {
+        if (newSeats == 0 || newSeats >= $.seats) revert IBoard.InvalidNumSeats();
+        uint256[] memory prevTop = topTokenIds($);
         $.seats = uint32(newSeats);
         delete $.seatUpdate;
         refreshSeating($, prevTop);
@@ -366,6 +428,8 @@ library BoardLib {
         }
     }
 
+    /// @dev Rank occupancy by configured `seats`. Inert ids still occupy a slot if weight remains
+    ///      (PMN-M02 rank cleanup). Quorum denominator uses {countReachableAuthorized} instead.
     function inTopSeats(BoardTypes.BoardStorage storage $, uint256 tokenId) internal view returns (bool) {
         uint256 current = $.head;
         uint256 remaining = $.seats;
@@ -406,10 +470,12 @@ library BoardLib {
         uint256 nonce,
         uint256 tokenId
     ) internal view returns (bool) {
+        address owner = tryOwnerOf(nft, tokenId);
+        // PMN-M01 / minimal PMN-M02: burned or otherwise inert tokenIds do not contribute flags.
+        if (owner == address(0)) return false;
         address recorded = flagOwners[nonce][tokenId];
         if (recorded == address(0)) return true;
-        address owner = tryOwnerOf(nft, tokenId);
-        return owner != address(0) && owner == recorded;
+        return owner == recorded;
     }
 
     function swapUp(BoardTypes.BoardStorage storage $, uint256 tokenId) internal {

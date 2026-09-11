@@ -74,7 +74,7 @@ struct SeatUpdate {
 - **Sorted Linked List**: Maintains nodes sorted by delegation amount (descending)
 - **Circuit Breaker**: Prevents reentrancy during repositioning
 - **Seat Management**: Dynamic seat updates with timelock and quorum
-- **Quorum Calculation**: `1 + (seats * 51) / 100` distinct director `tokenId`s (integer division; one- and two-seat chambers require all seats; token-weighted — one owner of `quorum` top-seat NFTs is a single-actor treasury)
+- **Quorum Calculation**: `1 + (n * 51) / 100` where `n` is reachable authorized top-seat `tokenId`s (integer division; empty/inert slots do not inflate `n`; one- and two-director boards require all reachable directors; token-weighted — one owner of `quorum` top-seat NFTs is a single-actor treasury)
 
 **Operations**:
 - `_delegate()`: Add/update delegation, maintain sorted order

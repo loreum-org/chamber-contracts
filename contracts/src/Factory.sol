@@ -75,6 +75,9 @@ contract Factory is Ownable, IFactory {
         string memory symbol
     ) external returns (address payable chamber) {
         if (erc20Token == address(0) || erc721Token == address(0)) revert ZeroAddress();
+        // `seats == 0` is the knowable create-time bound (PMN-M01 B). IERC721 has no standard
+        // `totalSupply`; chambers are created before membership mint, so a supply cap is not
+        // knowable onchain without an invented oracle.
         if (seats == 0 || seats > 20) revert InvalidSeats();
         if (_implementation == address(0)) revert ZeroAddress();
 

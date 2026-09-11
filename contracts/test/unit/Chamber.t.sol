@@ -941,7 +941,8 @@ contract ChamberTest is Test {
 
         // Check the quorum
         uint256 quorum = chamber.getQuorum();
-        assertEq(quorum, 3);
+        // 3 reachable directors on 5 configured seats → 1 + (3 * 51) / 100 = 2 (PMN-M01)
+        assertEq(quorum, 2);
     }
 
     function test_Chamber_SendEth() public {
@@ -1304,17 +1305,13 @@ contract ChamberTest is Test {
 
         assertFalse(chamber.getCancelled(0));
 
-        // Quorum is 3 - need 3 directors to vote to cancel
+        // 3 reachable directors → quorum 2 (PMN-M01)
         vm.prank(user1);
         chamber.cancelTransaction(1, 0);
         assertFalse(chamber.getCancelled(0));
 
         vm.prank(user2);
         chamber.cancelTransaction(2, 0);
-        assertFalse(chamber.getCancelled(0));
-
-        vm.prank(user3);
-        chamber.cancelTransaction(3, 0);
         assertTrue(chamber.getCancelled(0));
 
         // Execute should revert
@@ -1333,12 +1330,10 @@ contract ChamberTest is Test {
         chamber.cancelTransaction(1, 0);
         vm.prank(user2);
         chamber.cancelTransaction(2, 0);
-        vm.prank(user3);
-        chamber.cancelTransaction(3, 0);
 
-        vm.prank(user1);
+        vm.prank(user3);
         vm.expectRevert(IWallet.TransactionAlreadyCancelled.selector);
-        chamber.cancelTransaction(1, 0);
+        chamber.cancelTransaction(3, 0);
     }
 
     function test_Chamber_ConfirmTransaction_AfterCancel_Reverts() public {
@@ -1351,8 +1346,6 @@ contract ChamberTest is Test {
         chamber.cancelTransaction(1, 0);
         vm.prank(user2);
         chamber.cancelTransaction(2, 0);
-        vm.prank(user3);
-        chamber.cancelTransaction(3, 0);
         assertTrue(chamber.getCancelled(0));
 
         vm.prank(user2);
@@ -1373,8 +1366,6 @@ contract ChamberTest is Test {
         chamber.cancelTransaction(1, 0);
         vm.prank(user2);
         chamber.cancelTransaction(2, 0);
-        vm.prank(user3);
-        chamber.cancelTransaction(3, 0);
         assertTrue(chamber.getCancelled(0));
 
         vm.prank(user2);
@@ -1627,7 +1618,7 @@ contract ChamberTest is Test {
     }
 
     function test_Chamber_Version() public view {
-        assertEq(chamber.VERSION(), bytes32("1.1.7"));
+        assertEq(chamber.VERSION(), bytes32("1.1.8"));
     }
 
     // ─── acceptAdmin (no-op) ───────────────────────────────────────────

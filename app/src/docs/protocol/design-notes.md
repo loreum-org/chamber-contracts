@@ -30,7 +30,7 @@ Calls where `target == Chamber` are limited to **`upgradeImplementation`** selec
 
 ## Quorum formula
 
-`getQuorum() = 1 + (getSeats() * 51) / 100` — integer math in Solidity. One- and two-seat chambers require all seats.
+`getQuorum() = 1 + (getReachableDirectorCount() * 51) / 100` — integer math in Solidity. Empty/inert slots do not inflate the denominator (PMN-M01). One- and two-director boards require all reachable directors.
 
 That count is **token-weighted** (distinct director `tokenId`s). One address holding `quorum` top-seat membership NFTs can satisfy quorum alone — a single-actor treasury. Confirmations are not capped per owner.
 

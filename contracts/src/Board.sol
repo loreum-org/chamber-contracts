@@ -72,12 +72,28 @@ abstract contract Board is ReentrancyGuardTransientUpgradeable {
         return BoardLib.getQuorum(_getBoardStorage());
     }
 
+    function _liveQuorum(IERC721 nft, address excludeOwner) internal view returns (uint256) {
+        return BoardLib.getQuorum(_getBoardStorage(), nft, excludeOwner);
+    }
+
+    function _countReachableAuthorized(IERC721 nft, address excludeOwner) internal view returns (uint256) {
+        return BoardLib.countReachableAuthorized(_getBoardStorage(), nft, excludeOwner);
+    }
+
     function _getSeats() internal view returns (uint256) {
         return BoardLib.getSeats(_getBoardStorage());
     }
 
     function _setSeats(uint256 tokenId, uint256 numOfSeats) internal {
         BoardLib.setSeats(_getBoardStorage(), tokenId, numOfSeats);
+    }
+
+    function _setSeats(uint256 tokenId, uint256 numOfSeats, uint256 liveQuorum) internal {
+        BoardLib.setSeats(_getBoardStorage(), tokenId, numOfSeats, liveQuorum);
+    }
+
+    function _recoverSeats(uint256 tokenId, uint256 newSeats, IERC721 nft) internal {
+        BoardLib.recoverSeats(_getBoardStorage(), tokenId, newSeats, nft);
     }
 
     function _executeSeatsUpdate(uint256 tokenId, IERC721 nft) internal {

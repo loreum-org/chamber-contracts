@@ -26,9 +26,8 @@ import {ILoreOwnable, MainnetLoreHandoff} from "test/utils/MainnetLoreHandoff.so
  *      Success: logs Factory / Chamber impl / Chamber proxy, and `LORE.owner() == chamber`.
  *
  *      Board seating is not exercised here. Factory create leaves an empty board
- *      (`FactoryBootstrap.t.sol`); seats=5 → quorum `1 + (5 * 51) / 100` = 3, so a queue
- *      smoke needs three seated membership NFTs plus LORE deposits. Ownable handoff does
- *      not require a seated board.
+ *      (`FactoryBootstrap.t.sol`); reachable quorum is 1 until directors seat (PMN-M01).
+ *      Ownable handoff does not require a seated board.
  *
  *      Fork proves the *mechanics* of Factory create + single-step Ownable handoff.
  *      It does **not** decide CCA vs Ownable production sequencing (#188).
@@ -70,7 +69,7 @@ contract MainnetLoreOwnableHandoffTest is Test {
         assertEq(chamber.name(), MainnetLoreHandoff.NAME);
         assertEq(chamber.symbol(), MainnetLoreHandoff.SYMBOL);
         assertEq(chamber.getDirectors().length, 0, "factory create leaves an empty board");
-        assertEq(chamber.getQuorum(), 1 + (MainnetLoreHandoff.SEATS * 51) / 100);
+        assertEq(chamber.getQuorum(), 1, "empty board reachable quorum (PMN-M01)");
 
         address proxyAdmin = IChamber(d.chamber).getProxyAdmin();
         assertEq(ProxyAdmin(proxyAdmin).owner(), d.chamber, "ProxyAdmin owned by Chamber proxy");

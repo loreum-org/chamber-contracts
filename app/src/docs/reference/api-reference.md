@@ -73,7 +73,7 @@ Public ETH / NFT receive: **`receive`**, **`fallback`**, **`onERC721Received`**.
 | **`getMember(tokenId)`** | Node tuple (`tokenId`, `amount`, `next`, `prev`). |
 | **`getTop(uint256 count)`** | Token IDs + amounts, descending. |
 | **`getSize()`** | Linked-list node count. |
-| **`getQuorum()`** | `1 + (seats * 51) / 100` distinct director `tokenId`s (token-weighted, not 1-address-1-vote). One- and two-seat chambers require all seats. |
+| **`getQuorum()`** | `1 + (n * 51) / 100` over reachable authorized director `tokenId`s (PMN-M01; token-weighted, not 1-address-1-vote). Empty/inert slots do not inflate `n`. |
 | **`getSeats()`** | Seat count. |
 | **`getDirectors()`** | **`ownerOf`** for each top **`getSeats()`** token ID; `address(0)` on failure. |
 | **`setDirectorOperator(tokenId, operator)`** | Contract NFT owner registers or clears the session key. No ERC-1271. |

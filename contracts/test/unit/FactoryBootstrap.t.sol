@@ -34,7 +34,7 @@ contract FactoryBootstrapTest is Test {
         assertEq(chamber.getDirectors().length, 0, "deploy must not seat anyone");
         (uint256[] memory topIds,) = chamber.getTop(SEATS);
         assertEq(topIds.length, 0, "board starts empty");
-        assertEq(chamber.getQuorum(), 1 + (SEATS * 51) / 100, "I-02 quorum formula");
+        assertEq(chamber.getQuorum(), 1, "empty board: reachable n=0 -> 1 + 0");
 
         uint256 tokenId = nft.mint(creator);
         assertEq(nft.ownerOf(tokenId), creator, "creator holds membership NFT");
@@ -64,6 +64,6 @@ contract FactoryBootstrapTest is Test {
         vm.prank(creator);
         chamber.submitTransaction(tokenId, address(token), 0, "");
         assertEq(chamber.getTransactionCount(), 1, "seated director can submit");
-        assertEq(chamber.getQuorum(), 1 + (SEATS * 51) / 100, "quorum unchanged after seating");
+        assertEq(chamber.getQuorum(), 1, "one reachable director -> quorum 1 (PMN-M01)");
     }
 }
