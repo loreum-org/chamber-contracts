@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, type HTMLAttributes, type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -17,7 +17,7 @@ interface DocNode {
   type: 'file' | 'directory'
 }
 
-function buildDocTree(files: Record<string, any>): DocNode[] {
+function buildDocTree(files: Record<string, unknown>): DocNode[] {
   const root: DocNode[] = []
 
   Object.keys(files).forEach((filePath) => {
@@ -255,7 +255,12 @@ export default function Docs() {
     }
     
     // With as: 'raw', doc should be the string content directly
-    return typeof doc === 'string' ? doc : (doc as any).default || String(doc)
+    if (typeof doc === 'string') return doc
+    if (doc && typeof doc === 'object' && 'default' in doc) {
+      const fallback = (doc as { default?: unknown }).default
+      if (typeof fallback === 'string') return fallback
+    }
+    return String(doc)
   }, [activePath, keys])
 
   return (
@@ -386,7 +391,16 @@ export default function Docs() {
                     </blockquote>
                   )
                 },
-                code({ node, inline, className, children, ...props }: any) {
+                code({
+                  inline,
+                  className,
+                  children,
+                  ...props
+                }: {
+                  inline?: boolean
+                  className?: string
+                  children?: ReactNode
+                } & HTMLAttributes<HTMLElement>) {
                   const match = /language-mermaid/.exec(className || '')
                   if (!inline && match) {
                     return (

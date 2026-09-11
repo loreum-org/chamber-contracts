@@ -87,7 +87,7 @@ export function useChamberEvents(
   useWatchContractEvent({
     address: isValidAddress ? chamberAddress : undefined,
     abi: chamberAbi,
-    eventName: 'Deposit' as any, // ERC4626 Deposit event
+    eventName: 'Deposit',
     onLogs: (logs) => {
       if (import.meta.env.DEV) console.log('Chamber Deposit event:', logs)
       invalidate()
@@ -100,7 +100,7 @@ export function useChamberEvents(
   useWatchContractEvent({
     address: isValidAddress ? chamberAddress : undefined,
     abi: chamberAbi,
-    eventName: 'Withdraw' as any, // ERC4626 Withdraw event
+    eventName: 'Withdraw',
     onLogs: (logs) => {
       if (import.meta.env.DEV) console.log('Chamber Withdraw event:', logs)
       invalidate()
@@ -113,7 +113,7 @@ export function useChamberEvents(
   useWatchContractEvent({
     address: isValidAddress ? chamberAddress : undefined,
     abi: chamberAbi,
-    eventName: 'Transfer' as any,
+    eventName: 'Transfer',
     onLogs: (logs) => {
       if (import.meta.env.DEV) console.log('Chamber Transfer event:', logs)
       invalidate()

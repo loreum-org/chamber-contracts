@@ -81,6 +81,31 @@ The app will be available at `http://localhost:5173`
 npm run build
 ```
 
+### CI / local checks
+
+These match `.github/workflows/app.yml` (`App CI`). From `app/`:
+
+```bash
+npm ci
+npm run lint
+npm run typecheck          # tsc --noEmit (build also runs tsc before vite)
+npm test                   # Vitest unit smoke
+npm run build              # tsc && vite build
+npm run test:discovery     # offline indexer/getLogs checks + live Sepolia RPC
+```
+
+`npm run typecheck` is the explicit typecheck CI uses. `npm run build` already runs `tsc && vite build`, so a green build also implies types pass.
+
+`test:discovery` uses public Sepolia RPC (no keys). Playwright Sepolia e2e is not part of this workflow (see #179 / #182).
+
+From `packages/operator/`:
+
+```bash
+npm ci
+npm run typecheck
+npm test
+```
+
 ## Project Structure
 
 ```

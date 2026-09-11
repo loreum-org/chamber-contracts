@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef, useState } from 'react'
 import { useWaitForTransactionReceipt, useWatchPendingTransactions, useWriteContract } from 'wagmi'
-import { type Hash } from 'viem'
+import { type Abi, type Hash, type TransactionReceipt } from 'viem'
 import toast from 'react-hot-toast'
 import { chamberAbi, erc20Abi, factoryAbi, registryAbi } from '@/contracts/abis'
 
@@ -10,7 +10,7 @@ export interface UseTransactionStatusOptions {
   /** Transaction hash to watch */
   hash?: Hash
   /** Callback when transaction succeeds */
-  onSuccess?: (receipt?: any) => void
+  onSuccess?: (receipt?: TransactionReceipt) => void
   /** Callback when transaction fails */
   onError?: (error: Error) => void
   /** Success message to show (default: "Transaction confirmed!") */
@@ -41,7 +41,7 @@ export interface UseTransactionStatusReturn {
   /** Error object if transaction failed */
   error: Error | null
   /** Transaction receipt if successful */
-  receipt: any
+  receipt: TransactionReceipt | null
   /** Reset the transaction status */
   reset: () => void
   /** Set a new transaction hash to watch */
@@ -82,7 +82,7 @@ export function useTransactionStatus(
   const [internalHash, setInternalHash] = useState<Hash | undefined>(providedHash)
   const [status, setStatus] = useState<TransactionStatus>('idle')
   const [error, setError] = useState<Error | null>(null)
-  const [receipt, setReceipt] = useState<any>(null)
+  const [receipt, setReceipt] = useState<TransactionReceipt | null>(null)
   
   const hasNotifiedRef = useRef(false)
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -112,7 +112,9 @@ export function useTransactionStatus(
       setStatus('idle')
       hasNotifiedRef.current = false
     }
-  }, [providedHash]) // Only depend on providedHash to avoid loops
+    // Only depend on providedHash to avoid loops when internalHash is written above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- internalHash is synced from providedHash
+  }, [providedHash])
 
   // Watch for transaction receipt - enable whenever we have a hash
   const {
@@ -185,9 +187,9 @@ export function useTransactionStatus(
   // Handle transaction receipt error
   useEffect(() => {
     if (receiptError && receiptErrorData && internalHash && status !== 'error' && !hasNotifiedRef.current) {
-      const errorObj = receiptErrorData instanceof Error 
-        ? receiptErrorData 
-        : new Error((receiptErrorData as any)?.message || errorMessage)
+      const errorObj = receiptErrorData instanceof Error
+        ? receiptErrorData
+        : new Error(errorMessage)
       
       setStatus('error')
       setError(errorObj)
@@ -605,7 +607,7 @@ export function useCreateChamberWithStatus(
 export function useWriteContractWithStatus(
   contractConfig: {
     address?: `0x${string}`
-    abi: any
+    abi: Abi
     functionName: string
   },
   options?: UseTransactionStatusOptions
@@ -616,7 +618,7 @@ export function useWriteContractWithStatus(
     ...options,
   })
 
-  const execute = async (callArgs: { args?: any[]; value?: bigint }) => {
+  const execute = async (callArgs: { args?: readonly unknown[]; value?: bigint }) => {
     if (!contractConfig.address) {
       throw new Error('Contract address is required')
     }
@@ -628,7 +630,7 @@ export function useWriteContractWithStatus(
         abi: contractConfig.abi,
         functionName: contractConfig.functionName,
         ...callArgs,
-      })
+      } as Parameters<typeof writeContract>[0])
       return txHash
     } catch (err) {
       transactionStatus.reset()

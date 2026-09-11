@@ -167,13 +167,14 @@ export function useNftImageMap(
     tokenIdsWithSuccessfulUri.length > 0 &&
     tokenIdsWithSuccessfulUri.some((id) => !imageQuery.data!.has(id))
 
+  const refetchImages = imageQuery.refetch
   useEffect(() => {
     if (!mapIncomplete) return
     const t = window.setInterval(() => {
-      void imageQuery.refetch()
+      void refetchImages()
     }, 28_000)
     return () => window.clearInterval(t)
-  }, [mapIncomplete, imageQuery.refetch])
+  }, [mapIncomplete, refetchImages])
 
   const resolvingImages =
     !!enabledAddr &&
